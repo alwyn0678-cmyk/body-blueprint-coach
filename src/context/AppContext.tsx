@@ -19,7 +19,7 @@ const defaultState: AppState = {
 const mockDevState: AppState = {
   user: {
     id: 'user-1',
-    name: 'Alex',
+    name: 'Alwyn',
     age: 30,
     sex: 'male',
     height: 180,
