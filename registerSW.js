@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/body-blueprint-coach/sw.js', { scope: '/body-blueprint-coach/' })})}
