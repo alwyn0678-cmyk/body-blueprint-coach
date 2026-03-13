@@ -1,33 +1,39 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  /* Premium Palette */
-  --bg-primary: #F6F3EE;
-  --bg-card: #FFFFFF;
+  /* Premium Dark Mode Palette */
+  --bg-primary: #0F1014; /* Deep, almost black abyss */
+  --bg-card: #1C1E23; /* Sleek dark gray for cards */
+  --bg-card-hover: #23252A; /* Slightly lighter for interaction */
   
-  --text-main: #2F2F2F;
-  --text-muted: #6E6E6E;
-  --text-light: #A0A0A0;
+  --text-main: #FFFFFF; /* Crisp white for primary text */
+  --text-muted: #A1A3AB; /* Soft gray for secondary text */
+  --text-light: #6E717B; /* Deeper gray for tertiary elements */
   
-  --accent-terracotta: #D97757;
-  --accent-terracotta-hover: #C56546;
-  --accent-beige: #E7DED3;
-  --accent-teal: #4A7C82;
+  /* Vibrant Accents */
+  --accent-primary: #FF5A36; /* Energetic Neon Orange/Terracotta */
+  --accent-primary-hover: #E34A29;
   
-  --border-color: #E6E1DC;
+  --accent-secondary: #00E676; /* Vibrant Success Green */
+  --accent-tertiary: #2979FF; /* Deep Electric Blue */
   
-  /* Macro Colors (Subtle/Calm) */
-  --color-protein: #D97757; /* Terracotta */
-  --color-carbs: #E4B363; /* Mustard/Warm Gold */
-  --color-fats: #5C808E; /* Muted Slate Blue */
+  /* Borders and Dividers */
+  --border-color: #2F323A;
+  
+  /* Macro Colors (High Contrast Neons) */
+  --color-protein: #FF5A36; /* Bright Orange */
+  --color-carbs: #FFD54F; /* Bright Amber/Gold */
+  --color-fats: #2979FF; /* Electric Blue */
 
-  --shadow-sm: 0 1px 3px rgba(47, 47, 47, 0.05);
-  --shadow-md: 0 4px 12px rgba(47, 47, 47, 0.04);
-  --shadow-lg: 0 12px 24px rgba(47, 47, 47, 0.06);
+  /* Glassmorphic Shadows & Glows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 15px rgba(255, 90, 54, 0.2);
 
-  --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  --radius-sm: 10px;
+  --radius-md: 20px;
+  --radius-lg: 32px;
+  --radius-full: 9999px;
   
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
@@ -48,19 +54,20 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-main);
   margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
 }
 
 a {
-  color: var(--accent-terracotta);
+  color: var(--accent-primary);
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 a:hover {
-  color: var(--accent-terracotta-hover);
+  color: var(--accent-primary-hover);
 }
 
 button {
@@ -71,6 +78,9 @@ button {
 input, select, textarea {
   font-family: inherit;
   font-size: 1rem;
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  outline: none;
 }
 
 /* Base Layout Classes */
@@ -83,42 +93,72 @@ input, select, textarea {
   flex-direction: column;
 }
 
+/* Premium Card Design */
 .card {
   background-color: var(--bg-card);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   padding: 1.5rem;
   border: 1px solid var(--border-color);
-  transition: box-shadow 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
+  background-color: var(--bg-card-hover);
+  border-color: #3B3F49;
+}
+
+/* Interactive elements */
+.btn-primary {
+  background: linear-gradient(135deg, #FF7A5A 0%, #FF5A36 100%);
+  color: #FFF;
+  border: none;
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 14px rgba(255, 90, 54, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-transform: uppercase;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 90, 54, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
 }
 
 /* Typography Utilities */
-.text-h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; }
-.text-h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; }
+.text-h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+.text-h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
 .text-h3 { font-size: 1.25rem; font-weight: 600; }
 .text-body { font-size: 1rem; font-weight: 400; color: var(--text-main); }
-.text-subtitle { font-size: 0.875rem; color: var(--text-muted); }
-.text-caption { font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.text-subtitle { font-size: 0.95rem; color: var(--text-muted); font-weight: 400; }
+.text-caption { font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
 
 /* Flex Helpers */
 .flex-row { display: flex; align-items: center; }
 .flex-col { display: flex; flex-direction: column; }
 .justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.align-center { align-items: center; }
 .gap-1 { gap: 0.25rem; }
 .gap-2 { gap: 0.5rem; }
 .gap-3 { gap: 1rem; }
 .gap-4 { gap: 1.5rem; }
+.gap-6 { gap: 2.5rem; }
 
 /* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.4s ease forwards;
+  animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

@@ -17,8 +17,8 @@ export const Settings: React.FC = () => {
       </div>
 
       <Card className="flex-row gap-4" style={{ alignItems: 'center' }}>
-        <div style={{ padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '50%' }}>
-          <User size={32} color="var(--accent-teal)" />
+        <div style={{ padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '50%', border: '1px solid var(--border-color)' }}>
+          <User size={32} color="var(--accent-primary)" />
         </div>
         <div className="flex-col">
           <span className="text-h2">{user.name}</span>
@@ -52,7 +52,7 @@ export const Settings: React.FC = () => {
         <button 
           onClick={resetApp}
           className="flex-row gap-2 justify-center"
-          style={{ width: '100%', padding: '1rem', backgroundColor: '#FEE2E2', color: '#DC2626', borderRadius: 'var(--radius-sm)', border: 'none', fontWeight: 600, alignItems: 'center' }}
+          style={{ width: '100%', padding: '1rem', backgroundColor: 'rgba(220, 38, 38, 0.1)', color: '#EF4444', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(220, 38, 38, 0.2)', fontWeight: 600, alignItems: 'center' }}
         >
           <LogOut size={20} /> Reset App Data
         </button>

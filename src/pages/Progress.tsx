@@ -49,13 +49,14 @@ export const Progress: React.FC = () => {
           onClick={() => setShowLogWeight(!showLogWeight)}
           className="flex-row gap-2"
           style={{ 
-            backgroundColor: 'var(--accent-teal)', 
+            backgroundColor: 'var(--accent-primary)', 
             color: 'white', 
             border: 'none',
             borderRadius: 'var(--radius-md)',
             padding: '0.5rem 1rem',
-            fontWeight: 500,
-            alignItems: 'center'
+            fontWeight: 600,
+            alignItems: 'center',
+            boxShadow: '0 4px 12px rgba(255, 90, 54, 0.3)'
           }}
         >
           <Plus size={18} /> Log Weight
@@ -63,9 +64,9 @@ export const Progress: React.FC = () => {
       </div>
 
       {showLogWeight && (
-        <Card className="flex-col gap-3 animate-fade-in" style={{ backgroundColor: 'white', border: '1px solid var(--accent-teal)' }}>
+        <Card className="flex-col gap-3 animate-fade-in" style={{ backgroundColor: 'var(--bg-card-hover)', border: '1px solid var(--accent-primary)' }}>
           <div className="flex-row justify-between" style={{ alignItems: 'center' }}>
-            <span className="text-body font-semibold flex-row gap-2"><Scale size={18} color="var(--accent-teal)" /> Log Today's Weight</span>
+            <span className="text-body font-semibold flex-row gap-2"><Scale size={18} color="var(--accent-primary)" /> Log Today's Weight</span>
           </div>
           <div className="flex-row gap-2">
             <input 
@@ -74,13 +75,14 @@ export const Progress: React.FC = () => {
               value={newWeight}
               onChange={(e) => setNewWeight(e.target.value)}
               placeholder="e.g. 79.5"
-              style={{ flex: 1, padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', fontSize: '1.1rem' }}
+              style={{ flex: 1, padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', fontSize: '1.1rem', backgroundColor: 'var(--bg-primary)', color: 'var(--text-main)' }}
             />
             <span style={{ alignSelf: 'center', color: 'var(--text-muted)' }}>kg</span>
           </div>
           <button 
             onClick={handleLogWeight}
-            style={{ width: '100%', padding: '0.75rem', backgroundColor: 'var(--text-main)', color: 'white', borderRadius: 'var(--radius-sm)', border: 'none', fontWeight: 600 }}
+            className="btn-primary"
+            style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}
           >
             Save Entry
           </button>
@@ -92,13 +94,13 @@ export const Progress: React.FC = () => {
         <div className="flex-row justify-between">
           <div className="flex-col">
             <span className="text-h3">Weight Trend</span>
-            <span className="text-subtitle flex-row gap-1" style={{ alignItems: 'center', color: 'var(--accent-teal)' }}>
+            <span className="text-subtitle flex-row gap-1" style={{ alignItems: 'center', color: 'var(--accent-primary)' }}>
               <TrendingDown size={14} /> -0.4kg this week
             </span>
           </div>
           <div className="flex-col align-end text-right">
             <span className="text-caption">Current Weight</span>
-            <span className="text-h2">{user?.weight} kg</span>
+            <span className="text-h2" style={{ color: 'var(--text-main)' }}>{user?.weight} kg</span>
           </div>
         </div>
 
@@ -108,22 +110,23 @@ export const Progress: React.FC = () => {
               <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} dy={10} />
               <YAxis domain={['dataMin - 1', 'dataMax + 1']} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
               <Tooltip 
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: 'var(--shadow-md)' }}
+                contentStyle={{ borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-md)' }}
                 labelStyle={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' }}
+                itemStyle={{ color: 'var(--text-main)' }}
               />
               <Line 
                 type="monotone" 
                 dataKey="weight" 
                 stroke="var(--text-light)" 
                 strokeWidth={2} 
-                dot={{ r: 4, fill: 'var(--text-light)', strokeWidth: 0 }} 
-                activeDot={{ r: 6 }} 
+                dot={{ r: 4, fill: 'var(--bg-card)', stroke: 'var(--text-light)', strokeWidth: 2 }} 
+                activeDot={{ r: 6, fill: 'var(--text-main)' }} 
                 name="Scale Weight"
               />
               <Line 
                 type="monotone" 
                 dataKey="trend" 
-                stroke="var(--accent-terracotta)" 
+                stroke="var(--accent-primary)" 
                 strokeWidth={3} 
                 dot={false}
                 name="Smoothed Trend"
@@ -134,7 +137,7 @@ export const Progress: React.FC = () => {
         
         <div className="flex-row gap-4 mt-2 justify-center">
           <div className="flex-row gap-2" style={{ alignItems: 'center' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--accent-terracotta)' }} />
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)' }} />
             <span className="text-caption">True Trend</span>
           </div>
           <div className="flex-row gap-2" style={{ alignItems: 'center' }}>

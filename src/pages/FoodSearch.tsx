@@ -61,22 +61,22 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
 
   if (selectedFood) {
     return (
-      <div className="flex-col gap-4 p-4 animate-fade-in bg-white" style={{ minHeight: '100%', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 }}>
-        <button onClick={() => setSelectedFood(null)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', width: 'fit-content' }}>
+      <div className="flex-col gap-4 p-4 animate-fade-in" style={{ backgroundColor: 'var(--bg-card)', minHeight: '100%', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
+        <button onClick={() => setSelectedFood(null)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-primary)', width: 'fit-content' }}>
           <ArrowLeft size={20} /> Back
         </button>
 
         <div>
-          <h2 className="text-h2">{selectedFood.name}</h2>
-          {selectedFood.brand && <p className="text-subtitle">{selectedFood.brand}</p>}
+          <h2 className="text-h2" style={{ color: 'var(--text-main)' }}>{selectedFood.name}</h2>
+          {selectedFood.brand && <p className="text-subtitle" style={{ color: 'var(--text-muted)' }}>{selectedFood.brand}</p>}
         </div>
 
-        <div className="card bg-primary-light flex-col gap-3">
-          <div className="flex-row justify-between text-body font-semibold">
+        <div className="card flex-col gap-3" style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
+          <div className="flex-row justify-between text-body font-semibold" style={{ color: 'var(--text-main)' }}>
             <span>Per {selectedFood.servingSize}{selectedFood.servingUnit}</span>
-            <span>{selectedFood.calories} kcal</span>
+            <span style={{ color: 'var(--accent-primary)' }}>{selectedFood.calories} kcal</span>
           </div>
-          <div className="flex-row justify-between text-caption">
+          <div className="flex-row justify-between text-caption border-t pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>
             <span style={{ color: 'var(--color-protein)' }}>Protein: {selectedFood.protein}g</span>
             <span style={{ color: 'var(--color-carbs)' }}>Carbs: {selectedFood.carbs}g</span>
             <span style={{ color: 'var(--color-fats)' }}>Fats: {selectedFood.fats}g</span>
@@ -123,10 +123,10 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
   }
 
   return (
-    <div className="flex-col p-4 animate-fade-in bg-white" style={{ minHeight: '100vh', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 }}>
+    <div className="flex-col p-4 animate-fade-in" style={{ backgroundColor: 'var(--bg-card)', minHeight: '100vh', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
       {/* Search Header */}
       <div className="flex-row gap-3 mb-4" style={{ alignItems: 'center' }}>
-        <button onClick={onCancel} style={{ background: 'none', border: 'none', color: 'var(--text-main)' }}>
+        <button onClick={onCancel} style={{ background: 'none', border: 'none', color: 'var(--accent-primary)' }}>
           <ArrowLeft size={24} />
         </button>
         <div style={{ position: 'relative', flex: 1 }}>
@@ -139,16 +139,18 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             style={{ 
               width: '100%', 
               padding: '0.75rem 1rem 0.75rem 2.5rem', 
-              borderRadius: 'var(--radius-md)', 
+              borderRadius: 'var(--radius-full)', 
               border: '1px solid var(--border-color)',
-              backgroundColor: 'var(--bg-primary)'
+              backgroundColor: 'var(--bg-primary)',
+              color: 'var(--text-main)',
+              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)'
             }}
             autoFocus
           />
         </div>
         <button 
           onClick={handleScanMock}
-          style={{ background: 'none', border: 'none', color: 'var(--accent-teal)' }}
+          style={{ background: 'none', border: 'none', color: 'var(--text-main)' }}
           title="Scan Barcode (Mock)"
         >
           {isScanning ? <span className="text-caption">Wait...</span> : <Scan size={24} />}
@@ -166,21 +168,27 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
 
       {/* Results List */}
       <div className="flex-col" style={{ flex: 1, overflowY: 'auto' }}>
-        <h3 className="text-h3 mb-2 text-muted">{query ? 'Results' : 'Recent Foods'}</h3>
+        <h3 className="text-subtitle mb-2" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{query ? 'Results' : 'Recent Foods'}</h3>
         
         {results.map(f => (
           <div 
             key={f.id} 
             onClick={() => { setSelectedFood(f); setAmount(1); }}
-            className="flex-row justify-between p-3 border-b border-color cursor-pointer"
-            style={{ borderBottom: '1px solid var(--border-color)' }}
+            className="flex-row justify-between p-3 cursor-pointer animate-fade-in"
+            style={{ 
+              borderBottom: '1px solid var(--border-color)',
+              backgroundColor: 'var(--bg-primary)',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: '0.5rem',
+              border: '1px solid var(--border-color)'
+            }}
           >
             <div className="flex-col gap-1">
-              <span className="text-body font-medium">{f.name}</span>
-              <span className="text-caption">{f.servingSize}{f.servingUnit} • {f.calories} kcal</span>
+              <span className="text-body font-semibold" style={{ color: 'var(--text-main)' }}>{f.name}</span>
+              <span className="text-caption" style={{ color: 'var(--text-light)' }}>{f.servingSize}{f.servingUnit} • <span style={{ color: 'var(--accent-primary)' }}>{f.calories} kcal</span></span>
             </div>
-            <button style={{ background: 'none', border: 'none', color: 'var(--accent-terracotta)' }}>
-              <Plus size={20} />
+            <button style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(255, 90, 54, 0.1)' }}>
+              <Plus size={18} />
             </button>
           </div>
         ))}

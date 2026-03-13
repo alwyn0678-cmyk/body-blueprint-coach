@@ -7,45 +7,80 @@ export const Header: React.FC = () => {
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
-    gap: '4px',
-    color: isActive ? 'var(--accent-terracotta)' : 'var(--text-light)',
-    transition: 'color 0.2s',
+    justifyContent: 'center',
+    gap: '6px',
+    color: isActive ? 'var(--accent-primary)' : 'var(--text-light)',
+    transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+    transform: isActive ? 'translateY(-2px)' : 'translateY(0)',
+    position: 'relative' as const,
+    flex: 1
   });
 
   return (
-    <header style={{
+    <div style={{
       position: 'sticky',
       bottom: 0,
       left: 0,
       right: 0,
-      backgroundColor: 'var(--bg-card)',
-      borderTop: '1px solid var(--border-color)',
-      padding: '0.75rem 1rem',
-      paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))',
-      display: 'flex',
-      justifyContent: 'space-around',
+      padding: '0 1rem',
+      paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
       zIndex: 50,
-      boxShadow: '0 -4px 12px rgba(0,0,0,0.03)'
+      pointerEvents: 'none' // Allow clicking through the container edges
     }}>
-      <NavLink to="/" style={navStyle}>
-        <Home size={24} />
-        <span className="text-caption" style={{ fontSize: '10px' }}>Home</span>
-      </NavLink>
-      
-      <NavLink to="/log" style={navStyle}>
-        <PlusCircle size={24} />
-        <span className="text-caption" style={{ fontSize: '10px' }}>Log</span>
-      </NavLink>
-      
-      <NavLink to="/progress" style={navStyle}>
-        <Activity size={24} />
-        <span className="text-caption" style={{ fontSize: '10px' }}>Progress</span>
-      </NavLink>
-      
-      <NavLink to="/settings" style={navStyle}>
-        <Settings size={24} />
-        <span className="text-caption" style={{ fontSize: '10px' }}>Settings</span>
-      </NavLink>
-    </header>
+      <header style={{
+        backgroundColor: 'rgba(28, 30, 35, 0.85)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.05)',
+        borderRadius: 'var(--radius-full)',
+        padding: '0.75rem 0.5rem',
+        display: 'flex',
+        justifyContent: 'space-around',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+        pointerEvents: 'auto', // Re-enable pointer events for the bar itself
+        maxWidth: '500px',
+        margin: '0 auto'
+      }}>
+        <NavLink to="/" style={navStyle}>
+          {({ isActive }) => (
+            <>
+              <Home size={24} />
+              <span className="text-caption" style={{ fontSize: '10px', fontWeight: isActive ? 700 : 600 }}>Home</span>
+              {isActive && <div style={{ position: 'absolute', bottom: -12, width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)', boxShadow: '0 0 10px var(--accent-primary)' }} />}
+            </>
+          )}
+        </NavLink>
+        
+        <NavLink to="/log" style={navStyle}>
+          {({ isActive }) => (
+            <>
+              <PlusCircle size={24} />
+              <span className="text-caption" style={{ fontSize: '10px', fontWeight: isActive ? 700 : 600 }}>Log</span>
+              {isActive && <div style={{ position: 'absolute', bottom: -12, width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)', boxShadow: '0 0 10px var(--accent-primary)' }} />}
+            </>
+          )}
+        </NavLink>
+        
+        <NavLink to="/progress" style={navStyle}>
+          {({ isActive }) => (
+            <>
+              <Activity size={24} />
+              <span className="text-caption" style={{ fontSize: '10px', fontWeight: isActive ? 700 : 600 }}>Progress</span>
+              {isActive && <div style={{ position: 'absolute', bottom: -12, width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)', boxShadow: '0 0 10px var(--accent-primary)' }} />}
+            </>
+          )}
+        </NavLink>
+        
+        <NavLink to="/settings" style={navStyle}>
+          {({ isActive }) => (
+             <>
+              <Settings size={24} />
+              <span className="text-caption" style={{ fontSize: '10px', fontWeight: isActive ? 700 : 600 }}>Settings</span>
+              {isActive && <div style={{ position: 'absolute', bottom: -12, width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--accent-primary)', boxShadow: '0 0 10px var(--accent-primary)' }} />}
+            </>
+          )}
+        </NavLink>
+      </header>
+    </div>
   );
 };

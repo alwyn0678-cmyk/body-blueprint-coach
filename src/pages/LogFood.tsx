@@ -49,15 +49,16 @@ export const LogFood: React.FC = () => {
     const mealProtein = mealItems.reduce((sum, item) => sum + (item.nutrition.protein * item.amount), 0);
     
     return (
-      <Card className="flex-col gap-2 p-3 mb-3 cursor-pointer" 
+      <Card className="flex-col gap-2 p-3 mb-4 cursor-pointer" 
             style={{ 
-              borderColor: activeMeal === mealType ? 'var(--accent-teal)' : 'var(--border-color)',
-              boxShadow: activeMeal === mealType ? '0 0 0 1px var(--accent-teal)' : 'var(--shadow-sm)'
+              borderColor: activeMeal === mealType ? 'var(--accent-primary)' : 'var(--border-color)',
+              boxShadow: activeMeal === mealType ? '0 0 15px rgba(255, 90, 54, 0.15)' : 'var(--shadow-sm)',
+              transform: activeMeal === mealType ? 'scale(1.01)' : 'scale(1)'
             }}
             onClick={() => setActiveMeal(mealType)} // This is safe, React wrapper doesn't pass DOM event
       >
         <div className="flex-row justify-between" style={{ alignItems: 'center' }}>
-          <span className="text-h3 capitalize" style={{ fontSize: '1.1rem' }}>{mealType}</span>
+          <span className="text-h3 capitalize" style={{ fontSize: '1.2rem', color: activeMeal === mealType ? 'var(--accent-primary)' : 'var(--text-main)' }}>{mealType}</span>
           <span className="text-body font-semibold">{Math.round(mealCals)} kcal</span>
         </div>
         
@@ -74,7 +75,7 @@ export const LogFood: React.FC = () => {
           <span className="text-subtitle" style={{ fontStyle: 'italic', margin: '0.5rem 0' }}>No items logged yet</span>
         )}
 
-        <div className="flex-row justify-between mt-1 pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>
+        <div className="flex-row justify-between mt-1 pt-3" style={{ borderTop: '1px solid var(--border-color)' }}>
           <span className="text-caption" style={{ color: 'var(--color-protein)' }}>Protein: {Math.round(mealProtein)}g</span>
           <button 
             onClick={(e) => {
@@ -83,9 +84,9 @@ export const LogFood: React.FC = () => {
               setShowSearch(true);
             }}
             className="text-caption flex-row gap-1"
-            style={{ color: 'var(--accent-terracotta)', border: 'none', background: 'none' }}
+            style={{ color: 'var(--accent-primary)', border: 'none', background: 'none' }}
           >
-            <Plus size={14} /> Add Food
+            <Plus size={16} /> Add Food
           </button>
         </div>
       </Card>
@@ -103,24 +104,28 @@ export const LogFood: React.FC = () => {
         <p className="text-subtitle">What are you eating today?</p>
       </div>
 
-      <div className="flex-row gap-2">
+      <div className="flex-row gap-3">
         <button 
-          className="flex-row gap-2 justify-center p-3" 
-          style={{ flex: 1, backgroundColor: 'var(--accent-teal)', color: 'white', borderRadius: 'var(--radius-sm)', border: 'none', fontWeight: 500 }}
+          className="btn-primary flex-row gap-2 justify-center" 
+          style={{ flex: 1, padding: '0.8rem', fontSize: '1rem', textTransform: 'none' }}
           onClick={() => setShowSearch(true)}
         >
           <Search size={18} /> Search
         </button>
         <button 
-          className="flex-row gap-2 justify-center p-3" 
-          style={{ flex: 1, backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontWeight: 500 }}
+          className="flex-row gap-2 justify-center" 
+          style={{ 
+            flex: 1, backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', 
+            border: '1px solid var(--border-color)', borderRadius: 'var(--radius-full)', 
+            fontWeight: 600, padding: '0.8rem', boxShadow: 'var(--shadow-sm)'
+          }}
           onClick={() => setShowSearch(true)}
         >
-          <Scan size={18} /> Scan Barcode
+          <Scan size={18} /> Barcode
         </button>
       </div>
 
-      <div className="flex-col mt-2">
+      <div className="flex-col mt-4">
         {(['breakfast', 'lunch', 'dinner', 'snacks'] as MealType[]).map(meal => (
           <div key={meal}>
             {renderMealSummary(meal)}

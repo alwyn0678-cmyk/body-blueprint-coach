@@ -1,7 +1,11 @@
 import React from 'react';
 
 export const Card: React.FC<{ children: React.ReactNode; className?: string; style?: React.CSSProperties; onClick?: (e: React.MouseEvent<HTMLDivElement>) => void }> = ({ children, className = '', style, onClick }) => (
-  <div className={`card ${className}`} style={style} onClick={onClick}>
+  <div 
+    className={`card ${className}`} 
+    style={{ ...style, cursor: onClick ? 'pointer' : 'default' }} 
+    onClick={onClick}
+  >
     {children}
   </div>
 );
@@ -18,7 +22,7 @@ interface ProgressBarProps {
 export const ProgressBar: React.FC<ProgressBarProps> = ({ 
   current, 
   max, 
-  color = 'var(--accent-teal)', 
+  color = 'var(--accent-primary)', 
   label,
   showValues = true
 }) => {
@@ -27,22 +31,23 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   return (
     <div className="flex-col gap-1 w-full" style={{ width: '100%' }}>
       {(label || showValues) && (
-        <div className="flex-row justify-between w-full">
-          {label && <span className="text-subtitle font-medium">{label}</span>}
+        <div className="flex-row justify-between w-full" style={{ marginBottom: '4px' }}>
+          {label && <span className="text-body font-medium" style={{ color: 'var(--text-main)', letterSpacing: '0.02em' }}>{label}</span>}
           {showValues && (
-            <span className="text-caption">
-              {Math.round(current)} / {max}
+            <span className="text-caption" style={{ color: 'var(--text-muted)' }}>
+              {Math.round(current)}<span style={{ color: 'var(--text-light)', margin: '0 2px' }}>/</span>{max}
             </span>
           )}
         </div>
       )}
       <div 
         style={{ 
-          height: '8px', 
+          height: '10px', 
           width: '100%', 
-          backgroundColor: 'var(--border-color)', 
-          borderRadius: '4px',
-          overflow: 'hidden'
+          backgroundColor: 'var(--bg-card-hover)', 
+          borderRadius: 'var(--radius-full)',
+          overflow: 'hidden',
+          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5)'
         }}
       >
         <div 
@@ -50,7 +55,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
             height: '100%', 
             width: `${percentage}%`, 
             backgroundColor: color,
-            transition: 'width 0.4s ease'
+            borderRadius: 'var(--radius-full)',
+            transition: 'width 0.5s cubic-bezier(0.25, 1, 0.5, 1)',
+            boxShadow: `0 0 10px ${color}` // Native glow effect
           }} 
         />
       </div>

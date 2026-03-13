@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { calculateTargets } from '../utils/macroEngine';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Check, Activity, Target } from 'lucide-react';
 
 export const Onboarding: React.FC = () => {
   const { updateUser } = useApp();
@@ -18,9 +19,15 @@ export const Onboarding: React.FC = () => {
     preferredDietSpeed: 'moderate',
   });
 
+  const totalSteps = 4;
+
   const handleNext = () => {
-    if (step < 3) setStep(step + 1);
+    if (step < totalSteps) setStep(step + 1);
     else finishOnboarding();
+  };
+
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
   };
 
   const finishOnboarding = () => {
@@ -44,90 +51,173 @@ export const Onboarding: React.FC = () => {
     navigate('/');
   };
 
+  const canProceed = () => {
+    if (step === 1) return formData.name.length > 0;
+    if (step === 2) return formData.age && formData.height && formData.weight;
+    return true;
+  };
+
+  const SelectionCard = ({ title, desc, selected, onClick, icon: Icon }: any) => (
+    <div 
+      onClick={onClick}
+      className="card animate-fade-in"
+      style={{
+        padding: '1.25rem',
+        cursor: 'pointer',
+        border: selected ? '2px solid var(--accent-primary)' : '2px solid var(--border-color)',
+        backgroundColor: selected ? 'rgba(255, 90, 54, 0.05)' : 'var(--bg-card)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem'
+      }}
+    >
+      {Icon && <div style={{ color: selected ? 'var(--accent-primary)' : 'var(--text-muted)' }}><Icon size={24} /></div>}
+      <div className="flex-col" style={{ flex: 1 }}>
+        <span className="text-body" style={{ fontWeight: 600, color: selected ? 'var(--accent-primary)' : 'var(--text-main)' }}>{title}</span>
+        {desc && <span className="text-caption" style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>{desc}</span>}
+      </div>
+      <div style={{ 
+        width: '24px', height: '24px', borderRadius: '50%', 
+        border: selected ? 'none' : '2px solid var(--border-color)',
+        backgroundColor: selected ? 'var(--accent-primary)' : 'transparent',
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>
+        {selected && <Check size={14} color="white" />}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="flex-col p-6 animate-fade-in" style={{ maxWidth: '500px', margin: '0 auto', minHeight: '100vh', justifyContent: 'center' }}>
-      <h1 className="text-h1 text-center mb-2" style={{ color: 'var(--accent-terracotta)' }}>Body Blueprint Coach</h1>
-      <p className="text-subtitle text-center mb-6">Let's build your custom nutrition plan.</p>
-      
-      <div className="card flex-col gap-4">
+    <div className="flex-col animate-fade-in" style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+      {/* Progress Bar Header */}
+      <div style={{ padding: '2rem 1.5rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        {step > 1 ? (
+          <button onClick={handleBack} style={{ background: 'none', border: 'none', color: 'var(--text-main)', padding: '0.5rem' }}>
+            <ArrowLeft size={24} />
+          </button>
+        ) : <div style={{ width: '40px' }} />}
+        
+        <div style={{ flex: 1, height: '6px', backgroundColor: 'var(--bg-card)', borderRadius: '3px', overflow: 'hidden' }}>
+          <div style={{ 
+            height: '100%', 
+            width: `${(step / totalSteps) * 100}%`, 
+            backgroundColor: 'var(--accent-primary)',
+            transition: 'width 0.3s ease'
+          }} />
+        </div>
+        <span className="text-caption" style={{ width: '40px', textAlign: 'right' }}>{step}/{totalSteps}</span>
+      </div>
+
+      <div className="flex-col" style={{ flex: 1, padding: '1rem 1.5rem', maxWidth: '500px', margin: '0 auto', width: '100%' }}>
+        
         {step === 1 && (
-          <div className="flex-col gap-3 animate-fade-in">
-            <h2 className="text-h3">The Basics</h2>
-            <input placeholder="First Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="p-2 border rounded" style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-            <div className="flex-row gap-2">
-              <input type="number" placeholder="Age" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-              <select value={formData.sex} onChange={e => setFormData({...formData, sex: e.target.value})} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}>
-                <option value="female">Female</option>
-                <option value="male">Male</option>
-              </select>
+          <div className="flex-col gap-6 animate-fade-in">
+            <div className="flex-col gap-2">
+              <h1 className="text-h1">Welcome.</h1>
+              <p className="text-subtitle" style={{ fontSize: '1.1rem' }}>Let's get to know you. What should we call you?</p>
             </div>
-            <div className="flex-row gap-2">
-              <input type="number" placeholder="Height (cm)" value={formData.height} onChange={e => setFormData({...formData, height: e.target.value})} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-              <input type="number" placeholder="Current Weight (kg)" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }} />
-            </div>
+            <input 
+              type="text" 
+              placeholder="Your Name" 
+              value={formData.name} 
+              onChange={e => setFormData({...formData, name: e.target.value})} 
+              style={{ 
+                padding: '1.25rem', fontSize: '1.25rem', borderRadius: 'var(--radius-md)', 
+                border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)'
+              }} 
+            />
           </div>
         )}
 
         {step === 2 && (
-          <div className="flex-col gap-3 animate-fade-in">
-            <h2 className="text-h3">Your Goals</h2>
-            <label className="text-body font-medium">Primary Goal</label>
-            <select value={formData.goalType} onChange={e => setFormData({...formData, goalType: e.target.value})} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}>
-              <option value="fat_loss">Fat Loss</option>
-              <option value="muscle_gain">Muscle Gain</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="recomposition">Recomposition</option>
-            </select>
+          <div className="flex-col gap-6 animate-fade-in">
+            <div className="flex-col gap-2">
+              <h1 className="text-h1">Your Metrics</h1>
+              <p className="text-subtitle" style={{ fontSize: '1.1rem' }}>We need accurate data to calculate your metabolic rate.</p>
+            </div>
+            
+            <div className="flex-row gap-4">
+              <div className="flex-col gap-2" style={{ flex: 1 }}>
+                <label className="text-caption">Age</label>
+                <input type="number" placeholder="e.g. 30" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }} />
+              </div>
+              <div className="flex-col gap-2" style={{ flex: 1 }}>
+                <label className="text-caption">Biological Sex</label>
+                <select value={formData.sex} onChange={e => setFormData({...formData, sex: e.target.value})} style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                </select>
+              </div>
+            </div>
 
-            <label className="text-body font-medium mt-2">Activity Level</label>
-            <select value={formData.activityLevel} onChange={e => setFormData({...formData, activityLevel: e.target.value})} style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}>
-              <option value="sedentary">Sedentary (Desk job, little exercise)</option>
-              <option value="lightly_active">Lightly Active (1-3 days/week)</option>
-              <option value="moderately_active">Moderately Active (3-5 days/week)</option>
-              <option value="very_active">Very Active (6-7 days/week)</option>
-            </select>
+            <div className="flex-row gap-4">
+              <div className="flex-col gap-2" style={{ flex: 1 }}>
+                <label className="text-caption">Height (cm)</label>
+                <input type="number" placeholder="e.g. 175" value={formData.height} onChange={e => setFormData({...formData, height: e.target.value})} style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }} />
+              </div>
+              <div className="flex-col gap-2" style={{ flex: 1 }}>
+                <label className="text-caption">Weight (kg)</label>
+                <input type="number" placeholder="e.g. 75" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }} />
+              </div>
+            </div>
           </div>
         )}
 
         {step === 3 && (
-          <div className="flex-col gap-3 animate-fade-in">
-            <h2 className="text-h3">Pacing</h2>
-            <p className="text-subtitle mb-2">How aggressive do you want the diet target to be?</p>
+          <div className="flex-col gap-6 animate-fade-in">
+            <div className="flex-col gap-2">
+              <h1 className="text-h1">Primary Goal</h1>
+              <p className="text-subtitle" style={{ fontSize: '1.1rem' }}>What are we trying to achieve?</p>
+            </div>
             
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-              <input type="radio" name="speed" value="sustainable" checked={formData.preferredDietSpeed === 'sustainable'} onChange={e => setFormData({...formData, preferredDietSpeed: e.target.value})} />
-              <div className="flex-col"><span className="font-medium">Sustainable</span><span className="text-caption text-muted">Slower progress, easier adherence</span></div>
-            </label>
-            
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-              <input type="radio" name="speed" value="moderate" checked={formData.preferredDietSpeed === 'moderate'} onChange={e => setFormData({...formData, preferredDietSpeed: e.target.value})} />
-              <div className="flex-col"><span className="font-medium">Moderate (Recommended)</span><span className="text-caption text-muted">Balanced progress and lifestyle</span></div>
-            </label>
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-              <input type="radio" name="speed" value="aggressive" checked={formData.preferredDietSpeed === 'aggressive'} onChange={e => setFormData({...formData, preferredDietSpeed: e.target.value})} />
-              <div className="flex-col"><span className="font-medium">Aggressive</span><span className="text-caption text-muted">Faster progress, very restrictive</span></div>
-            </label>
+            <div className="flex-col gap-3">
+              <SelectionCard title="Fat Loss" desc="Caloric deficit to drop body fat" icon={Target} selected={formData.goalType === 'fat_loss'} onClick={() => setFormData({...formData, goalType: 'fat_loss'})} />
+              <SelectionCard title="Muscle Gain" desc="Caloric surplus to build lean mass" icon={Target} selected={formData.goalType === 'muscle_gain'} onClick={() => setFormData({...formData, goalType: 'muscle_gain'})} />
+              <SelectionCard title="Maintenance" desc="Maintain current body composition" icon={Target} selected={formData.goalType === 'maintenance'} onClick={() => setFormData({...formData, goalType: 'maintenance'})} />
+              <SelectionCard title="Recomposition" desc="Lose fat and build muscle simultaneously" icon={Target} selected={formData.goalType === 'recomposition'} onClick={() => setFormData({...formData, goalType: 'recomposition'})} />
+            </div>
           </div>
         )}
 
+        {step === 4 && (
+          <div className="flex-col gap-6 animate-fade-in">
+            <div className="flex-col gap-2">
+              <h1 className="text-h1">Activity Level</h1>
+              <p className="text-subtitle" style={{ fontSize: '1.1rem' }}>How much do you move on an average week?</p>
+            </div>
+            
+            <div className="flex-col gap-3">
+              <SelectionCard title="Sedentary" desc="Desk job, little to no exercise" icon={Activity} selected={formData.activityLevel === 'sedentary'} onClick={() => setFormData({...formData, activityLevel: 'sedentary'})} />
+              <SelectionCard title="Lightly Active" desc="1-3 days of light exercise/sports" icon={Activity} selected={formData.activityLevel === 'lightly_active'} onClick={() => setFormData({...formData, activityLevel: 'lightly_active'})} />
+              <SelectionCard title="Moderately Active" desc="3-5 days of moderate exercise/sports" icon={Activity} selected={formData.activityLevel === 'moderately_active'} onClick={() => setFormData({...formData, activityLevel: 'moderately_active'})} />
+              <SelectionCard title="Very Active" desc="6-7 days of hard exercise/sports" icon={Activity} selected={formData.activityLevel === 'very_active'} onClick={() => setFormData({...formData, activityLevel: 'very_active'})} />
+            </div>
+
+            <div className="flex-col gap-2 mt-4">
+               <label className="text-caption">Diet Pacing</label>
+               <select value={formData.preferredDietSpeed} onChange={e => setFormData({...formData, preferredDietSpeed: e.target.value})} style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>
+                 <option value="sustainable">Sustainable (Slower, easier)</option>
+                 <option value="moderate">Moderate (Recommended)</option>
+                 <option value="aggressive">Aggressive (Faster, harder)</option>
+               </select>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center' }}>
         <button 
           onClick={handleNext}
-          disabled={step === 1 && (!formData.name || !formData.age || !formData.height || !formData.weight)}
-          style={{ 
-            marginTop: '1rem', 
-            padding: '1rem', 
-            backgroundColor: 'var(--text-main)', 
-            color: 'white', 
-            borderRadius: 'var(--radius-sm)', 
-            border: 'none', 
-            fontWeight: 600,
-            opacity: (step === 1 && (!formData.name || !formData.age || !formData.height || !formData.weight)) ? 0.5 : 1 
-          }}
+          disabled={!canProceed()}
+          className="btn-primary"
+          style={{ width: '100%', maxWidth: '500px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', opacity: !canProceed() ? 0.5 : 1 }}
         >
-          {step === 3 ? 'Generate Plan' : 'Next Step'}
+          {step === totalSteps ? 'Calculate Macros' : 'Continue'} <ArrowRight size={20} />
         </button>
       </div>
+
     </div>
   );
 };
+

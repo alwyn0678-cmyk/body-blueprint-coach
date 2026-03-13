@@ -15,41 +15,7 @@ const defaultState: AppState = {
   customFoods: []
 };
 
-// Initial mock state for development without needing to onboard every refresh
-const mockDevState: AppState = {
-  user: {
-    id: 'user-1',
-    name: 'Alwyn',
-    age: 30,
-    sex: 'male',
-    height: 180,
-    weight: 80,
-    goalType: 'fat_loss',
-    activityLevel: 'moderately_active',
-    trainingFrequency: 4,
-    stepsTarget: 8000,
-    targets: { calories: 2300, protein: 180, carbs: 220, fats: 70 },
-    preferredDietSpeed: 'moderate',
-    onboarded: true
-  },
-  logs: {
-    '2024-05-20': {
-      id: '2024-05-20',
-      date: '2024-05-20',
-      weight: 79.8,
-      steps: 8500,
-      waterGlasses: 4,
-      meals: {
-        breakfast: [],
-        lunch: [],
-        dinner: [],
-        snacks: []
-      },
-      adherenceScore: 90
-    }
-  },
-  customFoods: []
-};
+// Removed mockDevState for production
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -58,8 +24,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [state, setState] = useState<AppState>(() => {
     const saved = localStorage.getItem('bbc_state');
     if (saved) return JSON.parse(saved);
-    // Use mock state during development to skip onboarding, switch to defaultState later
-    return mockDevState; 
+    return defaultState; 
   });
 
   useEffect(() => {
