@@ -859,16 +859,51 @@ export const Training: React.FC = () => {
           <h1 className="text-h2">Training</h1>
           <p className="text-subtitle">{program.name} · Phase {program.phase}</p>
         </div>
-        <button
-          onClick={() => setShowCustomPicker(true)}
-          style={{ padding: '0.5rem 1rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 700, backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-        >
-          <Plus size={15} /> Custom
-        </button>
       </div>
 
-      {/* ── TODAY'S WORKOUT HERO ── */}
-      <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+      {/* ── WORKOUT TYPE SELECTOR (PRIMARY ACTION) ── */}
+      <div>
+        <p style={{ fontSize: '0.68rem', fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>What are you training today?</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
+          {[
+            { name: 'Push Day',  emoji: '💪', muscles: 'Chest · Shoulders · Triceps', color: '#60a5fa' },
+            { name: 'Pull Day',  emoji: '🔄', muscles: 'Back · Biceps',               color: '#4ade80' },
+            { name: 'Leg Day',   emoji: '🦵', muscles: 'Quads · Glutes · Hamstrings', color: '#fb923c' },
+            { name: 'Upper Body',emoji: '🏋️', muscles: 'Push + Pull combined',        color: '#a78bfa' },
+          ].map(t => (
+            <button
+              key={t.name}
+              onClick={() => startCustomSession(t.name)}
+              style={{ padding: '1.1rem', backgroundColor: 'var(--bg-card)', border: `1px solid ${t.color}30`, borderRadius: '18px', cursor: 'pointer', textAlign: 'left', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '6px' }}
+            >
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, ${t.color}, transparent)` }} />
+              <span style={{ fontSize: '1.6rem' }}>{t.emoji}</span>
+              <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>{t.name}</span>
+              <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.35)', lineHeight: 1.3 }}>{t.muscles}</span>
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {[
+            { name: 'Full Body',        emoji: '⚡', color: '#f9a8d4' },
+            { name: 'Arms & Shoulders', emoji: '💥', color: '#fbbf24' },
+          ].map(t => (
+            <button
+              key={t.name}
+              onClick={() => startCustomSession(t.name)}
+              style={{ flex: 1, padding: '0.85rem 1rem', backgroundColor: 'var(--bg-card)', border: `1px solid ${t.color}22`, borderRadius: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
+            >
+              <span style={{ fontSize: '1.2rem' }}>{t.emoji}</span>
+              <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#fff' }}>{t.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── TODAY'S PROGRAM DAY (SECONDARY) ── */}
+      <div>
+        <p style={{ fontSize: '0.68rem', fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Or follow your program</p>
+        <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
         {/* Top label */}
         <div style={{ padding: '0.6rem 1.25rem', backgroundColor: 'rgba(10,132,255,0.07)', borderBottom: '1px solid rgba(10,132,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -912,40 +947,10 @@ export const Training: React.FC = () => {
             onClick={() => startProgramDay(program, nextDay)}
             style={{ width: '100%', padding: '0.9rem', backgroundColor: 'var(--accent-blue)', color: '#fff', border: 'none', borderRadius: '14px', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
           >
-            <Play size={18} fill="currentColor" /> Start Workout
+            <Play size={18} fill="currentColor" /> Start {nextDay.name}
           </button>
         </div>
       </div>
-
-      {/* ── QUICK START ── */}
-      <div>
-        <div className="flex-row justify-between align-center" style={{ marginBottom: '10px' }}>
-          <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Quick Start</span>
-          <button
-            onClick={() => setShowCustomPicker(true)}
-            style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          >
-            More options →
-          </button>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-          {[
-            { name: 'Push Day', emoji: '💪', muscles: 'Chest · Shoulders', color: '#60a5fa' },
-            { name: 'Pull Day', emoji: '🔄', muscles: 'Back · Biceps',      color: '#4ade80' },
-            { name: 'Leg Day',  emoji: '🦵', muscles: 'Quads · Glutes',     color: '#fb923c' },
-          ].map(t => (
-            <button
-              key={t.name}
-              onClick={() => startCustomSession(t.name)}
-              style={{ padding: '0.85rem 0.6rem', backgroundColor: 'var(--bg-card)', border: `1px solid ${t.color}22`, borderRadius: '16px', cursor: 'pointer', textAlign: 'center', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}
-            >
-              <div style={{ position: 'absolute', top: 0, left: '20%', right: '20%', height: '2px', background: `linear-gradient(90deg, transparent, ${t.color}, transparent)` }} />
-              <span style={{ fontSize: '1.5rem' }}>{t.emoji}</span>
-              <span style={{ fontWeight: 800, fontSize: '0.78rem', color: '#fff' }}>{t.name.split(' ')[0]}</span>
-              <span style={{ fontSize: '0.58rem', fontWeight: 600, color: 'rgba(255,255,255,0.3)', lineHeight: 1.2 }}>{t.muscles}</span>
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* ── WEEK PROGRESS ── */}

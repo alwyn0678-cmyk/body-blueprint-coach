@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FoodItem, MealType } from '../types';
 import { ArrowLeft, Search, ScanLine, Plus, CheckCircle2, Loader2, Globe, Database, Heart, Clock, X, Camera, PenLine } from 'lucide-react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { useApp } from '../context/AppContext';
 import { FoodRow, EmptyState } from '../components/SharedUI';
 import { searchFoods, lookupBarcode as lookupBarcodeService } from '../services/foodService';
@@ -14,7 +15,6 @@ interface FoodSearchProps {
 const DEBOUNCE_MS = 600;
 type Tab = 'search' | 'recent' | 'favorites';
 
-const hasBarcodeDetector = () => typeof window !== 'undefined' && 'BarcodeDetector' in window;
 
 export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCancel }) => {
   const { state, showToast, toggleFavoriteFood, trackRecentFood, addCustomFood } = useApp();
@@ -29,11 +29,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
   const [measurementValue, setMeasurementValue] = useState('1');
   const [measurementUnit, setMeasurementUnit] = useState('serving');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const detectorRef = useRef<any>(null);
-  const scanLoopRef = useRef<number | null>(null);
-  const scanningRef = useRef(false);
+  const html5QrRef = useRef<Html5Qrcode | null>(null);
+  const SCANNER_ID = 'bbc-qr-scanner';
 
   // ── Set up measurement defaults on food selection ────────────────────────
   useEffect(() => {
@@ -43,11 +40,9 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
     }
   }, [selectedFood]);
 
-  // ── Stop camera on unmount ──────────────────────────────────────────────
+  // ── Stop scanner on unmount ─────────────────────────────────────────────
   useEffect(() => {
-    return () => {
-      stopCamera();
-    };
+    return () => { stopCamera(); };
   }, []);
 
   // ── Unified search via foodService ─────────────────────────────────────
@@ -94,137 +89,76 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
     return valInBase / selectedFood.servingSize;
   };
 
-  // ── Camera & BarcodeDetector ─────────────────────────────────────────────
-  const stopCamera = () => {
-    scanningRef.current = false;
-    if (scanLoopRef.current) cancelAnimationFrame(scanLoopRef.current);
-    scanLoopRef.current = null;
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
+  // ── Scanner using html5-qrcode (works on iOS Safari + all browsers) ──────
+  const stopCamera = async () => {
+    if (html5QrRef.current) {
+      try {
+        await html5QrRef.current.stop();
+        html5QrRef.current.clear();
+      } catch { /* ignore stop errors */ }
+      html5QrRef.current = null;
     }
-    if (videoRef.current) videoRef.current.srcObject = null;
   };
 
   const startCamera = async () => {
     setScanStatus('scanning');
-    scanningRef.current = true;
-
-    // Create BarcodeDetector if supported
-    if (hasBarcodeDetector()) {
-      try {
-        // @ts-ignore
-        detectorRef.current = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'qr_code'] });
-      } catch {
-        detectorRef.current = null;
-      }
-    }
-
+    // Wait a tick for the scanner div to mount in the DOM
+    await new Promise(r => setTimeout(r, 100));
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
-      if (detectorRef.current) {
-        const detect = async () => {
-          if (!scanningRef.current) return;
-          if (videoRef.current && videoRef.current.readyState === 4) {
-            try {
-              const codes = await detectorRef.current.detect(videoRef.current);
-              if (codes.length > 0) {
-                const barcode = codes[0].rawValue;
-                scanningRef.current = false;
-                setScanStatus('found');
-                await handleBarcodeResult(barcode);
-                return;
-              }
-            } catch { /* ignore detection errors */ }
-          }
-          if (scanningRef.current) {
-            scanLoopRef.current = requestAnimationFrame(detect);
-          }
-        };
-        detect();
-      }
+      const scanner = new Html5Qrcode(SCANNER_ID);
+      html5QrRef.current = scanner;
+      await scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 260, height: 150 }, aspectRatio: 1.6 },
+        async (decodedText) => {
+          // Barcode detected — stop scanning immediately
+          setScanStatus('found');
+          await stopCamera();
+          await handleBarcodeResult(decodedText);
+        },
+        () => { /* scan error (no barcode visible) — called continuously, ignore */ }
+      );
     } catch (err: any) {
       setScanStatus('error');
-      showToast('Camera access denied', 'error');
+      const msg = String(err).includes('Permission') || String(err).includes('permission')
+        ? 'Camera access denied — allow camera in browser settings'
+        : 'Camera not available on this device';
+      showToast(msg, 'error');
     }
   };
 
-  const scanRetriesRef = useRef(0);
   const [scanNotFound, setScanNotFound] = useState(false);
 
   const handleBarcodeResult = async (barcode: string) => {
     try {
       const result = await lookupBarcodeService(barcode);
       if (result) {
-        scanRetriesRef.current = 0;
-        stopCamera();
         setIsScanning(false);
         setScanNotFound(false);
         setSelectedFood(result);
         showToast(`Found: ${result.name}`, 'success');
       } else {
-        scanRetriesRef.current += 1;
         setScanStatus('notfound');
-        if (scanRetriesRef.current >= 2) {
-          // Stop scanning — guide user to search instead
-          stopCamera();
-          setScanNotFound(true);
-          setIsScanning(false);
-          showToast('Product not in database — try searching by name', 'info');
-        } else {
-          showToast('Product not found — try another barcode', 'error');
-          // Single retry after short pause — don't loop indefinitely
-          setTimeout(() => {
-            if (!scanningRef.current && detectorRef.current && videoRef.current) {
-              scanningRef.current = true;
-              setScanStatus('scanning');
-              const resumeDetect = async () => {
-                if (!scanningRef.current) return;
-                if (videoRef.current && videoRef.current.readyState === 4) {
-                  try {
-                    const codes = await detectorRef.current.detect(videoRef.current);
-                    if (codes.length > 0) {
-                      const b = codes[0].rawValue;
-                      scanningRef.current = false;
-                      setScanStatus('found');
-                      await handleBarcodeResult(b);
-                      return;
-                    }
-                  } catch { /* ignore */ }
-                }
-                if (scanningRef.current) scanLoopRef.current = requestAnimationFrame(resumeDetect);
-              };
-              resumeDetect();
-            }
-          }, 2000);
-        }
+        setScanNotFound(true);
+        setIsScanning(false);
+        showToast('Product not found — try searching by name', 'info');
       }
     } catch {
       setScanStatus('error');
-      stopCamera();
       setIsScanning(false);
       showToast('Lookup failed — try searching by name', 'error');
     }
   };
 
   const openScanner = () => {
-    scanRetriesRef.current = 0;
     setScanNotFound(false);
     setIsScanning(true);
     setScanStatus('idle');
     setTimeout(() => startCamera(), 200);
   };
 
-  const closeScanner = () => {
-    stopCamera();
+  const closeScanner = async () => {
+    await stopCamera();
     setIsScanning(false);
     setScanStatus('idle');
     setScanNotFound(false);
@@ -538,92 +472,54 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
           </button>
         </div>
 
-        {/* Camera feed */}
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        {/* html5-qrcode renders into this div — do not remove or hide it */}
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: '#111' }}>
+          <div
+            id={SCANNER_ID}
+            style={{ width: '100%', height: '100%' }}
           />
-          {/* Scan overlay */}
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-            <div style={{ width: '260px', height: '160px', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '50px', height: '50px', borderTop: '3px solid var(--accent-blue)', borderLeft: '3px solid var(--accent-blue)', filter: 'drop-shadow(0 0 8px var(--accent-blue))' }} />
-              <div style={{ position: 'absolute', top: 0, right: 0, width: '50px', height: '50px', borderTop: '3px solid var(--accent-blue)', borderRight: '3px solid var(--accent-blue)', filter: 'drop-shadow(0 0 8px var(--accent-blue))' }} />
-              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '50px', height: '50px', borderBottom: '3px solid var(--accent-blue)', borderLeft: '3px solid var(--accent-blue)', filter: 'drop-shadow(0 0 8px var(--accent-blue))' }} />
-              <div style={{ position: 'absolute', bottom: 0, right: 0, width: '50px', height: '50px', borderBottom: '3px solid var(--accent-blue)', borderRight: '3px solid var(--accent-blue)', filter: 'drop-shadow(0 0 8px var(--accent-blue))' }} />
-              {scanStatus === 'scanning' && (
-                <div style={{ width: '100%', height: '2px', backgroundColor: 'var(--accent-blue)', position: 'absolute', top: '50%', boxShadow: '0 0 15px var(--accent-blue)', animation: 'scanline 2s ease-in-out infinite' }} />
-              )}
-              {scanStatus === 'found' && (
-                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(48,209,88,0.3)', border: '2px solid var(--accent-green)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CheckCircle2 size={40} color="var(--accent-green)" />
-                </div>
-              )}
-              {scanStatus === 'notfound' && (
-                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255,69,58,0.2)', border: '2px solid var(--accent-red)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <X size={40} color="var(--accent-red)" />
-                </div>
-              )}
-            </div>
-          </div>
-          {/* Status overlay */}
-          <div style={{ position: 'absolute', bottom: '1rem', left: 0, right: 0, textAlign: 'center' }}>
-            {scanStatus === 'notfound' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '0 1.5rem' }}>
-                <span style={{ fontSize: '0.8rem', color: '#f87171', fontWeight: 700, backgroundColor: 'rgba(0,0,0,0.75)', padding: '0.5rem 1.2rem', borderRadius: '20px', backdropFilter: 'blur(8px)' }}>
-                  Product not in database
-                </span>
-                <button
-                  onClick={() => { stopCamera(); setIsScanning(false); }}
-                  style={{ fontSize: '0.82rem', fontWeight: 800, backgroundColor: 'white', color: '#000', padding: '0.6rem 1.4rem', borderRadius: '20px', border: 'none', cursor: 'pointer' }}
-                >
-                  Search by name instead →
-                </button>
-              </div>
-            ) : (
-              <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600, backgroundColor: 'rgba(0,0,0,0.6)', padding: '0.4rem 1rem', borderRadius: '20px', backdropFilter: 'blur(8px)', pointerEvents: 'none' }}>
-                {scanStatus === 'scanning' && (hasBarcodeDetector() ? 'Point camera at barcode' : 'Initialising...')}
-                {scanStatus === 'found' && 'Barcode found!'}
-                {scanStatus === 'error' && 'Camera error'}
-                {scanStatus === 'idle' && 'Starting camera...'}
+          {/* Status badge overlay */}
+          <div style={{ position: 'absolute', bottom: '1.5rem', left: 0, right: 0, textAlign: 'center', pointerEvents: 'none', zIndex: 10 }}>
+            {scanStatus === 'found' && (
+              <span style={{ fontSize: '0.85rem', color: '#4ade80', fontWeight: 800, backgroundColor: 'rgba(0,0,0,0.8)', padding: '0.5rem 1.2rem', borderRadius: '20px' }}>
+                ✓ Barcode found!
+              </span>
+            )}
+            {scanStatus === 'error' && (
+              <span style={{ fontSize: '0.85rem', color: '#f87171', fontWeight: 700, backgroundColor: 'rgba(0,0,0,0.8)', padding: '0.5rem 1.2rem', borderRadius: '20px' }}>
+                Camera not available
+              </span>
+            )}
+            {(scanStatus === 'scanning' || scanStatus === 'idle') && (
+              <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600, backgroundColor: 'rgba(0,0,0,0.65)', padding: '0.4rem 1rem', borderRadius: '20px' }}>
+                Point camera at barcode
               </span>
             )}
           </div>
         </div>
 
-        <div className="flex-col align-center pt-4 gap-3" style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))', padding: '1rem 1.25rem' }}>
-          {!hasBarcodeDetector() && (
-            <p className="text-caption" style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center', fontSize: '0.72rem' }}>
-              Auto-scan not available — enter barcode manually
-            </p>
-          )}
-          <div className="flex-row gap-2" style={{ width: '100%' }}>
+        {/* Manual fallback */}
+        <div style={{ padding: '1rem 1.25rem', paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, marginBottom: '8px', textAlign: 'center' }}>Or enter barcode manually</p>
+          <div className="flex-row gap-2">
             <input
               type="text"
               inputMode="numeric"
-              placeholder="Enter barcode number…"
+              placeholder="e.g. 5000112637939"
               value={manualBarcode}
               onChange={e => setManualBarcode(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleManualBarcodeSubmit()}
-              style={{ flex: 1, padding: '0.75rem 1rem', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', color: '#fff', fontSize: '0.95rem', fontWeight: 600 }}
+              style={{ flex: 1, padding: '0.75rem 1rem', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', color: '#fff', fontSize: '0.95rem', fontWeight: 600, outline: 'none' }}
             />
             <button
               onClick={handleManualBarcodeSubmit}
               disabled={!manualBarcode.trim()}
-              style={{ padding: '0.75rem 1rem', backgroundColor: 'var(--accent-blue)', border: 'none', borderRadius: '12px', color: '#fff', fontWeight: 700, fontSize: '0.85rem', opacity: manualBarcode.trim() ? 1 : 0.4 }}
+              style={{ padding: '0.75rem 1rem', backgroundColor: 'var(--accent-blue)', border: 'none', borderRadius: '12px', color: '#fff', fontWeight: 700, fontSize: '0.85rem', opacity: manualBarcode.trim() ? 1 : 0.4, cursor: 'pointer' }}
             >
               Look up
             </button>
           </div>
         </div>
-        <style>{`
-          @keyframes scanline {
-            0%, 100% { top: 15%; }
-            50% { top: 85%; }
-          }
-        `}</style>
       </div>
     );
   }
