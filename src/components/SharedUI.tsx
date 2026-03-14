@@ -44,10 +44,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
         style={{ 
           height: '10px', 
           width: '100%', 
-          backgroundColor: 'var(--bg-card-hover)', 
+          backgroundColor: 'var(--border-color)', 
           borderRadius: 'var(--radius-full)',
-          overflow: 'hidden',
-          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5)'
+          overflow: 'hidden'
         }}
       >
         <div 
@@ -56,11 +55,58 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
             width: `${percentage}%`, 
             backgroundColor: color,
             borderRadius: 'var(--radius-full)',
-            transition: 'width 0.5s cubic-bezier(0.25, 1, 0.5, 1)',
-            boxShadow: `0 0 10px ${color}` // Native glow effect
+            transition: 'width 0.5s cubic-bezier(0.25, 1, 0.5, 1)'
           }} 
         />
       </div>
+    </div>
+  );
+};
+
+export const Skeleton: React.FC<{ width?: string, height?: string, borderRadius?: string, className?: string }> = ({ width = '100%', height = '1rem', borderRadius = 'var(--radius-sm)', className = '' }) => {
+  return (
+    <div className={`skeleton ${className}`} style={{ width, height, borderRadius }} />
+  );
+};
+
+export const MacroCircle: React.FC<{ label: string, current: number, target: number, color: string }> = ({ label, current, target, color }) => {
+  const percentage = Math.min((current / target) * 100, 100);
+  const size = 60;
+  const stroke = 6;
+  const radius = (size / 2) - (stroke / 2);
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="flex-col align-center gap-1">
+      <div style={{ position: 'relative', width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="var(--bg-primary)"
+            strokeWidth={stroke}
+            fill="transparent"
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={stroke}
+            fill="transparent"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+          />
+        </svg>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '0.65rem', fontWeight: 700 }}>
+          {Math.round(current)}g
+        </div>
+      </div>
+      <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>{label}</span>
     </div>
   );
 };

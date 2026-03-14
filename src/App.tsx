@@ -7,6 +7,8 @@ import { LogFood } from './pages/LogFood';
 import { Progress } from './pages/Progress';
 import { Onboarding } from './pages/Onboarding';
 import { Settings } from './pages/Settings';
+import { Training } from './pages/Training';
+import { Health } from './pages/Health';
 
 const AppRoutes: React.FC = () => {
   const { state } = useApp();
@@ -29,6 +31,8 @@ const AppRoutes: React.FC = () => {
           <Route path="/" element={<Dashboard />} />
           <Route path="/log" element={<LogFood />} />
           <Route path="/progress" element={<Progress />} />
+          <Route path="/training" element={<Training />} />
+          <Route path="/health" element={<Health />} />
           <Route path="/settings" element={<Settings />} />
           {/* Catch all back to dashboard if onboarded */}
           <Route path="*" element={<Navigate to="/" replace />} />

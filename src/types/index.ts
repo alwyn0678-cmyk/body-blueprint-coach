@@ -16,10 +16,11 @@ export interface UserProfile {
   height: number; // cm
   weight: number; // kg
   goalWeight?: number; // kg
+  bodyFat?: number; // %
   goalType: GoalType;
   activityLevel: ActivityLevel;
   trainingFrequency: number; // sessions per week
-  stepsTarget: number;
+  stepsTarget?: number;
   
   // Calculated targets
   targets: MacroTargets;
@@ -50,11 +51,45 @@ export interface MealEntry {
   foodId: string;
   foodName: string;
   amount: number; // multiplier of servingSize
+  servingSize: number;
+  servingUnit: string;
   nutrition: NutritionData;
   timestamp: string;
 }
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
+
+export interface ExerciseSet {
+  id: string;
+  weight: number;
+  reps: number;
+  rpe?: number; // Rate of Perceived Exertion
+}
+
+export interface ExerciseEntry {
+  id: string;
+  exerciseId: string;
+  name: string;
+  sets: ExerciseSet[];
+  notes?: string;
+}
+
+export interface WorkoutSession {
+  id: string;
+  name: string;
+  timestamp: string;
+  durationMinutes: number;
+  exercises: ExerciseEntry[];
+  caloriesBurned?: number;
+}
+
+export interface HealthMetrics {
+  sleepScore?: number;
+  sleepDurationMinutes?: number;
+  recoveryScore?: number;
+  restingHR?: number;
+  hrv?: number;
+}
 
 export interface DailyLog {
   id: string; // YYYY-MM-DD
@@ -63,6 +98,8 @@ export interface DailyLog {
   steps: number;
   waterGlasses: number;
   meals: Record<MealType, MealEntry[]>;
+  workouts: WorkoutSession[];
+  health: HealthMetrics;
   adherenceScore: number;
 }
 
@@ -70,4 +107,5 @@ export interface AppState {
   user: UserProfile | null;
   logs: Record<string, DailyLog>; // Keyed by YYYY-MM-DD
   customFoods: FoodItem[];
+  workoutLibrary: { id: string; name: string; targetMuscles: string[] }[];
 }

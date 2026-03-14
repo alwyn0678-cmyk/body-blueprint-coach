@@ -14,8 +14,12 @@ export const Onboarding: React.FC = () => {
     sex: 'female',
     height: '',
     weight: '',
+    goalWeight: '',
+    bodyFat: '',
     goalType: 'fat_loss',
     activityLevel: 'moderately_active',
+    trainingFrequency: '3',
+    stepsTarget: '8000',
     preferredDietSpeed: 'moderate',
   });
 
@@ -38,10 +42,12 @@ export const Onboarding: React.FC = () => {
       sex: formData.sex as 'male' | 'female',
       height: parseFloat(formData.height),
       weight: parseFloat(formData.weight),
+      goalWeight: formData.goalWeight ? parseFloat(formData.goalWeight) : undefined,
+      bodyFat: formData.bodyFat ? parseFloat(formData.bodyFat) : undefined,
       goalType: formData.goalType as any,
       activityLevel: formData.activityLevel as any,
-      trainingFrequency: 3,
-      stepsTarget: 8000,
+      trainingFrequency: parseInt(formData.trainingFrequency) || 3,
+      stepsTarget: parseInt(formData.stepsTarget) || 8000,
       preferredDietSpeed: formData.preferredDietSpeed as any,
       onboarded: true
     };
@@ -53,7 +59,7 @@ export const Onboarding: React.FC = () => {
 
   const canProceed = () => {
     if (step === 1) return formData.name.length > 0;
-    if (step === 2) return formData.age && formData.height && formData.weight;
+    if (step === 2) return formData.age && formData.height && formData.weight && formData.goalWeight;
     return true;
   };
 
@@ -64,11 +70,12 @@ export const Onboarding: React.FC = () => {
       style={{
         padding: '1.25rem',
         cursor: 'pointer',
-        border: selected ? '2px solid var(--accent-primary)' : '2px solid var(--border-color)',
-        backgroundColor: selected ? 'rgba(255, 90, 54, 0.05)' : 'var(--bg-card)',
+        border: selected ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)',
+        backgroundColor: selected ? 'var(--bg-card-hover)' : 'var(--bg-card)',
         display: 'flex',
         alignItems: 'center',
-        gap: '1rem'
+        gap: '1rem',
+        boxShadow: selected ? '0 0 0 4px rgba(224, 122, 95, 0.1)' : 'var(--shadow-sm)'
       }}
     >
       {Icon && <div style={{ color: selected ? 'var(--accent-primary)' : 'var(--text-muted)' }}><Icon size={24} /></div>}
@@ -156,8 +163,19 @@ export const Onboarding: React.FC = () => {
                 <input type="number" placeholder="e.g. 175" value={formData.height} onChange={e => setFormData({...formData, height: e.target.value})} style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }} />
               </div>
               <div className="flex-col gap-2" style={{ flex: 1 }}>
-                <label className="text-caption">Weight (kg)</label>
+                <label className="text-caption">Current Weight (kg)</label>
                 <input type="number" placeholder="e.g. 75" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }} />
+              </div>
+            </div>
+
+            <div className="flex-row gap-4">
+              <div className="flex-col gap-2" style={{ flex: 1 }}>
+                <label className="text-caption">Body Fat % (Optional)</label>
+                <input type="number" placeholder="e.g. 15" value={formData.bodyFat} onChange={e => setFormData({...formData, bodyFat: e.target.value})} style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }} />
+              </div>
+              <div className="flex-col gap-2" style={{ flex: 1 }}>
+                <label className="text-caption">Goal Weight (kg)</label>
+                <input type="number" placeholder="e.g. 70" value={formData.goalWeight} onChange={e => setFormData({...formData, goalWeight: e.target.value})} style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }} />
               </div>
             </div>
           </div>
@@ -193,7 +211,18 @@ export const Onboarding: React.FC = () => {
               <SelectionCard title="Very Active" desc="6-7 days of hard exercise/sports" icon={Activity} selected={formData.activityLevel === 'very_active'} onClick={() => setFormData({...formData, activityLevel: 'very_active'})} />
             </div>
 
-            <div className="flex-col gap-2 mt-4">
+            <div className="flex-row gap-4 mt-2">
+              <div className="flex-col gap-2" style={{ flex: 1 }}>
+                <label className="text-caption">Training Days/Week</label>
+                <input type="number" placeholder="e.g. 4" min="0" max="7" value={formData.trainingFrequency} onChange={e => setFormData({...formData, trainingFrequency: e.target.value})} style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }} />
+              </div>
+              <div className="flex-col gap-2" style={{ flex: 1 }}>
+                <label className="text-caption">Daily Step Target</label>
+                <input type="number" placeholder="e.g. 8000" value={formData.stepsTarget} onChange={e => setFormData({...formData, stepsTarget: e.target.value})} style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }} />
+              </div>
+            </div>
+
+            <div className="flex-col gap-2 mt-2">
                <label className="text-caption">Diet Pacing</label>
                <select value={formData.preferredDietSpeed} onChange={e => setFormData({...formData, preferredDietSpeed: e.target.value})} style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}>
                  <option value="sustainable">Sustainable (Slower, easier)</option>

@@ -39,9 +39,8 @@ export const calculateTargets = (profile: Partial<UserProfile>): MacroTargets =>
   // Recomposition and maintenance stay close to TDEE
 
   // Calculate Macros
-  // Protein: Higher for fat loss to preserve muscle, adequate for gain
-  const proteinPerKg = profile.goalType === 'fat_loss' ? 2.2 : 1.8;
-  const protein = Math.round(profile.weight * proteinPerKg);
+  // CRITICAL SYSTEM RULE: Protein must always be calculate automatically based on 2.2g per kg.
+  const protein = Math.round(profile.weight * 2.2);
   
   // Fats: Minimum threshold for hormones (approx 0.8g per kg or 25% of calories)
   const fats = Math.max(Math.round(profile.weight * 0.8), Math.round((targetCalories * 0.25) / 9));

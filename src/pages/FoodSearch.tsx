@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { FoodItem, MealType } from '../types';
-import { ArrowLeft, Search, Scan, Plus, Info } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
+import { ArrowLeft, Search, ScanLine, Plus, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { localFoodDatabase } from '../utils/foodDatabase';
 
 interface FoodSearchProps {
   mealType: MealType;
@@ -9,187 +11,279 @@ interface FoodSearchProps {
   onCancel: () => void;
 }
 
-// Mock Database for quick search
-const mockDatabase: FoodItem[] = [
-  { id: 'f1', name: 'Chicken Breast (Raw)', servingSize: 100, servingUnit: 'g', calories: 120, protein: 26, carbs: 0, fats: 1.5 },
-  { id: 'f2', name: 'Jasmine Rice (Cooked)', servingSize: 100, servingUnit: 'g', calories: 130, protein: 2.7, carbs: 28, fats: 0.3 },
-  { id: 'f3', name: 'Olive Oil', servingSize: 15, servingUnit: 'ml', calories: 120, protein: 0, carbs: 0, fats: 14 },
-  { id: 'f4', name: 'Whey Protein Isolate', servingSize: 30, servingUnit: 'g', calories: 110, protein: 25, carbs: 1, fats: 0.5 },
-  { id: 'f5', name: 'Avocado', servingSize: 50, servingUnit: 'g', calories: 80, protein: 1, carbs: 4, fats: 7.5 },
-];
-
 export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCancel }) => {
-  const { state } = useApp();
+  const { state, addCustomFood, showToast } = useApp() as any;
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodItem[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
-  const [amount, setAmount] = useState(1);
+  
+  // Measurement State
+  const [measurementValue, setMeasurementValue] = useState<string>('1');
+  const [measurementUnit, setMeasurementUnit] = useState<string>('serving');
 
   useEffect(() => {
-    if (query.trim() === '') {
-      // Show recents/custom when empty
-      setResults([...state.customFoods, ...mockDatabase].slice(0, 5));
-    } else {
-      const allFoods = [...state.customFoods, ...mockDatabase];
-      const filtered = allFoods.filter(f => f.name.toLowerCase().includes(query.toLowerCase()));
-      setResults(filtered);
+    if (selectedFood) {
+      setMeasurementValue(selectedFood.servingSize.toString());
+      setMeasurementUnit(selectedFood.servingUnit || 'g');
     }
+  }, [selectedFood]);
+
+  const getCalculatedMultiplier = () => {
+    if (!selectedFood) return 0;
+    const val = parseFloat(measurementValue) || 0;
+    if (val === 0) return 0;
+
+    const baseUnit = (selectedFood.servingUnit || 'g').toLowerCase();
+    const inputUnit = measurementUnit.toLowerCase();
+
+    if (baseUnit === inputUnit) return val / selectedFood.servingSize;
+
+    let valInBase = val;
+    if ((baseUnit === 'g' || baseUnit === 'ml') && inputUnit === 'oz') {
+      valInBase = val * 28.3495;
+    } else if ((baseUnit === 'g' || baseUnit === 'ml') && inputUnit === 'lbs') {
+      valInBase = val * 453.592;
+    } else if (inputUnit.includes('serving')) {
+      return val; 
+    }
+
+    return valInBase / selectedFood.servingSize;
+  };
+
+  // Instant Local Search Filtering
+  useEffect(() => {
+    const allFoods = [...state.customFoods, ...localFoodDatabase];
+    
+    if (query.trim() === '') {
+      // Show highly used defaults
+      setResults(allFoods.slice(0, 15));
+      return;
+    }
+
+    const q = query.toLowerCase().trim();
+    const filtered = allFoods.filter(f => 
+      f.name.toLowerCase().includes(q) || 
+      (f.brand && f.brand.toLowerCase().includes(q))
+    ).sort((a, b) => {
+      // Prioritize exact matches
+      const aExact = a.name.toLowerCase() === q;
+      const bExact = b.name.toLowerCase() === q;
+      if (aExact && !bExact) return -1;
+      if (!aExact && bExact) return 1;
+      
+      // Prioritize startsWith
+      const aStart = a.name.toLowerCase().startsWith(q);
+      const bStart = b.name.toLowerCase().startsWith(q);
+      if (aStart && !bStart) return -1;
+      if (!aStart && bStart) return 1;
+      
+      return 0;
+    });
+    setResults(filtered.slice(0, 30)); // Higher density
   }, [query, state.customFoods]);
 
-  const handleScanMock = async () => {
-    setIsScanning(true);
-    // Simulate API delay to OpenFoodFacts
-    setTimeout(() => {
-      // Mock result as if we hit OpenFoodFacts API successfully
-      const scannedItem: FoodItem = {
-        id: 'opf-' + Date.now(),
-        name: 'Oikos Triple Zero Greek Yogurt',
-        brand: 'Dannon',
-        barcode: '036632027552',
-        servingSize: 150,
-        servingUnit: 'g',
-        calories: 90,
-        protein: 15,
-        carbs: 7,
-        fats: 0
-      };
-      setSelectedFood(scannedItem);
-      setIsScanning(false);
-    }, 1500);
+  const handleSimulateScan = () => {
+     setIsScanning(false);
+     const scanTargets = [
+        localFoodDatabase.find(f => f.name.includes("Whey")),
+        localFoodDatabase.find(f => f.name.includes("Energy Drink")),
+        localFoodDatabase.find(f => f.name.includes("Protein Bar"))
+     ].filter(Boolean) as FoodItem[];
+
+     const rand = scanTargets[Math.floor(Math.random() * scanTargets.length)];
+     if (rand) {
+       setSelectedFood(rand);
+       showToast(`Barcode Scanned: ${rand.name}`, 'success');
+     }
   };
 
   if (selectedFood) {
+    const multiplier = getCalculatedMultiplier();
+    
     return (
-      <div className="flex-col gap-4 p-4 animate-fade-in" style={{ backgroundColor: 'var(--bg-card)', minHeight: '100%', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
-        <button onClick={() => setSelectedFood(null)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-primary)', width: 'fit-content' }}>
-          <ArrowLeft size={20} /> Back
+      <div className="flex-col gap-4 p-4 animate-slide-up" style={{ backgroundColor: '#000000', minHeight: '100%', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
+        <button onClick={() => setSelectedFood(null)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#FFFFFF', width: 'fit-content', padding: 0 }}>
+          <ArrowLeft size={24} />
         </button>
 
-        <div>
-          <h2 className="text-h2" style={{ color: 'var(--text-main)' }}>{selectedFood.name}</h2>
-          {selectedFood.brand && <p className="text-subtitle" style={{ color: 'var(--text-muted)' }}>{selectedFood.brand}</p>}
+        <div className="mt-4">
+          <h2 className="text-h1" style={{ color: '#FFFFFF', lineHeight: 1.1, fontSize: '2.5rem', fontWeight: 800 }}>{selectedFood.name}</h2>
+          <p className="text-subtitle mt-2" style={{ color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{selectedFood.brand || 'Generic Food'}</p>
         </div>
 
-        <div className="card flex-col gap-3" style={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
-          <div className="flex-row justify-between text-body font-semibold" style={{ color: 'var(--text-main)' }}>
-            <span>Per {selectedFood.servingSize}{selectedFood.servingUnit}</span>
-            <span style={{ color: 'var(--accent-primary)' }}>{selectedFood.calories} kcal</span>
+        <div className="flex-col gap-6 mt-6">
+          <div className="flex-row justify-between align-end" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
+            <span className="text-h1" style={{ fontSize: '4rem', color: '#FFFFFF', fontFeatureSettings: '"tnum"', letterSpacing: '-0.03em', lineHeight: 0.85 }}>{Math.round(selectedFood.calories * multiplier)}</span>
+            <span className="text-caption font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.5)' }}>Calories</span>
           </div>
-          <div className="flex-row justify-between text-caption border-t pt-2" style={{ borderTop: '1px solid var(--border-color)' }}>
-            <span style={{ color: 'var(--color-protein)' }}>Protein: {selectedFood.protein}g</span>
-            <span style={{ color: 'var(--color-carbs)' }}>Carbs: {selectedFood.carbs}g</span>
-            <span style={{ color: 'var(--color-fats)' }}>Fats: {selectedFood.fats}g</span>
+          
+          <div className="flex-row justify-between">
+            <div className="flex-col">
+              <span className="text-h2" style={{ color: 'var(--color-protein)', fontFeatureSettings: '"tnum"' }}>{Math.round(selectedFood.protein * multiplier)}g</span>
+              <span className="text-caption font-semibold uppercase tracking-wider text-muted">Protein</span>
+            </div>
+            <div className="flex-col">
+              <span className="text-h2" style={{ color: 'var(--color-carbs)', fontFeatureSettings: '"tnum"' }}>{Math.round(selectedFood.carbs * multiplier)}g</span>
+              <span className="text-caption font-semibold uppercase tracking-wider text-muted">Carbs</span>
+            </div>
+            <div className="flex-col align-end">
+              <span className="text-h2" style={{ color: 'var(--color-fats)', fontFeatureSettings: '"tnum"' }}>{Math.round(selectedFood.fats * multiplier)}g</span>
+              <span className="text-caption font-semibold uppercase tracking-wider text-muted">Fats</span>
+            </div>
           </div>
         </div>
 
-        <div className="flex-col gap-2 mt-4">
-          <label className="text-body font-medium">Number of Servings</label>
-          <input 
-            type="number" 
-            min="0.1" 
-            step="0.1" 
-            value={amount} 
-            onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-            style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', fontSize: '1.1rem' }}
-          />
-        </div>
-
-        <div className="flex-col gap-2 mt-2">
-          <span className="text-subtitle">Total for this entry:</span>
-          <div className="flex-row justify-between font-semibold">
-            <span>Calories:</span>
-            <span>{Math.round(selectedFood.calories * amount)}</span>
+        <div className="flex-col gap-2 mt-8">
+          <label className="text-caption font-semibold uppercase tracking-widest text-muted mb-1">Serving Amount</label>
+          <div className="flex-row gap-2">
+            <input 
+              type="number" 
+              value={measurementValue} 
+              onChange={(e) => setMeasurementValue(e.target.value)}
+              className="tabular-nums"
+              style={{ flex: 1, padding: '1.2rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.15)', fontSize: '1.5rem', backgroundColor: 'rgba(255,255,255,0.05)', color: '#FFFFFF', fontWeight: 700 }}
+            />
+            <select 
+              value={measurementUnit}
+              onChange={(e) => setMeasurementUnit(e.target.value)}
+              style={{ flex: 1, padding: '1.2rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.15)', fontSize: '1rem', backgroundColor: 'rgba(255,255,255,0.05)', color: '#FFFFFF', fontWeight: 700, appearance: 'none' }}
+            >
+              <option value="g">Grams (g)</option>
+              <option value="oz">Ounces (oz)</option>
+              <option value="lbs">Pounds (lbs)</option>
+              <option value="ml">Milliliters (ml)</option>
+              <option value="serving">Serving</option>
+            </select>
           </div>
         </div>
 
         <button 
-          onClick={() => onAdd(selectedFood, amount)}
-          style={{ 
-            marginTop: 'auto',
-            padding: '1rem', 
-            backgroundColor: 'var(--text-main)', 
-            color: 'white', 
-            borderRadius: 'var(--radius-sm)', 
-            border: 'none', 
-            fontWeight: 600,
-            fontSize: '1.1rem'
+          onClick={() => {
+            onAdd(selectedFood, multiplier);
+            showToast(`Added ${selectedFood.name}`, 'success');
           }}
+          className="btn-primary flex-row justify-center align-center gap-2"
+          style={{ marginTop: 'auto', padding: '1.4rem', width: '100%', fontSize: '1.2rem', fontWeight: 800, borderRadius: '24px', backgroundColor: '#FFFFFF', color: '#000000', boxShadow: '0 10px 30px rgba(255,255,255,0.2)' }}
         >
-          Add to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+          <CheckCircle2 size={24} /> Log to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
         </button>
       </div>
     );
   }
 
   return (
-    <div className="flex-col p-4 animate-fade-in" style={{ backgroundColor: 'var(--bg-card)', minHeight: '100vh', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
-      {/* Search Header */}
-      <div className="flex-row gap-3 mb-4" style={{ alignItems: 'center' }}>
-        <button onClick={onCancel} style={{ background: 'none', border: 'none', color: 'var(--accent-primary)' }}>
-          <ArrowLeft size={24} />
+    <div className="flex-col p-4 animate-slide-up" style={{ backgroundColor: '#000000', minHeight: '100vh', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
+      {/* HUD Search Header */}
+      <div className="flex-row gap-3 mb-6 mt-2" style={{ alignItems: 'center' }}>
+        <button onClick={onCancel} style={{ background: 'none', border: 'none', color: '#FFFFFF', padding: 0 }}>
+          <ArrowLeft size={28} />
         </button>
         <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255, 255, 255, 0.4)' }} />
           <input 
             type="text" 
-            placeholder="Search for food..." 
+            placeholder="Search food database..." 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             style={{ 
               width: '100%', 
-              padding: '0.75rem 1rem 0.75rem 2.5rem', 
-              borderRadius: 'var(--radius-full)', 
-              border: '1px solid var(--border-color)',
-              backgroundColor: 'var(--bg-primary)',
-              color: 'var(--text-main)',
-              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)'
+              padding: '1rem 1rem 1rem 3rem', 
+              borderRadius: '16px', 
+              border: '1px solid rgba(255,255,255,0.1)',
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              color: '#FFFFFF',
+              fontSize: '1.1rem',
+              fontWeight: 500
             }}
             autoFocus
           />
         </div>
         <button 
-          onClick={handleScanMock}
-          style={{ background: 'none', border: 'none', color: 'var(--text-main)' }}
-          title="Scan Barcode (Mock)"
+          onClick={() => setIsScanning(true)}
+          style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', border: 'none', color: '#FFFFFF', padding: '0.9rem' }}
         >
-          {isScanning ? <span className="text-caption">Wait...</span> : <Scan size={24} />}
+          <ScanLine size={24} />
         </button>
       </div>
 
       {isScanning && (
-        <div className="card p-4 text-center mt-2" style={{ backgroundColor: 'var(--accent-beige)', border: 'none' }}>
-          <Info size={24} color="var(--accent-terracotta)" style={{ margin: '0 auto 0.5rem' }} />
-          <p className="text-body font-medium" style={{ color: 'var(--text-main)' }}>
-            Mocking OpenFoodFacts API request...
-          </p>
+        <div className="animate-fade-in" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 150, backgroundColor: '#000000', display: 'flex', flexDirection: 'column' }}>
+          {/* Digital Static Background Overlay */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.05, pointerEvents: 'none', background: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 1px, transparent 1px, transparent 2px)', backgroundSize: '100% 2px' }} />
+          
+          <div className="flex-row justify-between p-4 mt-2" style={{ alignItems: 'center', zIndex: 160 }}>
+            <div className="flex-col">
+              <span className="text-caption font-bold" style={{ color: 'var(--accent-primary)', letterSpacing: '2px' }}>DEEP_SCAN_ACTIVE</span>
+              <span className="text-h2" style={{ color: 'white', marginTop: '-4px' }}>HUD Scanner</span>
+            </div>
+            <button onClick={() => setIsScanning(false)} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.2)', color: '#FFFFFF', padding: '0.4rem 1rem', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Abort</button>
+          </div>
+          
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+            {/* Cinematic HUD Overlay */}
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '300px', height: '300px', zIndex: 160, pointerEvents: 'none' }}>
+               {/* Reticle Corners with glow */}
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '60px', height: '60px', borderTop: '4px solid var(--accent-primary)', borderLeft: '4px solid var(--accent-primary)', filter: 'drop-shadow(0 0 10px var(--accent-primary))' }}/>
+              <div style={{ position: 'absolute', top: 0, right: 0, width: '60px', height: '60px', borderTop: '4px solid var(--accent-primary)', borderRight: '4px solid var(--accent-primary)', filter: 'drop-shadow(0 0 10px var(--accent-primary))' }}/>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '60px', height: '60px', borderBottom: '4px solid var(--accent-primary)', borderLeft: '4px solid var(--accent-primary)', filter: 'drop-shadow(0 0 10px var(--accent-primary))' }}/>
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: '60px', height: '60px', borderBottom: '4px solid var(--accent-primary)', borderRight: '4px solid var(--accent-primary)', filter: 'drop-shadow(0 0 10px var(--accent-primary))' }}/>
+              
+              {/* Dynamic HUD Data Points */}
+              <div className="text-caption" style={{ position: 'absolute', top: '-40px', left: 0, fontFeatureSettings: '"tnum"', color: 'rgba(255,255,255,0.5)' }}>LAT: 37.7749 | LNG: -122.4194</div>
+              <div className="text-caption" style={{ position: 'absolute', bottom: '-40px', right: 0, fontFeatureSettings: '"tnum"', color: 'rgba(255,255,255,0.5)' }}>FREQ: 433.92MHz | GAIN: +12dB</div>
+
+              {/* Scanner Line Animation */}
+              <div style={{ width: '100%', height: '2px', backgroundColor: 'var(--accent-primary)', position: 'absolute', top: '50%', boxShadow: '0 0 20px var(--accent-primary)', zIndex: 165 }} className="animate-pulse" />
+            </div>
+            
+            <div className="flex-col align-center" style={{ position: 'absolute', bottom: '15%', gap: '1rem', width: '100%', zIndex: 170 }}>
+              <button 
+                  onClick={handleSimulateScan}
+                  className="animate-slide-up"
+                  style={{ padding: '1.2rem 2.5rem', backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '40px', color: '#FFF', backdropFilter: 'blur(15px)', fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase', fontSize: '0.9rem', boxShadow: '0 0 30px rgba(255,255,255,0.1)' }}>
+                  Simulate Optical Scan
+              </button>
+              <p className="text-caption" style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>Align barcode within frame for auto-detection</p>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Results List */}
+      {/* High-Density Results List */}
       <div className="flex-col" style={{ flex: 1, overflowY: 'auto' }}>
-        <h3 className="text-subtitle mb-2" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{query ? 'Results' : 'Recent Foods'}</h3>
+        <h3 className="text-caption font-semibold mb-3 ml-1 text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}>{query ? 'Global Database' : 'Frequently Logged'}</h3>
         
+        {results.length === 0 && (
+            <div className="p-4 text-center mt-10" style={{ color: 'var(--text-muted)' }}>
+               No exact matches found for "{query}".
+            </div>
+        )}
+
         {results.map(f => (
           <div 
             key={f.id} 
-            onClick={() => { setSelectedFood(f); setAmount(1); }}
-            className="flex-row justify-between p-3 cursor-pointer animate-fade-in"
+            onClick={() => setSelectedFood(f)}
+            className="flex-row justify-between p-4 cursor-pointer"
             style={{ 
-              borderBottom: '1px solid var(--border-color)',
-              backgroundColor: 'var(--bg-primary)',
-              borderRadius: 'var(--radius-md)',
-              marginBottom: '0.5rem',
-              border: '1px solid var(--border-color)'
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
             }}
           >
             <div className="flex-col gap-1">
-              <span className="text-body font-semibold" style={{ color: 'var(--text-main)' }}>{f.name}</span>
-              <span className="text-caption" style={{ color: 'var(--text-light)' }}>{f.servingSize}{f.servingUnit} • <span style={{ color: 'var(--accent-primary)' }}>{f.calories} kcal</span></span>
+              <span className="text-body font-bold" style={{ color: '#FFFFFF', fontSize: '1.1rem' }}>{f.name}</span>
+              <span className="text-caption font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                {f.brand ? `${f.brand} • ` : ''}{f.servingSize}{f.servingUnit}
+              </span>
             </div>
-            <button style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(255, 90, 54, 0.1)' }}>
-              <Plus size={18} />
-            </button>
+            <div className="flex-row gap-4 align-center">
+                <div className="flex-col align-end">
+                   <span className="text-body font-bold" style={{ color: '#FFFFFF', fontFeatureSettings: '"tnum"', lineHeight: 1 }}>{f.calories}</span>
+                   <span className="text-caption font-semibold" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', marginTop: '2px' }}>CALS</span>
+                </div>
+                <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--accent-primary)', padding: '0.5rem', borderRadius: '10px', display: 'flex' }}>
+                   <Plus size={18} />
+                </button>
+            </div>
           </div>
         ))}
       </div>
