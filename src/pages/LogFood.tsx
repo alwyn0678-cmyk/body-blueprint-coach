@@ -196,6 +196,8 @@ export const LogFood: React.FC = () => {
     const items = todayLog.meals[mealType] || [];
     const mealCals = items.reduce((s, i) => s + i.nutrition.calories * i.amount, 0);
     const mealPro = items.reduce((s, i) => s + i.nutrition.protein * i.amount, 0);
+    const mealCarbs = items.reduce((s, i) => s + i.nutrition.carbs * i.amount, 0);
+    const mealFats = items.reduce((s, i) => s + i.nutrition.fats * i.amount, 0);
     const isExpanded = !!expandedMeals[mealType];
     const hasItems = items.length > 0;
     const allSetsDone = savedMealConfirm === mealType;
@@ -205,7 +207,7 @@ export const LogFood: React.FC = () => {
         key={mealType}
         style={{
           ...cardBase,
-          borderLeft: isExpanded ? '3px solid rgba(10,132,255,0.4)' : '1px solid rgba(255,255,255,0.06)',
+          borderLeft: isExpanded && hasItems ? '3px solid rgba(10,132,255,0.35)' : undefined,
           transition: 'border 0.2s ease',
         }}
       >
@@ -213,50 +215,55 @@ export const LogFood: React.FC = () => {
         <div
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '0.9rem 1rem', cursor: 'pointer',
+            padding: '0.85rem 0.9rem', cursor: 'pointer',
           }}
           onClick={() => setExpandedMeals(prev => ({ ...prev, [mealType]: !prev[mealType] }))}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
             {/* Meal icon */}
             <div style={{
-              fontSize: '1.15rem', width: 38, height: 38,
-              backgroundColor: 'rgba(255,255,255,0.04)',
+              fontSize: '1.1rem', width: 36, height: 36,
+              backgroundColor: 'rgba(255,255,255,0.05)',
               borderRadius: '10px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              border: '1px solid rgba(255,255,255,0.05)',
             }}>
               {MEAL_ICONS[mealType]}
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.9rem', fontWeight: 800, textTransform: 'capitalize', color: 'var(--text-primary)' }}>
+                <span style={{ fontSize: '0.88rem', fontWeight: 800, textTransform: 'capitalize', color: 'var(--text-primary)' }}>
                   {mealType}
                 </span>
                 {hasItems && (
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>
-                    {Math.round(mealCals)} kcal
+                  <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                    {Math.round(mealCals)} <span style={{ fontSize: '0.58rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>kcal</span>
                   </span>
                 )}
               </div>
               {hasItems ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
-                  <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--color-protein)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(mealPro)}P</span>
-                  <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.15)' }}>·</span>
-                  <span style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.22)', fontWeight: 600 }}>{items.length} item{items.length !== 1 ? 's' : ''}</span>
+                  <span style={{ fontSize: '0.63rem', fontWeight: 800, color: 'var(--color-protein)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(mealPro)}P</span>
+                  <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.12)' }}>·</span>
+                  <span style={{ fontSize: '0.63rem', fontWeight: 700, color: 'var(--color-carbs)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(mealCarbs)}C</span>
+                  <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.12)' }}>·</span>
+                  <span style={{ fontSize: '0.63rem', fontWeight: 700, color: 'var(--color-fats)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(mealFats)}F</span>
+                  <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.12)' }}>·</span>
+                  <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.22)', fontWeight: 600 }}>{items.length} item{items.length !== 1 ? 's' : ''}</span>
                 </div>
               ) : (
-                <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.2)', fontWeight: 600, marginTop: '2px', display: 'block' }}>Nothing logged yet</span>
+                <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.2)', fontWeight: 600, marginTop: '2px', display: 'block' }}>Tap + to log food</span>
               )}
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             {/* Add button */}
             <button
               onClick={e => { e.stopPropagation(); setActiveMeal(mealType); setExpandedMeals(prev => ({ ...prev, [mealType]: true })); setShowSearch(true); }}
               style={{
-                width: 28, height: 28, borderRadius: '50%',
+                width: 30, height: 30, borderRadius: '50%',
                 backgroundColor: 'var(--accent-blue)',
                 border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', flexShrink: 0,
@@ -267,7 +274,7 @@ export const LogFood: React.FC = () => {
             {/* Collapse chevron */}
             <ChevronDown
               size={16}
-              color="rgba(255,255,255,0.25)"
+              color="rgba(255,255,255,0.2)"
               style={{
                 transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                 transition: 'transform 0.25s ease',
@@ -377,36 +384,32 @@ export const LogFood: React.FC = () => {
                         <div
                           style={{
                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '0.6rem 0.25rem', cursor: 'pointer',
+                            padding: '0.55rem 0.25rem', cursor: 'pointer',
                           }}
                           onClick={() => setEditingEntry({ id: item.id, mealType, amount: String(item.amount) })}
                         >
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.88rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                            <div style={{ fontSize: '0.87rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
                               {item.foodName}
                             </div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 600, marginTop: '2px' }}>
-                              {Math.round(item.amount * item.servingSize)}{item.servingUnit}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
+                              <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                                {Math.round(item.amount * item.servingSize)}{item.servingUnit}
+                              </span>
+                              <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.12)' }}>·</span>
+                              <span style={{ fontSize: '0.63rem', fontWeight: 700, color: 'var(--color-protein)', fontVariantNumeric: 'tabular-nums' }}>
+                                {Math.round(item.nutrition.protein * item.amount)}P
+                              </span>
                             </div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, paddingLeft: '8px' }}>
-                            {/* Protein chip */}
-                            <div style={{
-                              padding: '2px 7px', borderRadius: '99px',
-                              backgroundColor: 'rgba(255,159,10,0.1)',
-                              border: '1px solid rgba(255,159,10,0.2)',
-                            }}>
-                              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--color-protein)', fontVariantNumeric: 'tabular-nums' }}>
-                                {Math.round(item.nutrition.protein * item.amount)}g P
-                              </span>
-                            </div>
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '0.88rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)' }}>
+                              <div style={{ fontSize: '0.92rem', fontWeight: 900, fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
                                 {Math.round(item.nutrition.calories * item.amount)}
                               </div>
-                              <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.25)', fontWeight: 700 }}>kcal</div>
+                              <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.22)', fontWeight: 700 }}>kcal</div>
                             </div>
-                            <Pencil size={11} color="rgba(255,255,255,0.18)" />
+                            <Pencil size={11} color="rgba(255,255,255,0.15)" />
                           </div>
                         </div>
                       )}
@@ -536,74 +539,99 @@ export const LogFood: React.FC = () => {
 
       {/* ── DAILY SUMMARY HEADER ── */}
       <div style={{
-        background: 'linear-gradient(180deg, rgba(10,132,255,0.08) 0%, transparent 100%)',
-        padding: '16px 16px 14px',
+        background: 'linear-gradient(180deg, rgba(10,132,255,0.07) 0%, transparent 100%)',
+        padding: '14px 16px 16px',
+        borderBottom: '1px solid rgba(255,255,255,0.04)',
       }}>
-        {/* Top row: date + nav arrows */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.05em' }}>
+        {/* Top row: date label */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em' }}>
             {dateLabel}
           </span>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <button style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '8px', width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <ChevronLeft size={15} color="rgba(255,255,255,0.4)" />
-            </button>
-            <button style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '8px', width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <ChevronRight size={15} color="rgba(255,255,255,0.4)" />
-            </button>
-          </div>
-        </div>
-
-        {/* Big calorie display */}
-        <div style={{ textAlign: 'center', marginBottom: '14px' }}>
-          <div style={{
-            fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.04em',
-            color: isOver ? 'var(--accent-red)' : 'var(--text-primary)',
-            fontVariantNumeric: 'tabular-nums',
-            lineHeight: 1,
+          <span style={{
+            fontSize: '0.65rem', fontWeight: 800,
+            color: isOver ? 'var(--accent-red)' : calPct >= 90 ? '#fbbf24' : 'var(--accent-blue)',
+            textTransform: 'uppercase', letterSpacing: '0.06em',
+            padding: '3px 9px',
+            borderRadius: '50px',
+            backgroundColor: isOver ? 'rgba(255,69,58,0.1)' : calPct >= 90 ? 'rgba(251,191,36,0.1)' : 'rgba(10,132,255,0.1)',
+            border: `1px solid ${isOver ? 'rgba(255,69,58,0.2)' : calPct >= 90 ? 'rgba(251,191,36,0.2)' : 'rgba(10,132,255,0.2)'}`,
           }}>
-            {isOver ? `+${Math.abs(calRemaining)}` : calRemaining}
-          </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 600, marginTop: '4px' }}>
-            {isOver ? 'over target' : `of ${calTarget} kcal remaining`}
-          </div>
-          {/* Progress bar */}
-          <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginTop: '10px' }}>
+            {isOver ? 'Over' : calPct >= 90 ? 'Nearly there' : `${Math.round(calPct)}% logged`}
+          </span>
+        </div>
+
+        {/* Calorie row: logged / target */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div>
             <div style={{
-              height: '100%', width: `${calPct}%`,
-              background: isOver
-                ? 'linear-gradient(90deg, var(--accent-red), #ef4444)'
-                : calPct > 80
-                  ? 'linear-gradient(90deg, var(--accent-blue), var(--accent-orange))'
-                  : 'linear-gradient(90deg, var(--accent-blue), #5AC8FA)',
-              borderRadius: '3px', transition: 'width 0.5s ease',
-            }} />
+              fontSize: '2.4rem', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1,
+              color: isOver ? 'var(--accent-red)' : 'var(--text-primary)',
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              {calLogged.toLocaleString()}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: '4px' }}>
+              kcal logged
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'rgba(255,255,255,0.5)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+              {isOver
+                ? <span style={{ color: 'var(--accent-red)' }}>+{Math.abs(calRemaining).toLocaleString()}</span>
+                : calRemaining.toLocaleString()
+              }
+            </div>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.28)', fontWeight: 700, marginTop: '3px' }}>
+              {isOver ? 'over' : 'remaining'} · {calTarget.toLocaleString()} goal
+            </div>
           </div>
         </div>
 
-        {/* Macro pills */}
+        {/* Calorie progress bar */}
+        <div style={{ height: '5px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '14px' }}>
+          <div style={{
+            height: '100%', width: `${Math.min(calPct, 100)}%`,
+            background: isOver
+              ? 'linear-gradient(90deg, #ef4444, var(--accent-red))'
+              : calPct > 80
+                ? 'linear-gradient(90deg, var(--accent-blue), #fbbf24)'
+                : 'linear-gradient(90deg, var(--accent-blue), #5AC8FA)',
+            borderRadius: '3px', transition: 'width 0.5s ease',
+          }} />
+        </div>
+
+        {/* Macro bars */}
         {targets && (
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
             {[
-              { label: 'P', remaining: proRemaining, color: 'var(--color-protein)' },
-              { label: 'C', remaining: carbRemaining, color: 'var(--color-carbs)' },
-              { label: 'F', remaining: fatRemaining, color: 'var(--color-fats)' },
+              { label: 'Protein', key: 'P', logged: Math.round(dayTotals.protein), target: proTarget, color: 'var(--color-protein)', bg: 'rgba(255,159,10,0.15)' },
+              { label: 'Carbs',   key: 'C', logged: Math.round(dayTotals.carbs),   target: carbTarget, color: 'var(--color-carbs)',   bg: 'rgba(48,209,88,0.12)' },
+              { label: 'Fats',    key: 'F', logged: Math.round(dayTotals.fats),    target: fatTarget,  color: 'var(--color-fats)',    bg: 'rgba(255,69,58,0.12)' },
             ].map(m => {
-              const over = m.remaining < 0;
+              const pct = Math.min(100, (m.logged / Math.max(1, m.target)) * 100);
+              const over = m.logged > m.target;
               return (
-                <div key={m.label} style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  borderRadius: '8px', padding: '4px 10px',
-                  display: 'flex', alignItems: 'baseline', gap: '3px',
+                <div key={m.key} style={{
+                  flex: 1,
+                  background: 'rgba(255,255,255,0.04)',
+                  borderRadius: '12px',
+                  padding: '8px 10px',
+                  border: '1px solid rgba(255,255,255,0.05)',
                 }}>
-                  <span style={{
-                    fontSize: '0.7rem', fontWeight: 700,
-                    color: over ? 'var(--accent-red)' : m.color,
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>
-                    {over ? '+' : ''}{Math.abs(Math.round(m.remaining))}g
-                  </span>
-                  <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)' }}>{m.label}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.key}</span>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: over ? 'var(--accent-red)' : m.color, fontVariantNumeric: 'tabular-nums' }}>
+                      {m.logged}<span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>/{m.target}g</span>
+                    </span>
+                  </div>
+                  <div style={{ height: '3px', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', width: `${pct}%`,
+                      backgroundColor: over ? 'var(--accent-red)' : m.color,
+                      borderRadius: '2px', transition: 'width 0.4s ease',
+                    }} />
+                  </div>
                 </div>
               );
             })}

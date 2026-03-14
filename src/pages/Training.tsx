@@ -1437,188 +1437,104 @@ export const Training: React.FC = () => {
           </div>
         )}
 
-        {/* ── WORKOUT TYPE SELECTOR ── */}
+        {/* ── WORKOUT TYPE SELECTOR (hero action) ── */}
         <div>
-          <p style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
+          <p style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px' }}>
             WHAT ARE YOU TRAINING TODAY?
           </p>
-          {/* 2×2 primary grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
+          {/* 2×3 full grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {[
-              { name: 'Push Day',   emoji: '💪', muscles: 'Chest · Shoulders · Triceps', color: '#60a5fa' },
-              { name: 'Pull Day',   emoji: '🔄', muscles: 'Back · Biceps',               color: '#4ade80' },
-              { name: 'Leg Day',    emoji: '🦵', muscles: 'Quads · Glutes · Hamstrings', color: '#fb923c' },
-              { name: 'Upper Body', emoji: '🏋️', muscles: 'Push + Pull combined',        color: '#a78bfa' },
+              { name: 'Push',        emoji: '💪', muscles: 'Chest · Shoulders · Triceps', color: '#60a5fa' },
+              { name: 'Pull',        emoji: '🔄', muscles: 'Back · Biceps · Rear Delts',  color: '#4ade80' },
+              { name: 'Lower Body',  emoji: '🦵', muscles: 'Quads · Glutes · Hamstrings', color: '#fb923c' },
+              { name: 'Upper Body',  emoji: '🏋️', muscles: 'Push + Pull combined',        color: '#a78bfa' },
+              { name: 'Full Body',   emoji: '⚡', muscles: 'All muscle groups',            color: '#f9a8d4' },
+              { name: 'Core & Arms', emoji: '💥', muscles: 'Core · Biceps · Triceps',      color: '#fbbf24' },
             ].map(t => (
               <button
                 key={t.name}
                 onClick={() => startCustomSession(t.name)}
                 style={{
-                  padding: '1.1rem',
+                  padding: '1rem',
                   backgroundColor: 'var(--bg-card)',
                   border: '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: '20px',
+                  borderRadius: '18px',
                   cursor: 'pointer',
                   textAlign: 'left',
                   position: 'relative',
                   overflow: 'hidden',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '6px',
-                  minHeight: '80px',
+                  gap: '5px',
+                  minHeight: '84px',
                   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                  transition: 'transform 0.1s ease, border-color 0.1s ease',
                 }}
+                onPointerDown={e => (e.currentTarget.style.transform = 'scale(0.97)')}
+                onPointerUp={e => (e.currentTarget.style.transform = 'scale(1)')}
+                onPointerLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
               >
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, ${t.color}, transparent)` }} />
-                <span style={{ fontSize: '1.6rem' }}>{t.emoji}</span>
-                <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>{t.name}</span>
-                <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.35)', lineHeight: 1.3 }}>{t.muscles}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Secondary pill row */}
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {[
-              { name: 'Full Body',        emoji: '⚡', color: '#f9a8d4' },
-              { name: 'Arms & Shoulders', emoji: '💥', color: '#fbbf24' },
-            ].map(t => (
-              <button
-                key={t.name}
-                onClick={() => startCustomSession(t.name)}
-                style={{
-                  flex: 1,
-                  padding: '0.85rem 1rem',
-                  backgroundColor: 'var(--bg-card)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: '14px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-                }}
-              >
-                <span style={{ fontSize: '1.2rem' }}>{t.emoji}</span>
-                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#fff' }}>{t.name}</span>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2.5px', background: `linear-gradient(90deg, transparent, ${t.color}cc, transparent)` }} />
+                <span style={{ fontSize: '1.5rem', lineHeight: 1 }}>{t.emoji}</span>
+                <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#fff', marginTop: '2px' }}>{t.name}</span>
+                <span style={{ fontSize: '0.63rem', fontWeight: 600, color: 'rgba(255,255,255,0.3)', lineHeight: 1.3 }}>{t.muscles}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* ── OR FOLLOW YOUR PROGRAM ── */}
-        <div>
-          <p style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
-            OR FOLLOW YOUR PROGRAM
-          </p>
-          <div style={{
-            backgroundColor: 'var(--bg-card)',
-            borderRadius: '20px',
-            border: '1px solid rgba(255,255,255,0.08)',
-            overflow: 'hidden',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-          }}>
-            {/* Day badge row */}
+        {/* ── PROGRAM SUGGESTION (compact secondary) ── */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0.75rem 1rem',
+          backgroundColor: 'rgba(10,132,255,0.06)',
+          border: '1px solid rgba(10,132,255,0.12)',
+          borderRadius: '16px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
             <div style={{
-              padding: '0.7rem 1.25rem',
-              backgroundColor: 'rgba(10,132,255,0.06)',
-              borderBottom: '1px solid rgba(10,132,255,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              width: 34, height: 34, borderRadius: '10px',
+              backgroundColor: 'rgba(10,132,255,0.12)',
+              border: '1px solid rgba(10,132,255,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}>
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '3px 10px',
-                borderRadius: '50px',
-                backgroundColor: 'rgba(10,132,255,0.15)',
-                border: '1px solid rgba(10,132,255,0.25)',
-                fontSize: '0.62rem',
-                fontWeight: 900,
-                color: 'var(--accent-blue)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.07em',
-              }}>
-                {allDone ? 'NEW WEEK — DAY 1' : `DAY ${nextDayIndex + 1} OF ${program.days.length}`}
-              </span>
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>{estimatedMinutes} min</span>
+              <span style={{ fontSize: '0.95rem' }}>📋</span>
             </div>
-
-            {/* Workout info */}
-            <div style={{ padding: '1.1rem 1.25rem 0.75rem' }}>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', margin: 0 }}>{nextDay.name}</h2>
-              <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.38)', marginTop: '4px', fontWeight: 500 }}>
-                {nextDay.focus} · {nextDay.exercises.length} exercises
-              </p>
-            </div>
-
-            {/* Exercise preview */}
-            <div style={{ padding: '0 1.25rem 1rem' }}>
-              {nextDay.exercises.slice(0, 5).map((ex, j) => {
-                const supersetColor = ex.supersetGroup ? SUPERSET_COLORS[ex.supersetGroup] : null;
-                return (
-                  <div key={j} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0.35rem 0',
-                    borderBottom: j < Math.min(nextDay.exercises.length, 5) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {supersetColor && (
-                        <span style={{
-                          fontSize: '0.55rem',
-                          fontWeight: 900,
-                          padding: '1px 5px',
-                          borderRadius: '4px',
-                          backgroundColor: `${supersetColor.replace('0.9', '0.12')}`,
-                          color: supersetColor,
-                          flexShrink: 0,
-                        }}>
-                          {ex.supersetGroup}
-                        </span>
-                      )}
-                      <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{ex.name}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>{ex.sets} × {ex.reps}</span>
-                    </div>
-                  </div>
-                );
-              })}
-              {nextDay.exercises.length > 5 && (
-                <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600, marginTop: '6px', marginBottom: 0 }}>
-                  + {nextDay.exercises.length - 5} more exercises
-                </p>
-              )}
-            </div>
-
-            {/* CTA */}
-            <div style={{ padding: '0 1.25rem 1.25rem' }}>
-              <button
-                onClick={() => startProgramDay(program, nextDay)}
-                style={{
-                  width: '100%',
-                  padding: '0.9rem',
-                  backgroundColor: 'var(--accent-blue)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '14px',
-                  fontWeight: 900,
-                  fontSize: '1rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  letterSpacing: '0.01em',
-                }}
-              >
-                <Play size={17} fill="currentColor" /> Start {nextDay.name} →
-              </button>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                {allDone ? 'PROGRAM · NEW WEEK' : `PROGRAM · DAY ${nextDayIndex + 1}`}
+              </div>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#fff', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {nextDay.name}
+              </div>
+              <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: '1px' }}>
+                {nextDay.exercises.length} exercises · ~{estimatedMinutes} min
+              </div>
             </div>
           </div>
+          <button
+            onClick={() => startProgramDay(program, nextDay)}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: 'var(--accent-blue)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '10px',
+              fontWeight: 800,
+              fontSize: '0.82rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              flexShrink: 0,
+              marginLeft: '10px',
+            }}
+          >
+            <Play size={13} fill="currentColor" /> Start
+          </button>
         </div>
 
         {/* ── WEEK PROGRESS ── */}
