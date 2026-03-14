@@ -21,10 +21,10 @@ export interface UserProfile {
   activityLevel: ActivityLevel;
   trainingFrequency: number; // sessions per week
   stepsTarget?: number;
-  
+
   // Calculated targets
   targets: MacroTargets;
-  
+
   // Preferences
   preferredDietSpeed: 'aggressive' | 'moderate' | 'sustainable';
   onboarded: boolean;
@@ -35,6 +35,9 @@ export interface NutritionData {
   protein: number;
   carbs: number;
   fats: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number; // mg
 }
 
 export interface FoodItem extends NutritionData {
@@ -44,6 +47,7 @@ export interface FoodItem extends NutritionData {
   servingSize: number;
   servingUnit: string;
   barcode?: string;
+  source?: 'local' | 'custom' | 'openfoodfacts';
 }
 
 export interface MealEntry {
@@ -63,7 +67,7 @@ export interface ExerciseSet {
   id: string;
   weight: number;
   reps: number;
-  rpe?: number; // Rate of Perceived Exertion
+  rpe?: number; // Rate of Perceived Exertion 1-10
 }
 
 export interface ExerciseEntry {
@@ -103,9 +107,54 @@ export interface DailyLog {
   adherenceScore: number;
 }
 
+export interface SavedMeal {
+  id: string;
+  name: string;
+  mealType: MealType;
+  entries: Array<{
+    food: FoodItem;
+    amount: number;
+  }>;
+  totalNutrition: NutritionData;
+  createdAt: string;
+  timesUsed: number;
+}
+
+export interface WeeklyStats {
+  weekStart: string;
+  avgCalories: number;
+  avgProtein: number;
+  avgCarbs: number;
+  avgFats: number;
+  calorieAdherence: number; // %
+  proteinAdherence: number; // %
+  daysLogged: number;
+  weightChange: number | null;
+  workoutsCompleted: number;
+}
+
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'failed';
+
+export interface AppSettings {
+  adaptiveCoaching: boolean;
+  plateauDetection: boolean;
+  weeklyCheckIn: boolean;
+  connectedApps: {
+    appleHealth: ConnectionStatus;
+    googleFit: ConnectionStatus;
+    garmin: ConnectionStatus;
+    whoop: ConnectionStatus;
+  };
+}
+
 export interface AppState {
   user: UserProfile | null;
   logs: Record<string, DailyLog>; // Keyed by YYYY-MM-DD
   customFoods: FoodItem[];
+  savedMeals: SavedMeal[];
   workoutLibrary: { id: string; name: string; targetMuscles: string[] }[];
+  settings: AppSettings;
+  recentFoods: FoodItem[]; // full objects, most recent first, max 20
+  favoriteFoods: FoodItem[]; // full objects
+  assignedProgram: 'male_phase2' | 'female_phase1' | null;
 }

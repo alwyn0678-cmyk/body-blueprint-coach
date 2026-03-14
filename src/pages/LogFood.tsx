@@ -1,291 +1,378 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Card, ProgressBar, Skeleton } from '../components/SharedUI';
-import { Search, Scan, Plus, Clock, Copy, ChevronRight, Camera, Check, X, Loader2, Utensils, Zap, Trash2 } from 'lucide-react';
+import { Search, ChevronRight, BookOpen, Pencil, Check, X } from 'lucide-react';
 import { MealType, FoodItem, MealEntry } from '../types';
-import { v4 as uuidv4 } from 'uuid';
 import { FoodSearch } from './FoodSearch';
 import { getLocalISOString } from '../utils/dateUtils';
 import { SwipeReveal, SlideOver } from '../components/MotionUI';
+import { getMacrosFromLog } from '../utils/aiCoachingEngine';
+
+const MEAL_ICONS: Record<MealType, string> = {
+  breakfast: '🍳',
+  lunch: '🥗',
+  dinner: '🍽️',
+  snacks: '🍎',
+};
+
+const MEAL_ACCENT: Record<MealType, string> = {
+  breakfast: '#fb923c',
+  lunch: '#4ade80',
+  dinner: '#60a5fa',
+  snacks: '#f472b6',
+};
+
+const MacroChip: React.FC<{ value: number; label: string; color: string }> = ({ value, label, color }) => (
+  <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+    <span style={{ fontSize: '0.8rem', fontWeight: 800, color, fontVariantNumeric: 'tabular-nums' }}>{Math.round(value)}</span>
+    <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>{label}</span>
+  </div>
+);
 
 export const LogFood: React.FC = () => {
-  const { state, updateDailyLog, showToast, removeFoodEntry } = useApp();
+  const { state, addFoodToLog, removeFoodEntry, editFoodEntry, logSavedMeal, saveMeal, showToast } = useApp();
   const [activeMeal, setActiveMeal] = useState<MealType>('lunch');
   const [showSearch, setShowSearch] = useState(false);
-  const [isAIScanning, setIsAIScanning] = useState(false);
-  const [aiResult, setAIResult] = useState<FoodItem | null>(null);
+  const [showSavedMeals, setShowSavedMeals] = useState(false);
+  const [expandedMeals, setExpandedMeals] = useState<Partial<Record<MealType, boolean>>>({ lunch: true });
+  const [editingEntry, setEditingEntry] = useState<{ id: string; mealType: MealType; amount: string } | null>(null);
+  const [saveMealName, setSaveMealName] = useState('');
+  const [savingMealType, setSavingMealType] = useState<MealType | null>(null);
 
   const todayDate = getLocalISOString();
   const todayLog = state.logs[todayDate] || {
-    id: todayDate, date: todayDate, steps: 0, waterGlasses: 0, 
+    id: todayDate, date: todayDate, steps: 0, waterGlasses: 0,
     meals: { breakfast: [], lunch: [], dinner: [], snacks: [] },
-    adherenceScore: 0
+    workouts: [], health: {}, adherenceScore: 0,
   };
 
-  const handleAddFood = (food: FoodItem, amount: number) => {
-    const newEntry: MealEntry = {
-      id: uuidv4(),
-      foodId: food.id,
-      foodName: food.name,
-      amount: amount,
-      servingSize: food.servingSize,
-      servingUnit: food.servingUnit,
-      nutrition: food,
-      timestamp: new Date().toISOString()
-    };
+  const dayTotals = getMacrosFromLog(todayLog as any);
+  const targets = state.user?.targets;
+  const calTarget = targets?.calories ?? 2000;
+  const calLogged = Math.round(dayTotals.calories);
+  const calRemaining = calTarget - calLogged;
+  const isOver = calLogged > calTarget;
+  const calPct = Math.min(100, (calLogged / calTarget) * 100);
 
-    updateDailyLog(todayDate, {
-      meals: {
-        ...todayLog.meals,
-        [activeMeal]: [...todayLog.meals[activeMeal], newEntry]
-      }
-    });
-    
-    showToast(`${food.name} added to ${activeMeal}!`, "success");
+  const handleAddFood = (food: FoodItem, amount: number) => {
+    addFoodToLog(todayDate, activeMeal, food, amount);
+    showToast(`${food.name} added`, 'success');
     setShowSearch(false);
   };
 
-  const handleAIScan = () => {
-    setIsAIScanning(true);
-    setAIResult(null);
-    // Simulate Vision API
-    setTimeout(() => {
-      const result: FoodItem = {
-        id: 'ai-' + uuidv4(),
-        name: 'Grilled Salmon with Quinoa',
-        brand: 'Claude AI Vision',
-        servingSize: 1,
-        servingUnit: 'portion',
-        calories: 520,
-        protein: 42,
-        carbs: 35,
-        fats: 24
-      };
-      setAIResult(result);
-      setIsAIScanning(false);
-      showToast("AI analysis complete!", "success");
-    }, 2500);
+  const handleEditConfirm = () => {
+    if (!editingEntry) return;
+    const newAmount = parseFloat(editingEntry.amount);
+    if (!newAmount || newAmount <= 0) { setEditingEntry(null); return; }
+    editFoodEntry(todayDate, editingEntry.mealType, editingEntry.id, newAmount);
+    showToast('Serving updated', 'success');
+    setEditingEntry(null);
   };
 
-  const confirmAIResult = () => {
-    if (aiResult) {
-      handleAddFood(aiResult, 1);
-      setAIResult(null);
-    }
+  const handleSaveMeal = (mealType: MealType) => {
+    const items = todayLog.meals[mealType] || [];
+    if (!saveMealName.trim() || items.length === 0) return;
+    const entries = items.map(item => ({
+      food: {
+        id: item.foodId, name: item.foodName, calories: item.nutrition.calories,
+        protein: item.nutrition.protein, carbs: item.nutrition.carbs, fats: item.nutrition.fats,
+        servingSize: item.servingSize, servingUnit: item.servingUnit,
+      } as FoodItem,
+      amount: item.amount,
+    }));
+    saveMeal(saveMealName.trim(), mealType, entries);
+    showToast(`"${saveMealName.trim()}" saved`, 'success');
+    setSaveMealName('');
+    setSavingMealType(null);
   };
 
-  const [expandedMeals, setExpandedMeals] = useState<Record<string, boolean>>({});
+  const today = new Date();
+  const dateLabel = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-  const toggleMealExpansion = (mealType: string) => {
-    setExpandedMeals(prev => ({ ...prev, [mealType]: !prev[mealType] }));
-  };
-
-  const getMealIcon = (meal: string) => {
-    switch(meal) {
-      case 'breakfast': return '🍳';
-      case 'lunch': return '🥗';
-      case 'dinner': return '🍽️';
-      case 'snacks': return '🍎';
-      default: return '🍴';
-    }
-  };
-
-  const renderMealSummary = (mealType: MealType) => {
-    const mealItems = todayLog.meals[mealType] || [];
-    const mealCals = mealItems.reduce((sum, item) => sum + (item.nutrition.calories * item.amount), 0);
-    const mealProtein = mealItems.reduce((sum, item) => sum + (item.nutrition.protein * item.amount), 0);
-    const mealCarbs = mealItems.reduce((sum, item) => sum + (item.nutrition.carbs * item.amount), 0);
-    const mealFats = mealItems.reduce((sum, item) => sum + (item.nutrition.fats * item.amount), 0);
-    
-    const isExpanded = expandedMeals[mealType] || false;
+  const renderMealCard = (mealType: MealType) => {
+    const items = todayLog.meals[mealType] || [];
+    const mealCals = items.reduce((s, i) => s + i.nutrition.calories * i.amount, 0);
+    const mealPro = items.reduce((s, i) => s + i.nutrition.protein * i.amount, 0);
+    const mealCarbs = items.reduce((s, i) => s + i.nutrition.carbs * i.amount, 0);
+    const mealFats = items.reduce((s, i) => s + i.nutrition.fats * i.amount, 0);
+    const isExpanded = !!expandedMeals[mealType];
+    const accent = MEAL_ACCENT[mealType];
+    const hasItems = items.length > 0;
 
     return (
-      <Card 
-        key={mealType}
-        className="flex-col mb-4 overflow-hidden"
-        style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-sm)' }}
-      >
-        {/* Card Header (Always Visible) */}
-        <div 
-          className="flex-row justify-between align-center p-4 cursor-pointer"
-          onClick={() => toggleMealExpansion(mealType)}
-          style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
+      <div key={mealType} style={{
+        backgroundColor: 'var(--bg-card)', borderRadius: '20px',
+        border: `1px solid ${isExpanded ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)'}`,
+        overflow: 'hidden', transition: 'border-color 0.2s', position: 'relative',
+      }}>
+        {hasItems && (
+          <div style={{ position: 'absolute', top: 0, left: '20%', right: '20%', height: '2px', background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} />
+        )}
+
+        {/* Card Header */}
+        <div
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.9rem 1rem', cursor: 'pointer' }}
+          onClick={() => setExpandedMeals(prev => ({ ...prev, [mealType]: !prev[mealType] }))}
         >
-          <div className="flex-row gap-4 align-center w-full">
-            <div style={{ fontSize: '1.5rem', backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '0.5rem', borderRadius: '12px' }}>
-              {getMealIcon(mealType)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+            <div style={{ fontSize: '1.2rem', width: 38, height: 38, backgroundColor: `${accent}18`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {MEAL_ICONS[mealType]}
             </div>
-            
-            <div className="flex-col flex-1 pl-2">
-              <div className="flex-row justify-between align-center">
-                <h3 className="text-body font-bold" style={{ textTransform: 'capitalize', fontSize: '1.1rem' }}>
-                  {mealType}
-                </h3>
-                <div className="flex-row align-center gap-1">
-                  <span className="text-body font-bold" style={{ color: 'var(--text-main)' }}>{Math.round(mealCals)}</span>
-                  <span className="text-caption text-muted">kcal</span>
-                </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: hasItems ? '5px' : 0 }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 800, textTransform: 'capitalize' }}>{mealType}</span>
+                {hasItems && (
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                    <span style={{ fontSize: '1rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{Math.round(mealCals)}</span>
+                    <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', fontWeight: 700 }}>kcal</span>
+                  </div>
+                )}
               </div>
-              
-              {/* Macro Mini-Bars */}
-              <div className="flex-row gap-3 mt-2 w-full">
-                <div className="flex-col flex-1 gap-1">
-                  <div className="progress-track" style={{ height: '4px' }}>
-                    <div className="progress-fill" style={{ width: `${Math.min(100, (mealProtein / (state.user?.targets.protein || 150)) * 100)}%`, backgroundColor: 'var(--color-protein)' }} />
-                  </div>
-                  <span className="text-caption" style={{ fontSize: '0.65rem' }}>{Math.round(mealProtein)}g P</span>
+              {hasItems ? (
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <MacroChip value={mealPro} label="P" color="var(--color-protein)" />
+                  <MacroChip value={mealCarbs} label="C" color="var(--color-carbs)" />
+                  <MacroChip value={mealFats} label="F" color="var(--color-fats)" />
+                  <span style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.22)', fontWeight: 600 }}>{items.length} item{items.length !== 1 ? 's' : ''}</span>
                 </div>
-                <div className="flex-col flex-1 gap-1">
-                  <div className="progress-track" style={{ height: '4px' }}>
-                    <div className="progress-fill" style={{ width: `${Math.min(100, (mealCarbs / (state.user?.targets.carbs || 200)) * 100)}%`, backgroundColor: 'var(--color-carbs)' }} />
-                  </div>
-                  <span className="text-caption" style={{ fontSize: '0.65rem' }}>{Math.round(mealCarbs)}g C</span>
-                </div>
-                <div className="flex-col flex-1 gap-1">
-                  <div className="progress-track" style={{ height: '4px' }}>
-                    <div className="progress-fill" style={{ width: `${Math.min(100, (mealFats / (state.user?.targets.fats || 65)) * 100)}%`, backgroundColor: 'var(--color-fats)' }} />
-                  </div>
-                  <span className="text-caption" style={{ fontSize: '0.65rem' }}>{Math.round(mealFats)}g F</span>
-                </div>
-              </div>
+              ) : (
+                <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.22)', fontWeight: 600 }}>Nothing logged yet</span>
+              )}
             </div>
-            <ChevronRight size={20} color="var(--text-muted)" style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }} />
           </div>
+          <ChevronRight size={16} color="rgba(255,255,255,0.22)" style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.25s', marginLeft: '6px', flexShrink: 0 }} />
         </div>
-        
-        {/* Expanded Content View */}
-        <div style={{ 
-          height: isExpanded ? 'auto' : '0px', 
-          overflow: 'hidden', 
-          opacity: isExpanded ? 1 : 0, 
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          borderTop: isExpanded ? '1px solid var(--border-color)' : 'none',
-          backgroundColor: 'rgba(0,0,0,0.1)'
-        }}>
-          <div className="p-3">
-            {mealItems.length > 0 ? (
-              <div className="flex-col gap-2 mb-3">
-                {mealItems.map(item => (
-                  <SwipeReveal 
-                    key={item.id} 
-                    onDelete={() => {
-                      removeFoodEntry(todayDate, mealType, item.id);
-                      showToast(`${item.foodName} removed.`, "info");
-                    }}
-                  >
-                    <div className="flex-row justify-between align-center py-2 px-3 card-glass" style={{ marginBottom: '4px' }}>
-                      <div className="flex-col">
-                        <span className="text-body font-semibold">{item.foodName}</span>
-                        <span className="text-caption text-light" style={{ fontSize: '0.75rem' }}>{Math.round(item.amount * item.servingSize)}{item.servingUnit}</span>
-                      </div>
-                      <div className="flex-col align-end text-right">
-                        <span className="text-body font-bold">{Math.round(item.nutrition.calories * item.amount)}</span>
-                        <span className="text-caption text-light" style={{ fontSize: '0.7rem' }}>
-                          <span style={{ color: 'var(--color-protein)' }}>{Math.round(item.nutrition.protein * item.amount)}P</span>{' '}
-                          <span style={{ color: 'var(--color-carbs)' }}>{Math.round(item.nutrition.carbs * item.amount)}C</span>{' '}
-                          <span style={{ color: 'var(--color-fats)' }}>{Math.round(item.nutrition.fats * item.amount)}F</span>
-                        </span>
-                      </div>
-                    </div>
-                  </SwipeReveal>
-                ))}
+
+        {/* Expanded Items */}
+        {isExpanded && (
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            {items.length > 0 && (
+              <div style={{ padding: '0.4rem 0.75rem 0' }}>
+                {items.map(item => {
+                  const isEditing = editingEntry?.id === item.id;
+                  return (
+                    <SwipeReveal
+                      key={item.id}
+                      onDelete={() => {
+                        removeFoodEntry(todayDate, mealType, item.id);
+                        showToast(`${item.foodName} removed`, 'info');
+                      }}
+                    >
+                      {isEditing ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.6rem', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '12px', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.foodName}</span>
+                          <input
+                            type="number" step="0.5" min="0.5" autoFocus
+                            value={editingEntry.amount}
+                            onChange={e => setEditingEntry(prev => prev ? { ...prev, amount: e.target.value } : null)}
+                            onKeyDown={e => { if (e.key === 'Enter') handleEditConfirm(); if (e.key === 'Escape') setEditingEntry(null); }}
+                            style={{ width: '64px', padding: '0.3rem 0.5rem', fontSize: '0.9rem', fontWeight: 700, textAlign: 'center', backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: '#fff', outline: 'none' }}
+                          />
+                          <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)' }}>srv</span>
+                          <button onClick={handleEditConfirm} style={{ background: '#4ade80', border: 'none', borderRadius: '7px', padding: '0.35rem', display: 'flex', cursor: 'pointer' }}>
+                            <Check size={14} color="#000" />
+                          </button>
+                          <button onClick={() => setEditingEntry(null)} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '7px', padding: '0.35rem', display: 'flex', cursor: 'pointer' }}>
+                            <X size={14} color="rgba(255,255,255,0.5)" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0.5rem', borderRadius: '12px', marginBottom: '4px', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.02)' }}
+                          onClick={() => setEditingEntry({ id: item.id, mealType, amount: String(item.amount) })}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.foodName}</div>
+                            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, marginTop: '2px' }}>
+                              {Math.round(item.amount * item.servingSize)}{item.servingUnit}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0, paddingLeft: '8px' }}>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '0.88rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{Math.round(item.nutrition.calories * item.amount)}</div>
+                              <div style={{ fontSize: '0.58rem', fontWeight: 700, display: 'flex', gap: '4px' }}>
+                                <span style={{ color: 'var(--color-protein)' }}>{Math.round(item.nutrition.protein * item.amount)}P</span>
+                                <span style={{ color: 'var(--color-carbs)' }}>{Math.round(item.nutrition.carbs * item.amount)}C</span>
+                                <span style={{ color: 'var(--color-fats)' }}>{Math.round(item.nutrition.fats * item.amount)}F</span>
+                              </div>
+                            </div>
+                            <Pencil size={11} color="rgba(255,255,255,0.18)" />
+                          </div>
+                        </div>
+                      )}
+                    </SwipeReveal>
+                  );
+                })}
               </div>
-            ) : (
-               <div className="py-4 text-center text-caption text-light mb-2">No items logged.</div>
             )}
 
-            {/* Quick Action Buttons */}
-            <div className="flex-row gap-2 mt-2 px-1 pb-1">
-              <button 
-                className="flex-row align-center justify-center gap-2"
-                onClick={(e) => { e.stopPropagation(); setActiveMeal(mealType); setShowSearch(true); }}
-                style={{ padding: '0.75rem', color: 'var(--text-inverse)', background: 'var(--accent-primary)', border: 'none', borderRadius: 'var(--radius-sm)', flex: 1, fontWeight: 600, fontSize: '0.9rem' }}
-              >
-                <Plus size={16} /> Quick Add
-              </button>
-              <button 
-                className="flex-row align-center justify-center gap-2"
-                onClick={(e) => { e.stopPropagation(); setActiveMeal(mealType); handleAIScan(); }}
-                style={{ padding: '0.75rem', color: 'var(--text-main)', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', flex: 1, fontWeight: 600, fontSize: '0.9rem' }}
-              >
-                <Scan size={16} /> Barcode / Scan
-              </button>
+            {/* Action row */}
+            <div style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: items.length > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => { setActiveMeal(mealType); setShowSearch(true); }}
+                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '0.75rem', color: '#000', background: accent, border: 'none', borderRadius: '14px', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}
+                >
+                  <Search size={15} /> Add Food
+                </button>
+                {state.savedMeals.length > 0 && (
+                  <button
+                    onClick={() => { setActiveMeal(mealType); setShowSavedMeals(true); }}
+                    title="Saved meals"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.75rem 1rem', color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '14px', cursor: 'pointer', gap: '5px', fontSize: '0.78rem', fontWeight: 700 }}
+                  >
+                    <BookOpen size={14} /> Meals
+                  </button>
+                )}
+              </div>
+              {items.length > 0 && (
+                savingMealType === mealType ? (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      autoFocus type="text" placeholder="Name this meal…"
+                      value={saveMealName}
+                      onChange={e => setSaveMealName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleSaveMeal(mealType); if (e.key === 'Escape') setSavingMealType(null); }}
+                      style={{ flex: 1, padding: '0.6rem 0.75rem', fontSize: '0.85rem', backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', color: '#fff', outline: 'none' }}
+                    />
+                    <button
+                      onClick={() => handleSaveMeal(mealType)}
+                      disabled={!saveMealName.trim()}
+                      style={{ padding: '0.6rem 0.9rem', background: '#4ade80', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', color: '#000', cursor: 'pointer', opacity: saveMealName.trim() ? 1 : 0.4 }}
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => { setSavingMealType(null); setSaveMealName(''); }}
+                      style={{ padding: '0.6rem 0.75rem', background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setSavingMealType(mealType); setSaveMealName(''); }}
+                    style={{ width: '100%', padding: '0.5rem', background: 'transparent', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
+                  >
+                    + Save as meal template
+                  </button>
+                )
+              )}
             </div>
           </div>
-        </div>
-      </Card>
+        )}
+      </div>
     );
   };
 
   return (
-    <div className="flex-col gap-4 p-4 animate-fade-in" style={{ paddingBottom: '2rem', backgroundColor: 'var(--bg-primary)', minHeight: '100vh' }}>
-      <div>
-        <h1 className="text-h2">Daily Diary</h1>
-        <p className="text-subtitle">Your comprehensive food log.</p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '1rem', paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))', backgroundColor: 'var(--bg-primary)', minHeight: '100dvh' }} className="animate-fade-in">
+
+      {/* ── Header ── */}
+      <div style={{ paddingTop: '0.5rem', marginBottom: '2px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
+            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Food Log</h1>
+            <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: '2px' }}>{dateLabel}</p>
+          </div>
+          {targets && (
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: isOver ? '#f87171' : '#fff', fontVariantNumeric: 'tabular-nums' }}>
+                {isOver ? `+${Math.abs(calRemaining)}` : calRemaining}
+                <span style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', fontWeight: 700, marginLeft: '3px' }}>kcal {isOver ? 'over' : 'left'}</span>
+              </div>
+              <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>{calLogged} / {calTarget} logged</div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex-col mt-2">
-        {(['breakfast', 'lunch', 'dinner', 'snacks'] as MealType[]).map(m => renderMealSummary(m))}
-      </div>
-
-      {/* AI Scanning Modal Overlay */}
-      {(isAIScanning || aiResult) && (
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200, backgroundColor: 'rgba(250, 249, 246, 0.98)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem' }}>
-          <div className="flex-col gap-6 w-full align-center" style={{ marginTop: '20vh' }}>
-            <div style={{ position: 'relative', width: '120px', height: '120px' }}>
-              <div className="skeleton" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
-              <Camera size={40} color="var(--accent-primary)" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
-              {isAIScanning && <Loader2 size={130} color="var(--accent-primary)" className="animate-spin" style={{ position: 'absolute', top: '-5px', left: '-5px', opacity: 0.3 }} />}
-            </div>
-            
-            <div className="text-center">
-              <h2 className="text-h2">{isAIScanning ? 'Analyzing Meal...' : 'Analysis Complete'}</h2>
-              <p className="text-subtitle">{isAIScanning ? "Claude Vision is identifying ingredients and estimating macros." : "Is this what you ate?"}</p>
-            </div>
-
-            {aiResult && (
-              <Card className="w-full flex-col gap-4 p-4 animate-slide-up" style={{ border: '2px solid var(--accent-primary)' }}>
-                <div>
-                  <h3 className="text-h3">{aiResult.name}</h3>
-                  <p className="text-caption">{aiResult.brand}</p>
+      {/* ── Daily Summary Card ── */}
+      {targets && (
+        <div style={{
+          backgroundColor: 'var(--bg-card)', borderRadius: '20px',
+          border: `1px solid ${isOver ? 'rgba(248,113,113,0.2)' : 'rgba(255,255,255,0.07)'}`,
+          padding: '1rem 1.1rem 0.9rem', position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: 0, left: '10%', right: '10%', height: '2px', background: isOver ? 'linear-gradient(90deg, transparent, #f87171, transparent)' : 'linear-gradient(90deg, transparent, #60a5fa, transparent)' }} />
+          <div style={{ height: '5px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '12px' }}>
+            <div style={{
+              height: '100%', width: `${calPct}%`,
+              background: isOver ? 'linear-gradient(90deg, #f87171, #ef4444)' : calPct > 80 ? 'linear-gradient(90deg, #60a5fa, #fb923c)' : 'linear-gradient(90deg, #60a5fa, #a78bfa)',
+              borderRadius: '3px', transition: 'width 0.5s ease',
+            }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px' }}>
+            {[
+              { label: 'Protein', val: dayTotals.protein, target: targets.protein, color: 'var(--color-protein)', unit: 'g' },
+              { label: 'Carbs', val: dayTotals.carbs, target: targets.carbs, color: 'var(--color-carbs)', unit: 'g' },
+              { label: 'Fats', val: dayTotals.fats, target: targets.fats, color: 'var(--color-fats)', unit: 'g' },
+              { label: isOver ? 'Over' : 'Left', val: Math.abs(calRemaining), target: calTarget, color: isOver ? '#f87171' : '#4ade80', unit: 'kcal' },
+            ].map(m => (
+              <div key={m.label} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                  <span style={{ fontSize: '0.88rem', fontWeight: 800, color: m.color, fontVariantNumeric: 'tabular-nums' }}>{Math.round(m.val)}</span>
+                  <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>{m.unit}</span>
                 </div>
-                <div className="flex-row justify-between">
-                  <div className="flex-col">
-                    <span className="text-h3">{aiResult.calories}</span>
-                    <span className="text-caption">Calories</span>
-                  </div>
-                  <div className="flex-col">
-                    <span className="text-h3" style={{ color: 'var(--color-protein)' }}>{aiResult.protein}g</span>
-                    <span className="text-caption">Protein</span>
-                  </div>
-                  <div className="flex-col">
-                    <span className="text-h3" style={{ color: 'var(--color-carbs)' }}>{aiResult.carbs}g</span>
-                    <span className="text-caption">Carbs</span>
-                  </div>
-                  <div className="flex-col">
-                    <span className="text-h3" style={{ color: 'var(--color-fats)' }}>{aiResult.fats}g</span>
-                    <span className="text-caption">Fats</span>
-                  </div>
+                <div style={{ height: '3px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.min(100, (m.val / m.target) * 100)}%`, backgroundColor: m.color, borderRadius: '2px', transition: 'width 0.5s ease' }} />
                 </div>
-                <div className="flex-row gap-3 mt-2">
-                  <button className="flex-row align-center justify-center gap-2" onClick={() => setAIResult(null)} style={{ flex: 1, padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', background: 'white' }}>
-                    <X size={18} /> Cancel
-                  </button>
-                  <button className="flex-row align-center justify-center gap-2 btn-primary" onClick={confirmAIResult} style={{ flex: 2, padding: '0.75rem' }}>
-                    <Check size={18} /> Add to Log
-                  </button>
-                </div>
-              </Card>
-            )}
+                <span style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.25)', fontWeight: 700 }}>{m.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Full-Screen Modals */}
-      <SlideOver isOpen={showSearch} onClose={() => setShowSearch(false)}>
-         {showSearch && <FoodSearch mealType={activeMeal} onAdd={handleAddFood} onCancel={() => setShowSearch(false)} />}
+      {/* ── Meal Cards ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {(['breakfast', 'lunch', 'dinner', 'snacks'] as MealType[]).map(renderMealCard)}
+      </div>
+
+      {/* ── Saved Meals Sheet ── */}
+      <SlideOver isOpen={showSavedMeals} onClose={() => setShowSavedMeals(false)}>
+        <div style={{ display: 'flex', flexDirection: 'column', padding: '1.5rem', backgroundColor: 'var(--bg-primary)', minHeight: '100dvh' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
+            <button onClick={() => setShowSavedMeals(false)} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', fontSize: '1rem' }}>←</button>
+            <div>
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0 }}>Saved Meals</h2>
+              <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: '1px' }}>Tap to log to {activeMeal}</p>
+            </div>
+          </div>
+          {state.savedMeals.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'rgba(255,255,255,0.3)' }}>
+              <BookOpen size={32} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
+              <p style={{ fontSize: '0.88rem' }}>No saved meals yet.</p>
+              <p style={{ fontSize: '0.75rem', marginTop: '4px', opacity: 0.7 }}>Log a full meal and tap "Save as meal template".</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {state.savedMeals.map(meal => (
+                <div key={meal.id} style={{ backgroundColor: 'var(--bg-card)', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.1rem' }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{meal.name}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: '3px' }}>
+                      {Math.round(meal.totalNutrition.calories)} kcal · {meal.entries.length} items · used {meal.timesUsed}×
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { logSavedMeal(todayDate, activeMeal, meal.id); showToast(`${meal.name} added`, 'success'); setShowSavedMeals(false); }}
+                    style={{ padding: '0.55rem 1.1rem', backgroundColor: MEAL_ACCENT[activeMeal], color: '#000', border: 'none', borderRadius: '12px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer' }}
+                  >
+                    Add
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </SlideOver>
 
+      {/* ── Food Search Slide Over ── */}
+      <SlideOver isOpen={showSearch} onClose={() => setShowSearch(false)}>
+        {showSearch && (
+          <FoodSearch mealType={activeMeal} onAdd={handleAddFood} onCancel={() => setShowSearch(false)} />
+        )}
+      </SlideOver>
     </div>
   );
 };

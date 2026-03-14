@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FoodItem, MealType } from '../types';
-import { v4 as uuidv4 } from 'uuid';
-import { ArrowLeft, Search, ScanLine, Plus, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Search, ScanLine, Plus, CheckCircle2, Loader2, Globe, Database, Heart, Clock, X, Camera, PenLine } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { localFoodDatabase } from '../utils/foodDatabase';
+import { searchOpenFoodFacts, lookupBarcode } from '../utils/openFoodFacts';
 
 interface FoodSearchProps {
   mealType: MealType;
@@ -11,17 +11,31 @@ interface FoodSearchProps {
   onCancel: () => void;
 }
 
-export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCancel }) => {
-  const { state, addCustomFood, showToast } = useApp() as any;
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<FoodItem[]>([]);
-  const [isScanning, setIsScanning] = useState(false);
-  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
-  
-  // Measurement State
-  const [measurementValue, setMeasurementValue] = useState<string>('1');
-  const [measurementUnit, setMeasurementUnit] = useState<string>('serving');
+const DEBOUNCE_MS = 600;
+type Tab = 'search' | 'recent' | 'favorites';
 
+const hasBarcodeDetector = () => typeof window !== 'undefined' && 'BarcodeDetector' in window;
+
+export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCancel }) => {
+  const { state, showToast, toggleFavoriteFood, trackRecentFood, addCustomFood } = useApp();
+  const [tab, setTab] = useState<Tab>('search');
+  const [query, setQuery] = useState('');
+  const [localResults, setLocalResults] = useState<FoodItem[]>([]);
+  const [apiResults, setApiResults] = useState<FoodItem[]>([]);
+  const [isApiLoading, setIsApiLoading] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'found' | 'notfound' | 'error'>('idle');
+  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+  const [measurementValue, setMeasurementValue] = useState('1');
+  const [measurementUnit, setMeasurementUnit] = useState('serving');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const detectorRef = useRef<any>(null);
+  const scanLoopRef = useRef<number | null>(null);
+  const scanningRef = useRef(false);
+
+  // ── Set up measurement defaults on food selection ────────────────────────
   useEffect(() => {
     if (selectedFood) {
       setMeasurementValue(selectedFood.servingSize.toString());
@@ -29,125 +43,479 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
     }
   }, [selectedFood]);
 
-  const getCalculatedMultiplier = () => {
+  // ── Stop camera on unmount ──────────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  // ── Local search (instant) ───────────────────────────────────────────────
+  useEffect(() => {
+    const allFoods = [...state.customFoods, ...localFoodDatabase];
+    if (query.trim() === '') {
+      setLocalResults(allFoods.slice(0, 12));
+      return;
+    }
+    const q = query.toLowerCase().trim();
+    const filtered = allFoods
+      .filter(f => f.name.toLowerCase().includes(q) || (f.brand?.toLowerCase().includes(q)))
+      .sort((a, b) => {
+        const aStart = a.name.toLowerCase().startsWith(q);
+        const bStart = b.name.toLowerCase().startsWith(q);
+        if (aStart && !bStart) return -1;
+        if (!aStart && bStart) return 1;
+        return 0;
+      })
+      .slice(0, 20);
+    setLocalResults(filtered);
+  }, [query, state.customFoods]);
+
+  // ── OpenFoodFacts API search (debounced) ─────────────────────────────────
+  const triggerApiSearch = useCallback(async (q: string) => {
+    if (q.trim().length < 2) { setApiResults([]); return; }
+    setIsApiLoading(true);
+    try {
+      const results = await searchOpenFoodFacts(q);
+      setApiResults(results);
+    } catch {
+      setApiResults([]);
+    } finally {
+      setIsApiLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (query.trim().length < 2) { setApiResults([]); setIsApiLoading(false); return; }
+    debounceRef.current = setTimeout(() => triggerApiSearch(query), DEBOUNCE_MS);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query, triggerApiSearch]);
+
+  // ── Serving amount → multiplier ──────────────────────────────────────────
+  const getMultiplier = (): number => {
     if (!selectedFood) return 0;
     const val = parseFloat(measurementValue) || 0;
-    if (val === 0) return 0;
-
-    const baseUnit = (selectedFood.servingUnit || 'g').toLowerCase();
-    const inputUnit = measurementUnit.toLowerCase();
-
-    if (baseUnit === inputUnit) return val / selectedFood.servingSize;
-
+    if (val <= 0) return 0;
+    const base = (selectedFood.servingUnit || 'g').toLowerCase();
+    const input = measurementUnit.toLowerCase();
+    if (base === input) return val / selectedFood.servingSize;
+    if (input.includes('serving')) return val;
     let valInBase = val;
-    if ((baseUnit === 'g' || baseUnit === 'ml') && inputUnit === 'oz') {
-      valInBase = val * 28.3495;
-    } else if ((baseUnit === 'g' || baseUnit === 'ml') && inputUnit === 'lbs') {
-      valInBase = val * 453.592;
-    } else if (inputUnit.includes('serving')) {
-      return val; 
-    }
-
+    if ((base === 'g' || base === 'ml') && input === 'oz') valInBase = val * 28.3495;
+    else if ((base === 'g' || base === 'ml') && input === 'lbs') valInBase = val * 453.592;
     return valInBase / selectedFood.servingSize;
   };
 
-  // Instant Local Search Filtering
-  useEffect(() => {
-    const allFoods = [...state.customFoods, ...localFoodDatabase];
-    
-    if (query.trim() === '') {
-      // Show highly used defaults
-      setResults(allFoods.slice(0, 15));
-      return;
+  // ── Camera & BarcodeDetector ─────────────────────────────────────────────
+  const stopCamera = () => {
+    scanningRef.current = false;
+    if (scanLoopRef.current) cancelAnimationFrame(scanLoopRef.current);
+    scanLoopRef.current = null;
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
     }
-
-    const q = query.toLowerCase().trim();
-    const filtered = allFoods.filter(f => 
-      f.name.toLowerCase().includes(q) || 
-      (f.brand && f.brand.toLowerCase().includes(q))
-    ).sort((a, b) => {
-      // Prioritize exact matches
-      const aExact = a.name.toLowerCase() === q;
-      const bExact = b.name.toLowerCase() === q;
-      if (aExact && !bExact) return -1;
-      if (!aExact && bExact) return 1;
-      
-      // Prioritize startsWith
-      const aStart = a.name.toLowerCase().startsWith(q);
-      const bStart = b.name.toLowerCase().startsWith(q);
-      if (aStart && !bStart) return -1;
-      if (!aStart && bStart) return 1;
-      
-      return 0;
-    });
-    setResults(filtered.slice(0, 30)); // Higher density
-  }, [query, state.customFoods]);
-
-  const handleSimulateScan = () => {
-     setIsScanning(false);
-     const scanTargets = [
-        localFoodDatabase.find(f => f.name.includes("Whey")),
-        localFoodDatabase.find(f => f.name.includes("Energy Drink")),
-        localFoodDatabase.find(f => f.name.includes("Protein Bar"))
-     ].filter(Boolean) as FoodItem[];
-
-     const rand = scanTargets[Math.floor(Math.random() * scanTargets.length)];
-     if (rand) {
-       setSelectedFood(rand);
-       showToast(`Barcode Scanned: ${rand.name}`, 'success');
-     }
+    if (videoRef.current) videoRef.current.srcObject = null;
   };
 
-  if (selectedFood) {
-    const multiplier = getCalculatedMultiplier();
-    
+  const startCamera = async () => {
+    setScanStatus('scanning');
+    scanningRef.current = true;
+
+    // Create BarcodeDetector if supported
+    if (hasBarcodeDetector()) {
+      try {
+        // @ts-ignore
+        detectorRef.current = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'qr_code'] });
+      } catch {
+        detectorRef.current = null;
+      }
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      if (detectorRef.current) {
+        const detect = async () => {
+          if (!scanningRef.current) return;
+          if (videoRef.current && videoRef.current.readyState === 4) {
+            try {
+              const codes = await detectorRef.current.detect(videoRef.current);
+              if (codes.length > 0) {
+                const barcode = codes[0].rawValue;
+                scanningRef.current = false;
+                setScanStatus('found');
+                await handleBarcodeResult(barcode);
+                return;
+              }
+            } catch { /* ignore detection errors */ }
+          }
+          if (scanningRef.current) {
+            scanLoopRef.current = requestAnimationFrame(detect);
+          }
+        };
+        detect();
+      }
+    } catch (err: any) {
+      setScanStatus('error');
+      showToast('Camera access denied', 'error');
+    }
+  };
+
+  const scanRetriesRef = useRef(0);
+  const [scanNotFound, setScanNotFound] = useState(false);
+
+  const handleBarcodeResult = async (barcode: string) => {
+    try {
+      const result = await lookupBarcode(barcode);
+      if (result) {
+        scanRetriesRef.current = 0;
+        stopCamera();
+        setIsScanning(false);
+        setScanNotFound(false);
+        setSelectedFood(result);
+        showToast(`Found: ${result.name}`, 'success');
+      } else {
+        scanRetriesRef.current += 1;
+        setScanStatus('notfound');
+        if (scanRetriesRef.current >= 2) {
+          // Stop scanning — guide user to search instead
+          stopCamera();
+          setScanNotFound(true);
+          setIsScanning(false);
+          showToast('Product not in database — try searching by name', 'info');
+        } else {
+          showToast('Product not found — try another barcode', 'error');
+          // Single retry after short pause — don't loop indefinitely
+          setTimeout(() => {
+            if (!scanningRef.current && detectorRef.current && videoRef.current) {
+              scanningRef.current = true;
+              setScanStatus('scanning');
+              const resumeDetect = async () => {
+                if (!scanningRef.current) return;
+                if (videoRef.current && videoRef.current.readyState === 4) {
+                  try {
+                    const codes = await detectorRef.current.detect(videoRef.current);
+                    if (codes.length > 0) {
+                      const b = codes[0].rawValue;
+                      scanningRef.current = false;
+                      setScanStatus('found');
+                      await handleBarcodeResult(b);
+                      return;
+                    }
+                  } catch { /* ignore */ }
+                }
+                if (scanningRef.current) scanLoopRef.current = requestAnimationFrame(resumeDetect);
+              };
+              resumeDetect();
+            }
+          }, 2000);
+        }
+      }
+    } catch {
+      setScanStatus('error');
+      stopCamera();
+      setIsScanning(false);
+      showToast('Lookup failed — try searching by name', 'error');
+    }
+  };
+
+  const openScanner = () => {
+    scanRetriesRef.current = 0;
+    setScanNotFound(false);
+    setIsScanning(true);
+    setScanStatus('idle');
+    setTimeout(() => startCamera(), 200);
+  };
+
+  const closeScanner = () => {
+    stopCamera();
+    setIsScanning(false);
+    setScanStatus('idle');
+    setScanNotFound(false);
+  };
+
+  const [manualBarcode, setManualBarcode] = useState('');
+
+  // ── Custom food creation ─────────────────────────────────────────────────
+  const [showCustomForm, setShowCustomForm] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customBrand, setCustomBrand] = useState('');
+  const [customServingSize, setCustomServingSize] = useState('100');
+  const [customServingUnit, setCustomServingUnit] = useState('g');
+  const [customCalories, setCustomCalories] = useState('');
+  const [customProtein, setCustomProtein] = useState('');
+  const [customCarbs, setCustomCarbs] = useState('');
+  const [customFats, setCustomFats] = useState('');
+
+  const resetCustomForm = () => {
+    setCustomName('');
+    setCustomBrand('');
+    setCustomServingSize('100');
+    setCustomServingUnit('g');
+    setCustomCalories('');
+    setCustomProtein('');
+    setCustomCarbs('');
+    setCustomFats('');
+  };
+
+  const handleSaveCustomFood = () => {
+    if (!customName.trim()) { showToast('Name is required', 'error'); return; }
+    const food: FoodItem = {
+      id: `custom-${Date.now()}`,
+      name: customName.trim(),
+      brand: customBrand.trim() || undefined,
+      servingSize: parseFloat(customServingSize) || 100,
+      servingUnit: customServingUnit.trim() || 'g',
+      calories: parseFloat(customCalories) || 0,
+      protein: parseFloat(customProtein) || 0,
+      carbs: parseFloat(customCarbs) || 0,
+      fats: parseFloat(customFats) || 0,
+      source: 'custom',
+    };
+    addCustomFood(food);
+    setSelectedFood(food);
+    setShowCustomForm(false);
+    resetCustomForm();
+    showToast('Custom food added', 'success');
+  };
+
+  const handleManualBarcodeSubmit = async () => {
+    const code = manualBarcode.trim();
+    if (!code) return;
+    showToast('Looking up barcode...', 'info');
+    setScanStatus('scanning');
+    await handleBarcodeResult(code);
+    setManualBarcode('');
+  };
+
+  // recentFoods and favoriteFoods now store full FoodItem objects
+  const recentFoodItems = state.recentFoods;
+  const favoriteFoodItems = state.favoriteFoods;
+
+  // ── Deduplicate local+API results ────────────────────────────────────────
+  const localIds = new Set(localResults.map(f => f.id));
+  const deduplicatedApi = apiResults.filter(f => !localIds.has(f.id));
+
+  const renderFoodRow = (f: FoodItem, isApi = false) => {
+    const isFav = state.favoriteFoods.some(fav => fav.id === f.id);
     return (
-      <div className="flex-col gap-4 p-4 animate-slide-up" style={{ backgroundColor: '#000000', minHeight: '100%', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
-        <button onClick={() => setSelectedFood(null)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#FFFFFF', width: 'fit-content', padding: 0 }}>
-          <ArrowLeft size={24} />
-        </button>
+      <div
+        key={f.id}
+        onClick={() => setSelectedFood(f)}
+        className="flex-row justify-between"
+        style={{ padding: '0.85rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', alignItems: 'center' }}
+      >
+        <div className="flex-col gap-1" style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
+          <span className="text-body font-bold" style={{ color: '#fff', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {f.name}
+          </span>
+          <span className="text-caption" style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.68rem' }}>
+            {f.brand ? `${f.brand} · ` : ''}{f.servingSize}{f.servingUnit}
+            {isApi && <span style={{ color: 'rgba(10,132,255,0.7)', marginLeft: '4px' }}>· online</span>}
+          </span>
+        </div>
+        <div className="flex-row gap-2 align-center" style={{ flexShrink: 0 }}>
+          <div className="flex-col align-end">
+            <span className="text-body font-bold" style={{ fontVariantNumeric: 'tabular-nums', lineHeight: 1, fontSize: '0.95rem' }}>{f.calories}</span>
+            <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.28)', fontWeight: 700 }}>KCAL</span>
+          </div>
+          <button
+            onClick={e => { e.stopPropagation(); toggleFavoriteFood(f); }}
+            style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex' }}
+          >
+            <Heart size={15} color={isFav ? 'var(--accent-red)' : 'rgba(255,255,255,0.2)'} fill={isFav ? 'var(--accent-red)' : 'none'} />
+          </button>
+          <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)', padding: '0.4rem', borderRadius: '9px', display: 'flex' }}>
+            <Plus size={15} />
+          </div>
+        </div>
+      </div>
+    );
+  };
 
-        <div className="mt-4">
-          <h2 className="text-h1" style={{ color: '#FFFFFF', lineHeight: 1.1, fontSize: '2.5rem', fontWeight: 800 }}>{selectedFood.name}</h2>
-          <p className="text-subtitle mt-2" style={{ color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{selectedFood.brand || 'Generic Food'}</p>
+  // ── Custom Food Creation Overlay ─────────────────────────────────────────
+  if (showCustomForm) {
+    const inputStyle: React.CSSProperties = {
+      width: '100%',
+      padding: '0.85rem 1rem',
+      borderRadius: '12px',
+      border: '1px solid rgba(255,255,255,0.12)',
+      backgroundColor: 'rgba(255,255,255,0.05)',
+      color: '#fff',
+      fontSize: '0.95rem',
+      fontWeight: 500,
+      outline: 'none',
+      boxSizing: 'border-box',
+    };
+    const labelStyle: React.CSSProperties = {
+      fontSize: '0.65rem',
+      fontWeight: 700,
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.08em',
+      color: 'rgba(255,255,255,0.35)',
+      marginBottom: '4px',
+    };
+    return (
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9005, backgroundColor: '#000', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', paddingTop: 'calc(1rem + env(safe-area-inset-top))', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+          <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>Create Food</span>
+          <button
+            onClick={() => { setShowCustomForm(false); resetCustomForm(); }}
+            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer' }}
+          >
+            <X size={16} />
+          </button>
         </div>
 
-        <div className="flex-col gap-6 mt-6">
-          <div className="flex-row justify-between align-end" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
-            <span className="text-h1" style={{ fontSize: '4rem', color: '#FFFFFF', fontFeatureSettings: '"tnum"', letterSpacing: '-0.03em', lineHeight: 0.85 }}>{Math.round(selectedFood.calories * multiplier)}</span>
-            <span className="text-caption font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.5)' }}>Calories</span>
+        {/* Form */}
+        <div style={{ flex: 1, padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))' }}>
+          {/* Name */}
+          <div>
+            <div style={labelStyle}>Name <span style={{ color: 'var(--accent-red)' }}>*</span></div>
+            <input type="text" placeholder="e.g. Homemade granola" value={customName} onChange={e => setCustomName(e.target.value)} style={inputStyle} />
           </div>
-          
-          <div className="flex-row justify-between">
-            <div className="flex-col">
-              <span className="text-h2" style={{ color: 'var(--color-protein)', fontFeatureSettings: '"tnum"' }}>{Math.round(selectedFood.protein * multiplier)}g</span>
-              <span className="text-caption font-semibold uppercase tracking-wider text-muted">Protein</span>
+
+          {/* Brand */}
+          <div>
+            <div style={labelStyle}>Brand <span style={{ color: 'rgba(255,255,255,0.2)', fontWeight: 400, textTransform: 'none' }}>(optional)</span></div>
+            <input type="text" placeholder="e.g. Homemade" value={customBrand} onChange={e => setCustomBrand(e.target.value)} style={inputStyle} />
+          </div>
+
+          {/* Serving size + unit */}
+          <div>
+            <div style={labelStyle}>Serving size</div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <input type="number" placeholder="100" value={customServingSize} onChange={e => setCustomServingSize(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
+              <input type="text" placeholder="g" value={customServingUnit} onChange={e => setCustomServingUnit(e.target.value)} style={{ ...inputStyle, width: '80px', flex: 'none' }} />
             </div>
-            <div className="flex-col">
-              <span className="text-h2" style={{ color: 'var(--color-carbs)', fontFeatureSettings: '"tnum"' }}>{Math.round(selectedFood.carbs * multiplier)}g</span>
-              <span className="text-caption font-semibold uppercase tracking-wider text-muted">Carbs</span>
-            </div>
-            <div className="flex-col align-end">
-              <span className="text-h2" style={{ color: 'var(--color-fats)', fontFeatureSettings: '"tnum"' }}>{Math.round(selectedFood.fats * multiplier)}g</span>
-              <span className="text-caption font-semibold uppercase tracking-wider text-muted">Fats</span>
+          </div>
+
+          {/* Calories */}
+          <div>
+            <div style={labelStyle}>Calories (kcal)</div>
+            <input type="number" placeholder="0" value={customCalories} onChange={e => setCustomCalories(e.target.value)} style={inputStyle} />
+          </div>
+
+          {/* Macros row */}
+          <div>
+            <div style={labelStyle}>Macros (g per serving)</div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ ...labelStyle, color: 'var(--color-protein)', marginBottom: '4px' }}>Protein</div>
+                <input type="number" placeholder="0" value={customProtein} onChange={e => setCustomProtein(e.target.value)} style={inputStyle} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ ...labelStyle, color: 'var(--color-carbs)', marginBottom: '4px' }}>Carbs</div>
+                <input type="number" placeholder="0" value={customCarbs} onChange={e => setCustomCarbs(e.target.value)} style={inputStyle} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ ...labelStyle, color: 'var(--color-fats)', marginBottom: '4px' }}>Fats</div>
+                <input type="number" placeholder="0" value={customFats} onChange={e => setCustomFats(e.target.value)} style={inputStyle} />
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex-col gap-2 mt-8">
-          <label className="text-caption font-semibold uppercase tracking-widest text-muted mb-1">Serving Amount</label>
-          <div className="flex-row gap-2">
-            <input 
-              type="number" 
-              value={measurementValue} 
-              onChange={(e) => setMeasurementValue(e.target.value)}
-              className="tabular-nums"
-              style={{ flex: 1, padding: '1.2rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.15)', fontSize: '1.5rem', backgroundColor: 'rgba(255,255,255,0.05)', color: '#FFFFFF', fontWeight: 700 }}
+        {/* Save button */}
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '1rem 1.25rem', paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))', backgroundColor: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(255,255,255,0.07)', zIndex: 9006 }}>
+          <button
+            onClick={handleSaveCustomFood}
+            style={{ width: '100%', padding: '1.1rem', borderRadius: '16px', backgroundColor: '#fff', color: '#000', fontWeight: 800, fontSize: '1rem', border: 'none', cursor: 'pointer' }}
+          >
+            Save Food
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Food Detail / Amount Selection Screen ────────────────────────────────
+  if (selectedFood) {
+    const mult = getMultiplier();
+    const isFav = state.favoriteFoods.some(f => f.id === selectedFood.id);
+    return (
+      <div className="flex-col gap-4 p-4 animate-slide-up" style={{ backgroundColor: '#000', minHeight: '100%', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9002, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
+        <div className="flex-row justify-between align-center">
+          <button onClick={() => setSelectedFood(null)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255,255,255,0.6)', padding: 0, fontWeight: 600, fontSize: '0.9rem' }}>
+            <ArrowLeft size={20} /> Back
+          </button>
+          <button
+            onClick={() => toggleFavoriteFood(selectedFood)}
+            style={{ background: 'none', border: 'none', display: 'flex', padding: 0, cursor: 'pointer' }}
+          >
+            <Heart size={22} color={isFav ? 'var(--accent-red)' : 'rgba(255,255,255,0.3)'} fill={isFav ? 'var(--accent-red)' : 'none'} />
+          </button>
+        </div>
+
+        <div className="mt-3">
+          <h2 className="text-h1" style={{ color: '#fff', lineHeight: 1.1, fontSize: '2rem', fontWeight: 800 }}>{selectedFood.name}</h2>
+          <p className="text-subtitle mt-1" style={{ color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, fontSize: '0.8rem' }}>
+            {selectedFood.brand || 'Generic'}{selectedFood.source === 'openfoodfacts' ? ' · Open Food Facts' : ''}
+          </p>
+        </div>
+
+        {/* Macro breakdown */}
+        <div className="flex-col gap-3 mt-2 p-4" style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="flex-row justify-between align-end" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', paddingBottom: '1rem' }}>
+            <span style={{ fontSize: '3.5rem', fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', lineHeight: 0.9 }}>
+              {Math.round(selectedFood.calories * mult)}
+            </span>
+            <span className="text-caption font-semibold uppercase" style={{ color: 'rgba(255,255,255,0.4)' }}>Calories</span>
+          </div>
+          <div className="flex-row justify-between mt-1">
+            {[
+              { label: 'Protein', value: selectedFood.protein * mult, color: 'var(--color-protein)' },
+              { label: 'Carbs', value: selectedFood.carbs * mult, color: 'var(--color-carbs)' },
+              { label: 'Fats', value: selectedFood.fats * mult, color: 'var(--color-fats)' },
+            ].map(m => (
+              <div key={m.label} className="flex-col">
+                <span className="text-h2" style={{ color: m.color, fontVariantNumeric: 'tabular-nums', fontSize: '1.5rem' }}>{Math.round(m.value)}g</span>
+                <span className="text-caption" style={{ color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginTop: '2px' }}>{m.label}</span>
+              </div>
+            ))}
+          </div>
+          {(selectedFood.fiber !== undefined || selectedFood.sodium !== undefined) && (
+            <div className="flex-row gap-4 mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              {selectedFood.fiber !== undefined && (
+                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                  Fiber: <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{Math.round(selectedFood.fiber * mult)}g</strong>
+                </span>
+              )}
+              {selectedFood.sodium !== undefined && (
+                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                  Sodium: <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{Math.round(selectedFood.sodium * mult)}mg</strong>
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Serving size input */}
+        <div className="flex-col gap-2 mt-2">
+          <label className="text-caption font-semibold uppercase" style={{ color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em' }}>
+            Serving Amount
+          </label>
+          <div className="flex-row gap-3">
+            <input
+              type="number"
+              value={measurementValue}
+              onChange={e => setMeasurementValue(e.target.value)}
+              style={{ flex: 1, padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)', fontSize: '1.4rem', fontWeight: 700, backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', fontVariantNumeric: 'tabular-nums', outline: 'none' }}
             />
-            <select 
+            <select
               value={measurementUnit}
-              onChange={(e) => setMeasurementUnit(e.target.value)}
-              style={{ flex: 1, padding: '1.2rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.15)', fontSize: '1rem', backgroundColor: 'rgba(255,255,255,0.05)', color: '#FFFFFF', fontWeight: 700, appearance: 'none' }}
+              onChange={e => setMeasurementUnit(e.target.value)}
+              style={{ flex: 1, padding: '1rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.95rem', fontWeight: 700, backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', outline: 'none', appearance: 'none', WebkitAppearance: 'none' }}
             >
               <option value="g">Grams (g)</option>
               <option value="oz">Ounces (oz)</option>
@@ -158,135 +526,271 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
           </div>
         </div>
 
-        <button 
-          onClick={() => {
-            onAdd(selectedFood, multiplier);
-            showToast(`Added ${selectedFood.name}`, 'success');
-          }}
-          className="btn-primary flex-row justify-center align-center gap-2"
-          style={{ marginTop: 'auto', padding: '1.4rem', width: '100%', fontSize: '1.2rem', fontWeight: 800, borderRadius: '24px', backgroundColor: '#FFFFFF', color: '#000000', boxShadow: '0 10px 30px rgba(255,255,255,0.2)' }}
+        <button
+          onClick={() => { trackRecentFood(selectedFood); onAdd(selectedFood, mult); showToast(`${selectedFood.name} added`, 'success'); }}
+          className="flex-row justify-center align-center gap-2"
+          style={{ marginTop: 'auto', padding: '1.3rem', width: '100%', fontSize: '1.1rem', fontWeight: 800, borderRadius: '20px', backgroundColor: '#fff', color: '#000', boxShadow: '0 8px 24px rgba(255,255,255,0.15)', border: 'none' }}
         >
-          <CheckCircle2 size={24} /> Log to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+          <CheckCircle2 size={22} /> Log to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
         </button>
       </div>
     );
   }
 
+  // ── Barcode Scanner Overlay ──────────────────────────────────────────────
+  if (isScanning) {
+    return (
+      <div className="animate-fade-in" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 150, backgroundColor: '#000', display: 'flex', flexDirection: 'column' }}>
+        <div className="flex-row justify-between p-4 mt-4 align-center" style={{ zIndex: 160, position: 'relative' }}>
+          <div>
+            <span style={{ fontSize: '0.6rem', color: 'var(--accent-blue)', letterSpacing: '2px', fontWeight: 700 }}>BARCODE SCANNER</span>
+            <h2 className="text-h2" style={{ marginTop: '-2px' }}>Scan Product</h2>
+          </div>
+          <button onClick={closeScanner} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', padding: '0.4rem 1rem', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Camera feed */}
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+          {/* Scan overlay */}
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+            <div style={{ width: '260px', height: '160px', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '50px', height: '50px', borderTop: '3px solid var(--accent-blue)', borderLeft: '3px solid var(--accent-blue)', filter: 'drop-shadow(0 0 8px var(--accent-blue))' }} />
+              <div style={{ position: 'absolute', top: 0, right: 0, width: '50px', height: '50px', borderTop: '3px solid var(--accent-blue)', borderRight: '3px solid var(--accent-blue)', filter: 'drop-shadow(0 0 8px var(--accent-blue))' }} />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '50px', height: '50px', borderBottom: '3px solid var(--accent-blue)', borderLeft: '3px solid var(--accent-blue)', filter: 'drop-shadow(0 0 8px var(--accent-blue))' }} />
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: '50px', height: '50px', borderBottom: '3px solid var(--accent-blue)', borderRight: '3px solid var(--accent-blue)', filter: 'drop-shadow(0 0 8px var(--accent-blue))' }} />
+              {scanStatus === 'scanning' && (
+                <div style={{ width: '100%', height: '2px', backgroundColor: 'var(--accent-blue)', position: 'absolute', top: '50%', boxShadow: '0 0 15px var(--accent-blue)', animation: 'scanline 2s ease-in-out infinite' }} />
+              )}
+              {scanStatus === 'found' && (
+                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(48,209,88,0.3)', border: '2px solid var(--accent-green)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckCircle2 size={40} color="var(--accent-green)" />
+                </div>
+              )}
+              {scanStatus === 'notfound' && (
+                <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(255,69,58,0.2)', border: '2px solid var(--accent-red)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <X size={40} color="var(--accent-red)" />
+                </div>
+              )}
+            </div>
+          </div>
+          {/* Status overlay */}
+          <div style={{ position: 'absolute', bottom: '1rem', left: 0, right: 0, textAlign: 'center' }}>
+            {scanStatus === 'notfound' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '0 1.5rem' }}>
+                <span style={{ fontSize: '0.8rem', color: '#f87171', fontWeight: 700, backgroundColor: 'rgba(0,0,0,0.75)', padding: '0.5rem 1.2rem', borderRadius: '20px', backdropFilter: 'blur(8px)' }}>
+                  Product not in database
+                </span>
+                <button
+                  onClick={() => { stopCamera(); setIsScanning(false); }}
+                  style={{ fontSize: '0.82rem', fontWeight: 800, backgroundColor: 'white', color: '#000', padding: '0.6rem 1.4rem', borderRadius: '20px', border: 'none', cursor: 'pointer' }}
+                >
+                  Search by name instead →
+                </button>
+              </div>
+            ) : (
+              <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600, backgroundColor: 'rgba(0,0,0,0.6)', padding: '0.4rem 1rem', borderRadius: '20px', backdropFilter: 'blur(8px)', pointerEvents: 'none' }}>
+                {scanStatus === 'scanning' && (hasBarcodeDetector() ? 'Point camera at barcode' : 'Initialising...')}
+                {scanStatus === 'found' && 'Barcode found!'}
+                {scanStatus === 'error' && 'Camera error'}
+                {scanStatus === 'idle' && 'Starting camera...'}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-col align-center pt-4 gap-3" style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))', padding: '1rem 1.25rem' }}>
+          {!hasBarcodeDetector() && (
+            <p className="text-caption" style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center', fontSize: '0.72rem' }}>
+              Auto-scan not available — enter barcode manually
+            </p>
+          )}
+          <div className="flex-row gap-2" style={{ width: '100%' }}>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="Enter barcode number…"
+              value={manualBarcode}
+              onChange={e => setManualBarcode(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleManualBarcodeSubmit()}
+              style={{ flex: 1, padding: '0.75rem 1rem', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', color: '#fff', fontSize: '0.95rem', fontWeight: 600 }}
+            />
+            <button
+              onClick={handleManualBarcodeSubmit}
+              disabled={!manualBarcode.trim()}
+              style={{ padding: '0.75rem 1rem', backgroundColor: 'var(--accent-blue)', border: 'none', borderRadius: '12px', color: '#fff', fontWeight: 700, fontSize: '0.85rem', opacity: manualBarcode.trim() ? 1 : 0.4 }}
+            >
+              Look up
+            </button>
+          </div>
+        </div>
+        <style>{`
+          @keyframes scanline {
+            0%, 100% { top: 15%; }
+            50% { top: 85%; }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // ── Main Search Screen ───────────────────────────────────────────────────
   return (
-    <div className="flex-col p-4 animate-slide-up" style={{ backgroundColor: '#000000', minHeight: '100vh', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
-      {/* HUD Search Header */}
-      <div className="flex-row gap-3 mb-6 mt-2" style={{ alignItems: 'center' }}>
-        <button onClick={onCancel} style={{ background: 'none', border: 'none', color: '#FFFFFF', padding: 0 }}>
-          <ArrowLeft size={28} />
+    <div className="flex-col p-4 animate-slide-up" style={{ backgroundColor: '#000', minHeight: '100vh', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9002, paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))' }}>
+
+      {/* Header */}
+      <div className="flex-row gap-3 mb-4 mt-1 align-center">
+        <button onClick={onCancel} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', padding: 0, display: 'flex' }}>
+          <ArrowLeft size={26} />
         </button>
         <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255, 255, 255, 0.4)' }} />
-          <input 
-            type="text" 
-            placeholder="Search food database..." 
+          <Search size={17} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.35)' }} />
+          <input
+            type="text"
+            placeholder={`Search foods for ${mealType}...`}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            style={{ 
-              width: '100%', 
-              padding: '1rem 1rem 1rem 3rem', 
-              borderRadius: '16px', 
-              border: '1px solid rgba(255,255,255,0.1)',
-              backgroundColor: 'rgba(255,255,255,0.05)',
-              color: '#FFFFFF',
-              fontSize: '1.1rem',
-              fontWeight: 500
-            }}
+            onChange={e => { setQuery(e.target.value); if (tab !== 'search') setTab('search'); }}
+            style={{ width: '100%', padding: '0.95rem 0.95rem 0.95rem 2.8rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: '1rem', fontWeight: 500, outline: 'none' }}
             autoFocus
           />
+          {isApiLoading && (
+            <Loader2 size={16} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent-blue)', animation: 'spin 1s linear infinite' }} />
+          )}
         </div>
-        <button 
-          onClick={() => setIsScanning(true)}
-          style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', border: 'none', color: '#FFFFFF', padding: '0.9rem' }}
+        <button
+          onClick={openScanner}
+          style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '0.85rem', display: 'flex' }}
         >
-          <ScanLine size={24} />
+          <Camera size={22} />
         </button>
       </div>
 
-      {isScanning && (
-        <div className="animate-fade-in" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 150, backgroundColor: '#000000', display: 'flex', flexDirection: 'column' }}>
-          {/* Digital Static Background Overlay */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.05, pointerEvents: 'none', background: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 1px, transparent 1px, transparent 2px)', backgroundSize: '100% 2px' }} />
-          
-          <div className="flex-row justify-between p-4 mt-2" style={{ alignItems: 'center', zIndex: 160 }}>
-            <div className="flex-col">
-              <span className="text-caption font-bold" style={{ color: 'var(--accent-primary)', letterSpacing: '2px' }}>DEEP_SCAN_ACTIVE</span>
-              <span className="text-h2" style={{ color: 'white', marginTop: '-4px' }}>HUD Scanner</span>
-            </div>
-            <button onClick={() => setIsScanning(false)} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.2)', color: '#FFFFFF', padding: '0.4rem 1rem', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Abort</button>
-          </div>
-          
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-            {/* Cinematic HUD Overlay */}
-            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '300px', height: '300px', zIndex: 160, pointerEvents: 'none' }}>
-               {/* Reticle Corners with glow */}
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '60px', height: '60px', borderTop: '4px solid var(--accent-primary)', borderLeft: '4px solid var(--accent-primary)', filter: 'drop-shadow(0 0 10px var(--accent-primary))' }}/>
-              <div style={{ position: 'absolute', top: 0, right: 0, width: '60px', height: '60px', borderTop: '4px solid var(--accent-primary)', borderRight: '4px solid var(--accent-primary)', filter: 'drop-shadow(0 0 10px var(--accent-primary))' }}/>
-              <div style={{ position: 'absolute', bottom: 0, left: 0, width: '60px', height: '60px', borderBottom: '4px solid var(--accent-primary)', borderLeft: '4px solid var(--accent-primary)', filter: 'drop-shadow(0 0 10px var(--accent-primary))' }}/>
-              <div style={{ position: 'absolute', bottom: 0, right: 0, width: '60px', height: '60px', borderBottom: '4px solid var(--accent-primary)', borderRight: '4px solid var(--accent-primary)', filter: 'drop-shadow(0 0 10px var(--accent-primary))' }}/>
-              
-              {/* Dynamic HUD Data Points */}
-              <div className="text-caption" style={{ position: 'absolute', top: '-40px', left: 0, fontFeatureSettings: '"tnum"', color: 'rgba(255,255,255,0.5)' }}>LAT: 37.7749 | LNG: -122.4194</div>
-              <div className="text-caption" style={{ position: 'absolute', bottom: '-40px', right: 0, fontFeatureSettings: '"tnum"', color: 'rgba(255,255,255,0.5)' }}>FREQ: 433.92MHz | GAIN: +12dB</div>
-
-              {/* Scanner Line Animation */}
-              <div style={{ width: '100%', height: '2px', backgroundColor: 'var(--accent-primary)', position: 'absolute', top: '50%', boxShadow: '0 0 20px var(--accent-primary)', zIndex: 165 }} className="animate-pulse" />
-            </div>
-            
-            <div className="flex-col align-center" style={{ position: 'absolute', bottom: '15%', gap: '1rem', width: '100%', zIndex: 170 }}>
-              <button 
-                  onClick={handleSimulateScan}
-                  className="animate-slide-up"
-                  style={{ padding: '1.2rem 2.5rem', backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '40px', color: '#FFF', backdropFilter: 'blur(15px)', fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase', fontSize: '0.9rem', boxShadow: '0 0 30px rgba(255,255,255,0.1)' }}>
-                  Simulate Optical Scan
-              </button>
-              <p className="text-caption" style={{ color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>Align barcode within frame for auto-detection</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* High-Density Results List */}
-      <div className="flex-col" style={{ flex: 1, overflowY: 'auto' }}>
-        <h3 className="text-caption font-semibold mb-3 ml-1 text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}>{query ? 'Global Database' : 'Frequently Logged'}</h3>
-        
-        {results.length === 0 && (
-            <div className="p-4 text-center mt-10" style={{ color: 'var(--text-muted)' }}>
-               No exact matches found for "{query}".
-            </div>
-        )}
-
-        {results.map(f => (
-          <div 
-            key={f.id} 
-            onClick={() => setSelectedFood(f)}
-            className="flex-row justify-between p-4 cursor-pointer"
-            style={{ 
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
-            }}
+      {/* Tabs */}
+      <div className="flex-row gap-1 mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '3px' }}>
+        {([
+          { id: 'search' as Tab, icon: <Search size={13} />, label: 'Search' },
+          { id: 'recent' as Tab, icon: <Clock size={13} />, label: `Recent${recentFoodItems.length > 0 ? ` (${recentFoodItems.length})` : ''}` },
+          { id: 'favorites' as Tab, icon: <Heart size={13} />, label: `Saved${favoriteFoodItems.length > 0 ? ` (${favoriteFoodItems.length})` : ''}` },
+        ]).map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className="flex-row align-center justify-center gap-1"
+            style={{ flex: 1, padding: '0.5rem 0.25rem', borderRadius: '9px', backgroundColor: tab === t.id ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: tab === t.id ? '#fff' : 'rgba(255,255,255,0.4)', fontWeight: 700, fontSize: '0.72rem', cursor: 'pointer', transition: 'all 0.15s' }}
           >
-            <div className="flex-col gap-1">
-              <span className="text-body font-bold" style={{ color: '#FFFFFF', fontSize: '1.1rem' }}>{f.name}</span>
-              <span className="text-caption font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                {f.brand ? `${f.brand} • ` : ''}{f.servingSize}{f.servingUnit}
-              </span>
-            </div>
-            <div className="flex-row gap-4 align-center">
-                <div className="flex-col align-end">
-                   <span className="text-body font-bold" style={{ color: '#FFFFFF', fontFeatureSettings: '"tnum"', lineHeight: 1 }}>{f.calories}</span>
-                   <span className="text-caption font-semibold" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', marginTop: '2px' }}>CALS</span>
-                </div>
-                <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--accent-primary)', padding: '0.5rem', borderRadius: '10px', display: 'flex' }}>
-                   <Plus size={18} />
-                </button>
-            </div>
-          </div>
+            {t.icon} {t.label}
+          </button>
         ))}
       </div>
+
+      {/* Content */}
+      <div className="flex-col" style={{ flex: 1, overflowY: 'auto' }}>
+
+        {tab === 'recent' && (
+          recentFoodItems.length === 0 ? (
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem' }}>
+              <Clock size={28} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
+              <p>No recent foods yet. Log some food to see them here.</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex-row align-center gap-2 mb-2 px-1">
+                <Clock size={12} color="rgba(255,255,255,0.3)" />
+                <span className="text-caption font-semibold" style={{ color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
+                  Recently Logged
+                </span>
+              </div>
+              {recentFoodItems.map(f => renderFoodRow(f, false))}
+            </>
+          )
+        )}
+
+        {tab === 'favorites' && (
+          favoriteFoodItems.length === 0 ? (
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem' }}>
+              <Heart size={28} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
+              <p>No saved foods yet. Tap the heart icon on any food to save it.</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex-row align-center gap-2 mb-2 px-1">
+                <Heart size={12} color="var(--accent-red)" />
+                <span className="text-caption font-semibold" style={{ color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
+                  Saved Foods
+                </span>
+              </div>
+              {favoriteFoodItems.map(f => renderFoodRow(f, false))}
+            </>
+          )
+        )}
+
+        {tab === 'search' && (
+          <>
+            {/* Create Custom Food button */}
+            <button
+              onClick={() => setShowCustomForm(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '0.75rem 0.875rem', marginBottom: '0.75rem', backgroundColor: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(255,255,255,0.12)', borderRadius: '12px', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+            >
+              <PenLine size={14} />
+              <span>Create custom food</span>
+            </button>
+
+            {/* Local Database Results */}
+            {localResults.length > 0 && (
+              <>
+                <div className="flex-row align-center gap-2 mb-2 px-1">
+                  <Database size={12} color="rgba(255,255,255,0.3)" />
+                  <span className="text-caption font-semibold" style={{ color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
+                    {query ? 'Local Database' : 'Frequently Logged'}
+                  </span>
+                </div>
+                {localResults.map(f => renderFoodRow(f, false))}
+              </>
+            )}
+
+            {/* Online Results (OpenFoodFacts) */}
+            {query.length >= 2 && (
+              <div style={{ marginTop: localResults.length > 0 ? '1.5rem' : 0 }}>
+                <div className="flex-row align-center gap-2 mb-2 px-1">
+                  <Globe size={12} color="var(--accent-blue)" />
+                  <span className="text-caption font-semibold" style={{ color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
+                    Online Database
+                  </span>
+                  {isApiLoading && (
+                    <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' }}>searching...</span>
+                  )}
+                </div>
+
+                {isApiLoading && deduplicatedApi.length === 0 && (
+                  <div style={{ padding: '1.5rem', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>
+                    <Loader2 size={20} style={{ animation: 'spin 1s linear infinite', marginBottom: '8px' }} />
+                    <div>Searching Open Food Facts...</div>
+                  </div>
+                )}
+
+                {!isApiLoading && deduplicatedApi.length === 0 && query.length >= 2 && (
+                  <div style={{ padding: '1.5rem', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>
+                    No online results found
+                  </div>
+                )}
+
+                {deduplicatedApi.map(f => renderFoodRow(f, true))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 };
