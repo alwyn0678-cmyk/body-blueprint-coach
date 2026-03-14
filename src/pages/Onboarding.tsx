@@ -5,12 +5,28 @@ import { ftInToCm, lbsToKg } from '../utils/units';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 
-// ── Total step count (excluding calculating/plan screens) ─────────────────────
+// ── Total step count ──────────────────────────────────────────────────────────
 const FORM_STEPS = 7;
 const STEP_CALCULATING = 8;
 const STEP_PLAN = 9;
 
-// ── Form data shape ────────────────────────────────────────────────────────────
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const C = {
+  bgPrimary: '#080810',
+  bgCard: '#0f0f1a',
+  bgElevated: '#161625',
+  accentBlue: '#0A84FF',
+  accentGreen: '#32D74B',
+  accentOrange: '#FF9F0A',
+  accentRed: '#FF453A',
+  textPrimary: '#F2F2F7',
+  textSecondary: 'rgba(242,242,247,0.6)',
+  textTertiary: 'rgba(242,242,247,0.35)',
+  border: 'rgba(255,255,255,0.06)',
+  borderMd: 'rgba(255,255,255,0.1)',
+};
+
+// ── Form data shape ───────────────────────────────────────────────────────────
 interface FormData {
   name: string;
   goalType: string;
@@ -30,7 +46,7 @@ interface FormData {
   bodyFat: string;
 }
 
-// ── Shared sub-components ─────────────────────────────────────────────────────
+// ── Sub-components ────────────────────────────────────────────────────────────
 
 const StepHeader: React.FC<{ title: string; subtitle: string }> = ({ title, subtitle }) => (
   <div style={{ marginBottom: '1.75rem' }}>
@@ -40,22 +56,18 @@ const StepHeader: React.FC<{ title: string; subtitle: string }> = ({ title, subt
       fontWeight: 800,
       letterSpacing: '-0.025em',
       lineHeight: 1.1,
-      color: 'var(--text-primary)',
+      color: C.textPrimary,
       marginBottom: '0.5rem',
     }}>
       {title}
     </h1>
-    <p style={{
-      fontSize: '0.875rem',
-      color: 'var(--text-secondary)',
-      fontWeight: 400,
-      lineHeight: 1.5,
-    }}>
+    <p style={{ fontSize: '0.875rem', color: C.textSecondary, fontWeight: 400, lineHeight: 1.5 }}>
       {subtitle}
     </p>
   </div>
 );
 
+// Goal / selection card with colored left-border accent when selected
 const BigSelectionCard: React.FC<{
   title: string;
   desc: string;
@@ -70,37 +82,33 @@ const BigSelectionCard: React.FC<{
       padding: '1rem 1.125rem',
       cursor: 'pointer',
       borderRadius: 'var(--radius-lg)',
-      border: selected
-        ? `1.5px solid ${accentColor}`
-        : '1px solid var(--border-color)',
-      backgroundColor: selected ? 'rgba(255,255,255,0.04)' : 'var(--bg-card)',
+      border: selected ? `1.5px solid ${accentColor}` : `1px solid ${C.border}`,
+      borderLeft: selected ? `3px solid ${accentColor}` : `1px solid ${C.border}`,
+      backgroundColor: selected ? `rgba(${hexToRgbStr(accentColor)}, 0.08)` : C.bgCard,
       display: 'flex',
       alignItems: 'center',
       gap: '1rem',
-      transition: 'border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease',
-      boxShadow: selected
-        ? `inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 3px ${accentColor}22`
-        : 'inset 0 1px 0 rgba(255,255,255,0.03)',
-      transform: selected ? 'scale(1.005)' : 'scale(1)',
+      transition: 'border-color 0.15s ease, background-color 0.15s ease',
+      boxShadow: selected ? `0 0 0 3px ${accentColor}22` : 'none',
     }}
   >
     {emoji && (
-      <span style={{ fontSize: '1.5rem', lineHeight: 1, flexShrink: 0, width: 32, textAlign: 'center' }}>
+      <span style={{ fontSize: '1.5rem', lineHeight: 1, flexShrink: 0, width: 32, textAlign: 'center' as const }}>
         {emoji}
       </span>
     )}
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+      <span style={{ fontWeight: 700, fontSize: '0.9375rem', color: C.textPrimary, letterSpacing: '-0.01em' }}>
         {title}
       </span>
-      <span style={{ fontSize: '0.775rem', color: 'var(--text-secondary)', fontWeight: 400, lineHeight: 1.4 }}>
+      <span style={{ fontSize: '0.775rem', color: C.textSecondary, fontWeight: 400, lineHeight: 1.4 }}>
         {desc}
       </span>
     </div>
     <div style={{
       width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
       backgroundColor: selected ? accentColor : 'transparent',
-      border: selected ? 'none' : '1.5px solid rgba(255,255,255,0.18)',
+      border: selected ? 'none' : `1.5px solid rgba(255,255,255,0.18)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       transition: 'background-color 0.15s ease',
     }}>
@@ -108,6 +116,17 @@ const BigSelectionCard: React.FC<{
     </div>
   </div>
 );
+
+// Helper: convert hex to rgb string for rgba()
+function hexToRgbStr(hex: string): string {
+  // fallback for non-hex values (like CSS vars or rgba strings)
+  if (!hex.startsWith('#')) return '255,255,255';
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return '255,255,255';
+  return `${r},${g},${b}`;
+}
 
 const FloatingInput: React.FC<{
   label: string;
@@ -134,9 +153,9 @@ const FloatingInput: React.FC<{
         fontSize: floated ? '0.625rem' : '0.875rem',
         fontWeight: floated ? 700 : 400,
         letterSpacing: floated ? '0.06em' : 0,
-        textTransform: floated ? 'uppercase' : 'none',
-        color: hasError ? '#f87171' : focused ? 'rgba(255,255,255,0.5)' : 'var(--text-tertiary)',
-        pointerEvents: 'none',
+        textTransform: floated ? 'uppercase' as const : 'none' as const,
+        color: hasError ? '#f87171' : focused ? 'rgba(255,255,255,0.5)' : C.textTertiary,
+        pointerEvents: 'none' as const,
         transition: 'all 0.18s cubic-bezier(0.16,1,0.3,1)',
         zIndex: 1,
       }}>
@@ -158,14 +177,15 @@ const FloatingInput: React.FC<{
           paddingBottom: '0.5rem',
           paddingLeft: '1rem',
           paddingRight: suffix ? '3rem' : '1rem',
-          border: `1px solid ${hasError ? '#f87171' : focused ? 'var(--border-strong)' : 'var(--border-color)'}`,
+          border: `1px solid ${hasError ? '#f87171' : focused ? C.borderMd : C.border}`,
           borderRadius: 'var(--radius-md)',
           backgroundColor: 'var(--bg-input)',
-          color: 'var(--text-primary)',
+          color: C.textPrimary,
           fontSize: '1rem',
           fontWeight: 500,
           transition: 'border-color 0.2s ease',
           boxShadow: focused ? '0 0 0 3px rgba(255,255,255,0.04)' : 'none',
+          outline: 'none',
         }}
       />
       {suffix && (
@@ -175,7 +195,7 @@ const FloatingInput: React.FC<{
           top: '50%',
           transform: 'translateY(-50%)',
           fontSize: '0.8rem',
-          color: 'var(--text-tertiary)',
+          color: C.textTertiary,
           fontWeight: 600,
           pointerEvents: 'none',
         }}>
@@ -188,7 +208,7 @@ const FloatingInput: React.FC<{
 
 const FieldError: React.FC<{ msg: string | null }> = ({ msg }) =>
   msg ? (
-    <p style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 600, marginTop: '5px' }}>
+    <p className="field-error" style={{ fontSize: '0.75rem', fontWeight: 600, marginTop: '5px' }}>
       {msg}
     </p>
   ) : null;
@@ -204,7 +224,7 @@ const UnitToggle: React.FC<{
     background: 'rgba(255,255,255,0.06)',
     borderRadius: 'var(--radius-full)',
     padding: 2,
-    border: '1px solid var(--border-subtle)',
+    border: `1px solid ${C.border}`,
   }}>
     {options.map(opt => (
       <button
@@ -215,7 +235,7 @@ const UnitToggle: React.FC<{
           borderRadius: 'var(--radius-full)',
           border: 'none',
           background: value === opt ? 'rgba(255,255,255,0.12)' : 'transparent',
-          color: value === opt ? 'var(--text-primary)' : 'var(--text-tertiary)',
+          color: value === opt ? C.textPrimary : C.textTertiary,
           fontSize: '0.75rem',
           fontWeight: 700,
           letterSpacing: '0.03em',
@@ -239,7 +259,6 @@ export const Onboarding: React.FC = () => {
   const [targets, setTargets] = useState<{ calories: number; protein: number; carbs: number; fats: number } | null>(null);
   const [calcError, setCalcError] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  // Track whether user has attempted to proceed (to show errors)
   const [attempted, setAttempted] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
@@ -263,7 +282,6 @@ export const Onboarding: React.FC = () => {
 
   const set = (key: keyof FormData, val: string) => setFormData(p => ({ ...p, [key]: val }));
 
-  // Resolve height/weight to metric for calculations
   const resolvedHeightCm = (): number => {
     if (formData.heightUnit === 'ft') return ftInToCm(parseFloat(formData.heightFt) || 0, parseFloat(formData.heightIn) || 0);
     return parseFloat(formData.height) || 0;
@@ -277,7 +295,6 @@ export const Onboarding: React.FC = () => {
     return parseFloat(formData.goalWeight) || 0;
   };
 
-  // ── Per-field validation messages ──────────────────────────────────────────
   const getFieldErrors = () => {
     const weightKg = resolvedWeightKg();
     const heightCm = resolvedHeightCm();
@@ -297,7 +314,6 @@ export const Onboarding: React.FC = () => {
     return { weightErr, heightErr, ageErr, goalWeightErr };
   };
 
-  // ── Validation per step ──────────────────────────────────────────────────────
   const canProceed = (): boolean => {
     const { weightErr, heightErr, ageErr, goalWeightErr } = getFieldErrors();
     switch (step) {
@@ -323,7 +339,6 @@ export const Onboarding: React.FC = () => {
     }
   };
 
-  // What field name to show in the helper text
   const getMissingFieldName = (): string | null => {
     switch (step) {
       case 2: return !formData.goalType ? 'goal' : null;
@@ -366,7 +381,6 @@ export const Onboarding: React.FC = () => {
     }
   };
 
-  // ── Calculating screen: fill progress bar then advance ─────────────────────
   useEffect(() => {
     if (step !== STEP_CALCULATING) return;
     setCalcError(false);
@@ -397,7 +411,6 @@ export const Onboarding: React.FC = () => {
       computed = calculateTargets(profile);
     } catch (err) {
       console.error('calculateTargets failed:', err);
-      // Use safe defaults
       computed = { calories: 2000, protein: 150, carbs: 200, fats: 67 };
       setCalcError(true);
     }
@@ -413,7 +426,6 @@ export const Onboarding: React.FC = () => {
       const pct = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - pct, 3);
       setCalcProgress(eased);
-
       if (pct < 1) {
         raf = requestAnimationFrame(tick);
       } else {
@@ -421,12 +433,10 @@ export const Onboarding: React.FC = () => {
       }
     };
     raf = requestAnimationFrame(tick);
-
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  // ── Finish: persist and navigate ────────────────────────────────────────────
   const finish = () => {
     if (!targets) return;
     const heightCm = resolvedHeightCm();
@@ -456,7 +466,6 @@ export const Onboarding: React.FC = () => {
     navigate('/');
   };
 
-  // ── Goal weight delta copy ───────────────────────────────────────────────────
   const weightDeltaLabel = (): string | null => {
     const current = resolvedWeightKg();
     const goal = resolvedGoalWeightKg();
@@ -471,7 +480,6 @@ export const Onboarding: React.FC = () => {
     return 'Maintain your current weight';
   };
 
-  // ── Goal weight timeline calculation ────────────────────────────────────────
   const goalWeightTimeline = (): string | null => {
     const current = resolvedWeightKg();
     const goal = resolvedGoalWeightKg();
@@ -484,15 +492,12 @@ export const Onboarding: React.FC = () => {
     return `~${weeks} weeks at ${speedLabel} pace`;
   };
 
-  // ── Coaching summary copy ────────────────────────────────────────────────────
   const coachingCopy = (): string => {
     if (!targets) return '';
     const speed = formData.preferredDietSpeed;
     const goal = formData.goalType;
-
     if (goal === 'maintenance') return `Your maintenance calories are ${targets.calories} kcal/day. Stay consistent and your body composition will stabilize.`;
     if (goal === 'recomposition') return `At ${targets.calories} kcal/day with high protein, your body will slowly shift fat for muscle.`;
-
     const weeklyChangeKg = speed === 'aggressive' ? 0.75 : speed === 'moderate' ? 0.5 : 0.25;
     const weeklyChangeLbs = Math.round(weeklyChangeKg / 0.453592 * 10) / 10;
     const changeDisplay = formData.weightUnit === 'lbs' ? `${weeklyChangeLbs} lbs` : `${weeklyChangeKg} kg`;
@@ -500,7 +505,7 @@ export const Onboarding: React.FC = () => {
     return `You'll ${verb} ~${changeDisplay}/week eating ${targets.calories} kcal/day. High protein keeps you strong throughout.`;
   };
 
-  // ── Rendering ────────────────────────────────────────────────────────────────
+  // ── Rendering ──────────────────────────────────────────────────────────────
   const showHeader = step >= 2 && step <= FORM_STEPS;
   const showFooter = step >= 1 && step <= FORM_STEPS;
   const { weightErr, heightErr, ageErr, goalWeightErr } = getFieldErrors();
@@ -509,21 +514,25 @@ export const Onboarding: React.FC = () => {
 
   const renderContent = () => {
     switch (step) {
-      // ── Step 1: Welcome ─────────────────────────────────────────────────────
+
+      // ── Step 1: Welcome ───────────────────────────────────────────────────
       case 1: return (
         <div
           key="step-1"
           className="animate-slide-up"
           style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '2rem 1.5rem', textAlign: 'center', gap: '2rem' }}
         >
+          {/* App icon: 72px circle, blue-to-purple gradient */}
           <div style={{
-            width: 88, height: 88,
-            borderRadius: 24,
-            background: 'linear-gradient(145deg, #1c1c2e 0%, #12121e 100%)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '2.5rem',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)',
+            width: 72,
+            height: 72,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #0A84FF 0%, #BF5AF2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.8rem',
+            boxShadow: '0 12px 40px rgba(10,132,255,0.35), 0 0 0 1px rgba(255,255,255,0.08)',
           }}>
             💪
           </div>
@@ -531,47 +540,47 @@ export const Onboarding: React.FC = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
             <h1 style={{
               fontFamily: 'var(--font-display)',
-              fontSize: '2.4rem',
+              fontSize: '2rem',
               fontWeight: 900,
               letterSpacing: '-0.03em',
               lineHeight: 1.0,
-              color: 'var(--text-primary)',
+              color: C.textPrimary,
+              margin: 0,
             }}>
               Body Blueprint
             </h1>
-            <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 400, lineHeight: 1.5 }}>
+            <p style={{ fontSize: '1rem', color: C.textSecondary, fontWeight: 400, lineHeight: 1.5, margin: 0 }}>
               Your intelligent fitness coach
             </p>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', maxWidth: 320 }}>
-            <div style={{ display: 'flex', gap: '0.625rem', justifyContent: 'center' }}>
-              {['Science-backed', 'Personalized', 'Built for results'].map(badge => (
-                <span key={badge} style={{
-                  padding: '0.25rem 0.625rem',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid var(--border-subtle)',
-                  fontSize: '0.68rem',
-                  fontWeight: 700,
-                  color: 'var(--text-secondary)',
-                  letterSpacing: '0.02em',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {badge}
-                </span>
-              ))}
-            </div>
+          {/* Feature badge pills */}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' as const, justifyContent: 'center' }}>
+            {['Science-backed', 'Personalized', 'Built for results'].map(badge => (
+              <span key={badge} style={{
+                padding: '0.3rem 0.75rem',
+                borderRadius: 9999,
+                background: 'rgba(255,255,255,0.07)',
+                border: `1px solid ${C.border}`,
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                color: C.textSecondary,
+                letterSpacing: '0.02em',
+                whiteSpace: 'nowrap' as const,
+              }}>
+                {badge}
+              </span>
+            ))}
           </div>
         </div>
       );
 
-      // ── Step 2: Goal ─────────────────────────────────────────────────────────
+      // ── Step 2: Goal ──────────────────────────────────────────────────────
       case 2: return (
         <div key="step-2" className="animate-slide-up">
           <StepHeader title="What's your primary goal?" subtitle="This shapes your calorie and macro targets." />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-            <BigSelectionCard emoji="🔥" title="Lose Fat" desc="Caloric deficit to reduce body fat while preserving muscle" selected={formData.goalType === 'fat_loss'} accentColor="#FF375F" onClick={() => set('goalType', 'fat_loss')} />
+            <BigSelectionCard emoji="🔥" title="Lose Fat" desc="Caloric deficit to reduce body fat while preserving muscle" selected={formData.goalType === 'fat_loss'} accentColor="#FF453A" onClick={() => set('goalType', 'fat_loss')} />
             <BigSelectionCard emoji="💪" title="Build Muscle" desc="Caloric surplus to grow lean mass and get stronger" selected={formData.goalType === 'muscle_gain'} accentColor="#0A84FF" onClick={() => set('goalType', 'muscle_gain')} />
             <BigSelectionCard emoji="⚖️" title="Maintain" desc="Sustain your current weight and body composition" selected={formData.goalType === 'maintenance'} accentColor="#32D74B" onClick={() => set('goalType', 'maintenance')} />
             <BigSelectionCard emoji="🔄" title="Recomposition" desc="Lose fat and build muscle at the same time" selected={formData.goalType === 'recomposition'} accentColor="#BF5AF2" onClick={() => set('goalType', 'recomposition')} />
@@ -579,7 +588,7 @@ export const Onboarding: React.FC = () => {
         </div>
       );
 
-      // ── Step 3: Biological Sex ───────────────────────────────────────────────
+      // ── Step 3: Biological Sex ────────────────────────────────────────────
       case 3: return (
         <div key="step-3" className="animate-slide-up">
           <StepHeader title="Biological sex" subtitle="Affects your metabolic rate, macro ratios, and calorie targets." />
@@ -589,19 +598,19 @@ export const Onboarding: React.FC = () => {
               style={{
                 padding: '1.375rem 1.25rem',
                 borderRadius: 'var(--radius-lg)',
-                border: formData.sex === 'male' ? '1.5px solid #0A84FF' : '1px solid var(--border-color)',
+                border: formData.sex === 'male' ? `1.5px solid ${C.accentBlue}` : `1px solid ${C.border}`,
                 background: formData.sex === 'male'
                   ? 'linear-gradient(135deg, rgba(10,132,255,0.12) 0%, rgba(94,92,230,0.08) 100%)'
-                  : 'var(--bg-card)',
+                  : C.bgCard,
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 transition: 'all 0.15s ease',
-                boxShadow: formData.sex === 'male' ? '0 0 0 3px rgba(10,132,255,0.12)' : 'inset 0 1px 0 rgba(255,255,255,0.03)',
+                boxShadow: formData.sex === 'male' ? `0 0 0 3px rgba(10,132,255,0.12)` : 'none',
               }}
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <span style={{ fontSize: '1.125rem', fontWeight: 700, letterSpacing: '-0.015em' }}>Male</span>
-                <span style={{ fontSize: '0.775rem', color: 'var(--text-secondary)' }}>Higher baseline metabolic rate</span>
+                <span style={{ fontSize: '1.125rem', fontWeight: 700, letterSpacing: '-0.015em', color: C.textPrimary }}>Male</span>
+                <span style={{ fontSize: '0.775rem', color: C.textSecondary }}>Higher baseline metabolic rate</span>
               </div>
               <span style={{ fontSize: '2rem' }}>♂</span>
             </div>
@@ -610,19 +619,19 @@ export const Onboarding: React.FC = () => {
               style={{
                 padding: '1.375rem 1.25rem',
                 borderRadius: 'var(--radius-lg)',
-                border: formData.sex === 'female' ? '1.5px solid #BF5AF2' : '1px solid var(--border-color)',
+                border: formData.sex === 'female' ? '1.5px solid #BF5AF2' : `1px solid ${C.border}`,
                 background: formData.sex === 'female'
                   ? 'linear-gradient(135deg, rgba(191,90,242,0.12) 0%, rgba(255,55,95,0.08) 100%)'
-                  : 'var(--bg-card)',
+                  : C.bgCard,
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 transition: 'all 0.15s ease',
-                boxShadow: formData.sex === 'female' ? '0 0 0 3px rgba(191,90,242,0.12)' : 'inset 0 1px 0 rgba(255,255,255,0.03)',
+                boxShadow: formData.sex === 'female' ? '0 0 0 3px rgba(191,90,242,0.12)' : 'none',
               }}
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <span style={{ fontSize: '1.125rem', fontWeight: 700, letterSpacing: '-0.015em' }}>Female</span>
-                <span style={{ fontSize: '0.775rem', color: 'var(--text-secondary)' }}>Optimized hormonal & metabolic calculations</span>
+                <span style={{ fontSize: '1.125rem', fontWeight: 700, letterSpacing: '-0.015em', color: C.textPrimary }}>Female</span>
+                <span style={{ fontSize: '0.775rem', color: C.textSecondary }}>Optimized hormonal & metabolic calculations</span>
               </div>
               <span style={{ fontSize: '2rem' }}>♀</span>
             </div>
@@ -630,7 +639,7 @@ export const Onboarding: React.FC = () => {
         </div>
       );
 
-      // ── Step 4: Body Stats ───────────────────────────────────────────────────
+      // ── Step 4: Body Stats ────────────────────────────────────────────────
       case 4: return (
         <div key="step-4" className="animate-slide-up">
           <StepHeader title="Your body stats" subtitle="Accurate numbers mean precise macro targets. You can update these anytime." />
@@ -658,12 +667,8 @@ export const Onboarding: React.FC = () => {
             {/* Height */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)' }}>Height</span>
-                <UnitToggle
-                  options={['cm', 'ft']}
-                  value={formData.heightUnit}
-                  onChange={v => set('heightUnit', v as 'cm' | 'ft')}
-                />
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: C.textTertiary }}>Height</span>
+                <UnitToggle options={['cm', 'ft']} value={formData.heightUnit} onChange={v => set('heightUnit', v as 'cm' | 'ft')} />
               </div>
               {formData.heightUnit === 'cm' ? (
                 <>
@@ -681,12 +686,8 @@ export const Onboarding: React.FC = () => {
             {/* Weight */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)' }}>Weight</span>
-                <UnitToggle
-                  options={['kg', 'lbs']}
-                  value={formData.weightUnit}
-                  onChange={v => set('weightUnit', v as 'kg' | 'lbs')}
-                />
+                <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: C.textTertiary }}>Weight</span>
+                <UnitToggle options={['kg', 'lbs']} value={formData.weightUnit} onChange={v => set('weightUnit', v as 'kg' | 'lbs')} />
               </div>
               <FloatingInput
                 label="Current weight"
@@ -704,7 +705,7 @@ export const Onboarding: React.FC = () => {
         </div>
       );
 
-      // ── Step 5: Goal Weight ──────────────────────────────────────────────────
+      // ── Step 5: Goal Weight ───────────────────────────────────────────────
       case 5: {
         const deltaLabel = weightDeltaLabel();
         const timeline = goalWeightTimeline();
@@ -726,23 +727,29 @@ export const Onboarding: React.FC = () => {
                 />
                 {attempted && <FieldError msg={goalWeightErr} />}
               </div>
+              {/* Helper text */}
+              {formData.goalType === 'fat_loss' && (
+                <p style={{ fontSize: '0.78rem', color: C.textTertiary, margin: 0 }}>Recommended: 0.5–1 kg per week loss</p>
+              )}
+              {formData.goalType === 'muscle_gain' && (
+                <p style={{ fontSize: '0.78rem', color: C.textTertiary, margin: 0 }}>Recommended: 0.25–0.5 kg per week gain</p>
+              )}
               {deltaLabel && (
                 <div style={{
                   padding: '0.875rem 1rem',
                   borderRadius: 'var(--radius-md)',
                   background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid var(--border-subtle)',
+                  border: `1px solid ${C.border}`,
                   display: 'flex', alignItems: 'center', gap: '0.625rem',
                 }}>
                   <span style={{ fontSize: '1.125rem' }}>
                     {resolvedGoalWeightKg() < resolvedWeightKg() ? '📉' : resolvedGoalWeightKg() > resolvedWeightKg() ? '📈' : '⚖️'}
                   </span>
-                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                  <span style={{ fontSize: '0.875rem', color: C.textSecondary, fontWeight: 500 }}>
                     {deltaLabel}
                   </span>
                 </div>
               )}
-              {/* Timeline estimate */}
               {timeline && (
                 <div style={{
                   padding: '0.75rem 1rem',
@@ -762,7 +769,7 @@ export const Onboarding: React.FC = () => {
         );
       }
 
-      // ── Step 6: Activity Level ───────────────────────────────────────────────
+      // ── Step 6: Activity Level ────────────────────────────────────────────
       case 6: return (
         <div key="step-6" className="animate-slide-up">
           <StepHeader title="Activity level" subtitle="How much do you move in a typical week?" />
@@ -775,7 +782,7 @@ export const Onboarding: React.FC = () => {
         </div>
       );
 
-      // ── Step 7: Diet Approach ────────────────────────────────────────────────
+      // ── Step 7: Diet Approach ─────────────────────────────────────────────
       case 7: return (
         <div key="step-7" className="animate-slide-up">
           <StepHeader title="Diet approach" subtitle="How aggressively do you want to work toward your goal?" />
@@ -785,7 +792,7 @@ export const Onboarding: React.FC = () => {
               title="Sustainable"
               desc={formData.goalType === 'muscle_gain' ? '+150 kcal/day · ~0.25 kg/week' : '–250 kcal/day · ~0.25 kg/week'}
               selected={formData.preferredDietSpeed === 'sustainable'}
-              accentColor="#32D74B"
+              accentColor={C.accentGreen}
               onClick={() => set('preferredDietSpeed', 'sustainable')}
             />
             <BigSelectionCard
@@ -793,7 +800,7 @@ export const Onboarding: React.FC = () => {
               title="Moderate"
               desc={formData.goalType === 'muscle_gain' ? '+300 kcal/day · ~0.5 kg/week' : '–500 kcal/day · ~0.5 kg/week'}
               selected={formData.preferredDietSpeed === 'moderate'}
-              accentColor="#FF9F0A"
+              accentColor={C.accentOrange}
               onClick={() => set('preferredDietSpeed', 'moderate')}
             />
             <BigSelectionCard
@@ -801,20 +808,21 @@ export const Onboarding: React.FC = () => {
               title="Aggressive"
               desc={formData.goalType === 'muscle_gain' ? '+500 kcal/day · ~0.75 kg/week' : '–750 kcal/day · ~0.75 kg/week'}
               selected={formData.preferredDietSpeed === 'aggressive'}
-              accentColor="#FF375F"
+              accentColor={C.accentRed}
               onClick={() => set('preferredDietSpeed', 'aggressive')}
             />
           </div>
         </div>
       );
 
-      // ── Step 8: Calculating ──────────────────────────────────────────────────
+      // ── Step 8: Calculating ───────────────────────────────────────────────
       case STEP_CALCULATING: return (
         <div
           key="step-calculating"
           className="animate-fade-in"
           style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '2rem 1.5rem', textAlign: 'center' }}
         >
+          {/* Spinning orb */}
           <div style={{ position: 'relative', width: 80, height: 80 }}>
             <div style={{
               position: 'absolute', inset: 0,
@@ -826,7 +834,7 @@ export const Onboarding: React.FC = () => {
             <div style={{
               position: 'absolute', inset: 4,
               borderRadius: '50%',
-              background: 'var(--bg-primary)',
+              background: C.bgPrimary,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '1.5rem',
             }}>
@@ -840,27 +848,24 @@ export const Onboarding: React.FC = () => {
               fontSize: '1.375rem',
               fontWeight: 800,
               letterSpacing: '-0.02em',
-              color: 'var(--text-primary)',
+              color: C.textPrimary,
+              margin: 0,
             }}>
-              Calculating your plan...
+              Calculating your blueprint...
             </h2>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+            <p style={{ fontSize: '0.875rem', color: C.textSecondary, margin: 0 }}>
               Running metabolic calculations
             </p>
           </div>
 
+          {/* Progress bar */}
           <div style={{ width: '100%', maxWidth: 280 }}>
-            <div style={{
-              height: 4,
-              background: 'rgba(255,255,255,0.07)',
-              borderRadius: 'var(--radius-full)',
-              overflow: 'hidden',
-            }}>
+            <div style={{ height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 9999, overflow: 'hidden' }}>
               <div style={{
                 height: '100%',
                 width: `${calcProgress * 100}%`,
-                background: 'linear-gradient(90deg, #0A84FF, #BF5AF2)',
-                borderRadius: 'var(--radius-full)',
+                background: `linear-gradient(90deg, ${C.accentBlue}, #BF5AF2)`,
+                borderRadius: 9999,
                 transition: 'width 0.1s linear',
               }} />
             </div>
@@ -868,38 +873,39 @@ export const Onboarding: React.FC = () => {
         </div>
       );
 
-      // ── Step 9: Your Plan ────────────────────────────────────────────────────
+      // ── Step 9: Your Plan ─────────────────────────────────────────────────
       case STEP_PLAN: return (
         <div
           key="step-plan"
           className="animate-slide-up"
           style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem' }}
         >
+          {/* Heading */}
           <div style={{ marginBottom: '1.5rem' }}>
-            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '0.375rem' }}>
-              Your personalized plan
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: C.textTertiary, marginBottom: '0.375rem', margin: 0 }}>
+              Your Blueprint
             </p>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.1, color: 'var(--text-primary)' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.1, color: C.textPrimary, marginTop: 4 }}>
               {formData.name ? `Ready, ${formData.name}.` : 'Your plan is ready.'}
             </h1>
             {calcError && (
-              <p style={{ fontSize: '0.78rem', color: 'rgba(251,191,36,0.8)', fontWeight: 600, marginTop: '6px' }}>
+              <p style={{ fontSize: '0.78rem', color: 'rgba(251,191,36,0.8)', fontWeight: 600, marginTop: 6 }}>
                 Using estimated targets — update in Settings
               </p>
             )}
           </div>
 
-          {/* Calorie hero */}
+          {/* Calories HERO — blue gradient text */}
           <div style={{
             padding: '1.5rem',
             borderRadius: 'var(--radius-xl)',
             background: 'linear-gradient(135deg, rgba(10,132,255,0.15) 0%, rgba(94,92,230,0.1) 100%)',
             border: '1px solid rgba(10,132,255,0.2)',
             marginBottom: '1rem',
-            textAlign: 'center',
+            textAlign: 'center' as const,
             boxShadow: '0 0 32px rgba(10,132,255,0.1)',
           }}>
-            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(10,132,255,0.8)', marginBottom: '0.375rem' }}>
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'rgba(10,132,255,0.8)', margin: '0 0 0.375rem' }}>
               Daily Calorie Target
             </p>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.375rem' }}>
@@ -909,51 +915,54 @@ export const Onboarding: React.FC = () => {
                 fontWeight: 900,
                 letterSpacing: '-0.04em',
                 lineHeight: 1,
-                color: 'var(--text-primary)',
+                background: `linear-gradient(135deg, ${C.accentBlue}, #60a5fa)`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
                 fontVariantNumeric: 'tabular-nums',
               }}>
                 {targets?.calories?.toLocaleString() ?? '—'}
               </span>
-              <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 600 }}>kcal</span>
+              <span style={{ fontSize: '1rem', color: C.textSecondary, fontWeight: 600 }}>kcal/day</span>
             </div>
           </div>
 
-          {/* Macro pills */}
+          {/* 3 macro pills */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.625rem', marginBottom: '1rem' }}>
             {[
-              { label: 'Protein', value: targets?.protein, unit: 'g', color: '#FF9F0A', bg: 'rgba(255,159,10,0.1)', border: 'rgba(255,159,10,0.2)' },
-              { label: 'Carbs', value: targets?.carbs, unit: 'g', color: '#0A84FF', bg: 'rgba(10,132,255,0.1)', border: 'rgba(10,132,255,0.2)' },
-              { label: 'Fats', value: targets?.fats, unit: 'g', color: '#32D74B', bg: 'rgba(50,215,75,0.1)', border: 'rgba(50,215,75,0.2)' },
+              { label: 'Protein', value: targets?.protein, unit: 'g', color: C.accentOrange, bg: 'rgba(255,159,10,0.1)', border: 'rgba(255,159,10,0.2)' },
+              { label: 'Carbs',   value: targets?.carbs,   unit: 'g', color: C.accentBlue,   bg: 'rgba(10,132,255,0.1)',  border: 'rgba(10,132,255,0.2)' },
+              { label: 'Fats',    value: targets?.fats,    unit: 'g', color: C.accentGreen,  bg: 'rgba(50,215,75,0.1)',   border: 'rgba(50,215,75,0.2)' },
             ].map(macro => (
               <div key={macro.label} style={{
                 padding: '0.875rem 0.625rem',
                 borderRadius: 'var(--radius-md)',
                 background: macro.bg,
                 border: `1px solid ${macro.border}`,
-                textAlign: 'center',
+                textAlign: 'center' as const,
                 display: 'flex', flexDirection: 'column', gap: '0.2rem',
               }}>
-                <span style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: macro.color, opacity: 0.8 }}>
+                <span style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: macro.color, opacity: 0.8 }}>
                   {macro.label}
                 </span>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 800, color: C.textPrimary, lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
                   {macro.value ?? '—'}
                 </span>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{macro.unit}</span>
+                <span style={{ fontSize: '0.7rem', color: C.textTertiary, fontWeight: 600 }}>{macro.unit}</span>
               </div>
             ))}
           </div>
 
-          {/* Coaching insight */}
+          {/* Coaching paragraph */}
           <div style={{
             padding: '1rem 1.125rem',
             borderRadius: 'var(--radius-md)',
             background: 'rgba(255,255,255,0.03)',
-            border: '1px solid var(--border-subtle)',
+            border: `1px solid ${C.border}`,
             display: 'flex', gap: '0.75rem', alignItems: 'flex-start',
           }}>
             <span style={{ fontSize: '1.125rem', flexShrink: 0, marginTop: 1 }}>💡</span>
-            <p style={{ fontSize: '0.8375rem', color: 'var(--text-secondary)', lineHeight: 1.55, fontWeight: 400 }}>
+            <p style={{ fontSize: '0.8375rem', color: C.textSecondary, lineHeight: 1.55, fontWeight: 400, margin: 0 }}>
               {coachingCopy()}
             </p>
           </div>
@@ -964,21 +973,19 @@ export const Onboarding: React.FC = () => {
     }
   };
 
-  // ── Layout ───────────────────────────────────────────────────────────────────
+  // ── Layout ────────────────────────────────────────────────────────────────
   const isFullscreen = step === 1 || step === STEP_CALCULATING || step === STEP_PLAN;
 
   return (
-    <div
-      style={{
-        minHeight: '100dvh',
-        backgroundColor: 'var(--bg-primary)',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Ambient background glow */}
+    <div style={{
+      minHeight: '100dvh',
+      background: C.bgPrimary,
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* Ambient glow */}
       <div style={{
         position: 'absolute',
         top: -120,
@@ -992,7 +999,7 @@ export const Onboarding: React.FC = () => {
         zIndex: 0,
       }} />
 
-      {/* Header — progress bar + back button */}
+      {/* Header — progress bar (thin line, no step counter) */}
       {showHeader && (
         <div style={{ padding: '1.25rem 1.25rem 0.75rem', position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '1rem' }}>
@@ -1001,7 +1008,7 @@ export const Onboarding: React.FC = () => {
               style={{
                 background: 'none',
                 border: 'none',
-                color: 'var(--text-primary)',
+                color: C.textPrimary,
                 padding: '0.5rem',
                 display: 'flex',
                 cursor: 'pointer',
@@ -1011,25 +1018,17 @@ export const Onboarding: React.FC = () => {
             >
               <ArrowLeft size={20} />
             </button>
-            <span style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)' }}>
-              Step {step - 1} of {FORM_STEPS - 1}
-            </span>
           </div>
-
-          {/* Segmented progress bar */}
-          <div style={{ display: 'flex', gap: 4, height: 3 }}>
-            {Array.from({ length: FORM_STEPS - 1 }, (_, i) => (
-              <div
-                key={i}
-                style={{
-                  flex: 1,
-                  height: '100%',
-                  borderRadius: 99,
-                  backgroundColor: i < step - 1 ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.1)',
-                  transition: 'background-color 0.3s ease',
-                }}
-              />
-            ))}
+          {/* Progress line — thin 4px, blue fill */}
+          <div style={{ height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 9999, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              width: `${((step - 1) / (FORM_STEPS - 1)) * 100}%`,
+              background: C.accentBlue,
+              borderRadius: 9999,
+              transition: 'width 0.3s ease',
+              boxShadow: `0 0 8px ${C.accentBlue}60`,
+            }} />
           </div>
         </div>
       )}
@@ -1067,33 +1066,33 @@ export const Onboarding: React.FC = () => {
               alignItems: 'center',
               gap: '0.5rem',
               padding: '1rem',
-              background: '#FFFFFF',
-              color: '#000000',
+              background: canProceed() ? C.accentBlue : 'rgba(10,132,255,0.3)',
+              color: '#FFFFFF',
               border: 'none',
               borderRadius: 'var(--radius-full)',
               fontWeight: 800,
               fontSize: '0.9375rem',
               letterSpacing: '-0.01em',
-              opacity: canProceed() ? 1 : 0.35,
+              opacity: canProceed() ? 1 : 0.6,
               cursor: canProceed() ? 'pointer' : 'not-allowed',
-              transition: 'transform 0.12s ease, opacity 0.15s ease',
+              transition: 'transform 0.12s ease, opacity 0.15s ease, background 0.15s ease',
+              boxShadow: canProceed() ? `0 0 20px ${C.accentBlue}40` : 'none',
             }}
             onMouseDown={e => { if (canProceed()) (e.currentTarget.style.transform = 'scale(0.97)'); }}
             onMouseUp={e => { (e.currentTarget.style.transform = 'scale(1)'); }}
             onTouchStart={e => { if (canProceed()) (e.currentTarget.style.transform = 'scale(0.97)'); }}
             onTouchEnd={e => { (e.currentTarget.style.transform = 'scale(1)'); }}
           >
-            {step === 1 ? 'Get Started' : step === FORM_STEPS ? 'Calculate My Plan' : 'Continue'}
-            <ArrowRight size={17} strokeWidth={2.5} />
+            {step === 1 ? 'Get started →' : step === FORM_STEPS ? 'Calculate My Plan' : 'Continue'}
+            {step !== 1 && <ArrowRight size={17} strokeWidth={2.5} />}
           </button>
-          {/* Helper text when button is blocked */}
           {showHelperText && (
             <p style={{
               textAlign: 'center',
               fontSize: '0.78rem',
               color: 'rgba(255,255,255,0.4)',
               fontWeight: 600,
-              marginTop: '8px',
+              marginTop: 8,
             }}>
               Fill in your {missingField} above to continue
             </p>
@@ -1101,7 +1100,7 @@ export const Onboarding: React.FC = () => {
         </div>
       )}
 
-      {/* Plan screen CTA */}
+      {/* Plan screen CTA — "Begin →" */}
       {step === STEP_PLAN && (
         <div style={{
           padding: '1rem 1.5rem',
@@ -1118,22 +1117,22 @@ export const Onboarding: React.FC = () => {
               alignItems: 'center',
               gap: '0.5rem',
               padding: '1rem',
-              background: '#FFFFFF',
-              color: '#000000',
+              background: C.accentBlue,
+              color: '#FFFFFF',
               border: 'none',
               borderRadius: 'var(--radius-full)',
               fontWeight: 800,
               fontSize: '1rem',
               letterSpacing: '-0.01em',
               cursor: 'pointer',
-              boxShadow: '0 0 24px rgba(255,255,255,0.12)',
+              boxShadow: `0 0 24px ${C.accentBlue}40`,
             }}
             onMouseDown={e => { (e.currentTarget.style.transform = 'scale(0.97)'); }}
             onMouseUp={e => { (e.currentTarget.style.transform = 'scale(1)'); }}
             onTouchStart={e => { (e.currentTarget.style.transform = 'scale(0.97)'); }}
             onTouchEnd={e => { (e.currentTarget.style.transform = 'scale(1)'); }}
           >
-            Start your journey
+            Begin →
             <ArrowRight size={17} strokeWidth={2.5} />
           </button>
         </div>

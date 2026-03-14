@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
-  Calendar, ChevronLeft, ChevronRight, Settings, Plus, Minus,
+  ChevronLeft, ChevronRight, Plus, Minus,
 } from 'lucide-react';
 import { evaluateWeeklyCheckIn, calculateWeightTrend, calculateStreak, getMacrosFromLog } from '../utils/aiCoachingEngine';
 import { getLocalISOString, formatReadableDate } from '../utils/dateUtils';
@@ -10,14 +10,15 @@ import { BottomSheet } from '../components/MotionUI';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { useNavigate } from 'react-router-dom';
 import {
-  MacroSummaryCard,
-  DailyHabitsCard,
-  WeeklyChartCard,
+  HeroRingCard,
+  QuickLogRow,
+  ProgramSnapshotCard,
   CoachingInsightCard,
   WeeklyPauseCard,
-  RecoveryCard,
-  WeightCard,
+  WeeklyChartCard,
   StreakCard,
+  RecoveryCard,
+  SectionLabel,
 } from '../components/DashboardCards';
 
 export const Dashboard: React.FC = () => {
@@ -27,7 +28,7 @@ export const Dashboard: React.FC = () => {
 
   const todayDate = getLocalISOString();
 
-  const [selectedDate, setSelectedDate]     = useState(todayDate);
+  const [selectedDate, setSelectedDate]       = useState(todayDate);
   const [isWaterSheetOpen, setIsWaterSheetOpen]   = useState(false);
   const [isWeightSheetOpen, setIsWeightSheetOpen] = useState(false);
   const [isStepsSheetOpen, setIsStepsSheetOpen]   = useState(false);
@@ -54,22 +55,20 @@ export const Dashboard: React.FC = () => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + days);
     const next = getLocalISOString(d);
-    // Guard: never navigate to a future date
     if (next > todayDate) return;
     setSelectedDate(next);
   };
 
   const rawConsumed = getMacrosFromLog(todayLog);
-  // Guard all macro values against NaN / Infinity using safeNum
   const consumed = {
     calories: safeNum(rawConsumed.calories),
     protein:  safeNum(rawConsumed.protein),
     carbs:    safeNum(rawConsumed.carbs),
     fats:     safeNum(rawConsumed.fats),
   };
-  const targets  = user.targets;
+  const targets = user.targets;
 
-  // Weekly chart — clamp calories to 0 to avoid negative bars
+  // Weekly chart
   const weeklyData = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() - (6 - i));
@@ -93,7 +92,7 @@ export const Dashboard: React.FC = () => {
     : 0;
   const activeDaysCount = activeDays.length;
 
-  // AI coaching — wrapped in try/catch to prevent crash if evaluation throws
+  // AI coaching
   const trendData  = calculateWeightTrend(logs, user.weight);
   const currentEma = trendData.length > 0 ? trendData[trendData.length - 1].trend : null;
   let evaluation: ReturnType<typeof evaluateWeeklyCheckIn>;
@@ -106,24 +105,13 @@ export const Dashboard: React.FC = () => {
       urgency: 'low',
     };
   }
-  const streak     = calculateStreak(logs);
+  const streak = calculateStreak(logs);
 
-  // Weight delta — guard against null/NaN
+  // Weight delta
   const weekAgoEma  = trendData.length >= 7 ? trendData[trendData.length - 7]?.trend : null;
   const weightDelta = (currentEma != null && weekAgoEma != null && !isNaN(currentEma) && !isNaN(weekAgoEma))
     ? currentEma - weekAgoEma
     : null;
-  const weightDeltaStr  = weightDelta !== null
-    ? `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)}kg`
-    : null;
-  const weightDeltaGood = weightDelta === null ? null
-    : user.goalType === 'fat_loss' ? weightDelta <= 0
-    : weightDelta >= 0;
-
-  // Vitals
-  const stepsTarget   = user.stepsTarget || 8000;
-  const mealsLogged   = Object.values(todayLog.meals).filter((m: any) => m.length > 0).length;
-  const workoutsToday = (todayLog.workouts || []).length;
 
   // Recovery
   const rec = todayLog.health?.recoveryScore;
@@ -139,29 +127,28 @@ export const Dashboard: React.FC = () => {
     : assignedProgram === 'female_phase1' ? 'Glute & Tone Focus'
     : null;
 
-  const recLabel = rec
-    ? rec >= 85
-      ? programName ? `Push hard — perfect day for ${programName}` : 'Excellent — push hard today'
-      : rec >= 70
-      ? programName ? `${programName} — good to go` : 'Good — normal training'
-      : rec >= 50
-      ? 'Moderate — consider a lighter session'
-      : 'Low — prioritise rest & recovery today'
-    : null;
-
   const recCTA = rec
     ? rec >= 50
       ? { label: 'Start Session', path: '/training' }
       : { label: 'View Recovery', path: '/health' }
     : { label: 'Log Vitals', path: '/health' };
 
+  const isToday = selectedDate === todayDate;
+
+  // ── Format date for nav ───────────────────────────────────────────────────────
+  const formatNavDate = (dateStr: string): string => {
+    const d = new Date(dateStr + 'T12:00:00');
+    if (isToday) return 'Today';
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
+  };
+
   // ── Handlers ─────────────────────────────────────────────────────────────────
   const handleWaterUpdate = (n: number) => {
     Haptics.impact({ style: ImpactStyle.Light }).catch(() => {});
     const v = Math.max(0, Math.min(20, todayLog.waterGlasses + n));
     updateDailyLog(todayDate, { waterGlasses: v });
-    // Auto-close after reaching 0 or 20 would be odd; keep open so user can adjust freely.
-    // Sheet stays open — they close it with the sheet handle.
   };
 
   const handleWeightSave = () => {
@@ -181,162 +168,136 @@ export const Dashboard: React.FC = () => {
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div
-      className="flex-col animate-fade-in"
+      className="animate-fade-in"
       style={{
-        paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))',
         backgroundColor: 'var(--bg-primary)',
         minHeight: '100dvh',
+        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
       }}
     >
-      {/* ── Date nav bar ── */}
-      <div style={{
-        background: 'linear-gradient(180deg, rgba(255,255,255,0.04) 0%, var(--bg-card) 100%)',
-        borderBottom: '1px solid var(--border-subtle)',
-        position: 'relative',
-      }}>
-        <div className="flex-row justify-between align-center" style={{ padding: '0.75rem 1rem', position: 'relative' }}>
-          <button className="btn-icon" onClick={() => changeDate(-1)} style={{ width: 34, height: 34 }}>
-            <ChevronLeft size={18} />
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+        {/* ── 1. DATE NAV ── */}
+        <div style={{
+          height: 48,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          {/* Left chevron */}
+          <button
+            onClick={() => changeDate(-1)}
+            style={{
+              width: 32, height: 32,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'rgba(255,255,255,0.4)',
+              padding: 0,
+            }}
+          >
+            <ChevronLeft size={16} />
           </button>
 
-          <div className="flex-row align-center gap-2" style={{
-            backgroundColor: 'rgba(255,255,255,0.06)',
-            borderRadius: 'var(--radius-full)',
-            padding: '0.35rem 0.85rem',
-            border: '1px solid var(--border-subtle)',
+          {/* Date label */}
+          <span style={{
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            letterSpacing: '-0.01em',
           }}>
-            <Calendar size={13} color="var(--accent-blue)" />
-            <span style={{ fontSize: '0.8125rem', fontWeight: 600, letterSpacing: '-0.01em' }}>
-              {formatReadableDate(selectedDate)}
-            </span>
-          </div>
+            {formatNavDate(selectedDate)}
+          </span>
 
-          <div className="flex-row align-center gap-2">
-            <button
-              onClick={() => navigate('/settings')}
-              style={{
-                width: 34, height: 34,
-                borderRadius: 'var(--radius-full)',
-                border: '1px solid var(--border-subtle)',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <Settings size={15} color="rgba(255,255,255,0.45)" />
-            </button>
-            <button
-              className="btn-icon"
-              onClick={() => changeDate(1)}
-              disabled={selectedDate >= todayDate}
-              style={{ width: 34, height: 34, opacity: selectedDate >= todayDate ? 0.3 : 1 }}
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
+          {/* Right chevron */}
+          <button
+            onClick={() => changeDate(1)}
+            disabled={isToday}
+            style={{
+              width: 32, height: 32,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'none', border: 'none',
+              cursor: isToday ? 'default' : 'pointer',
+              color: isToday ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)',
+              padding: 0,
+            }}
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
 
-        {/* Macro hero (ring + P/C/F tiles + Log Food CTA) */}
-        <MacroSummaryCard
+        {/* ── 2. HERO RING CARD ── */}
+        <HeroRingCard
           calories={consumed.calories}
           protein={consumed.protein}
           carbs={consumed.carbs}
           fats={consumed.fats}
           targets={targets}
-          onLogFood={() => navigate('/log')}
         />
-      </div>
 
-      {/* ── Content sections ── */}
-      <div className="flex-col gap-3" style={{ padding: '1rem' }}>
+        {/* ── 3. QUICK LOG ROW ── */}
+        <QuickLogRow
+          water={todayLog.waterGlasses}
+          weight={user.weight}
+          steps={todayLog.steps || 0}
+          onWaterOpen={() => setIsWaterSheetOpen(true)}
+          onWeightOpen={() => { setTempWeight(user.weight); setIsWeightSheetOpen(true); }}
+          onStepsOpen={() => { setTempSteps(todayLog.steps || 0); setIsStepsSheetOpen(true); }}
+        />
 
-        {/* TODAY section label */}
-        <span style={{
-          fontSize: '0.625rem', fontWeight: 700,
-          textTransform: 'uppercase', letterSpacing: '0.1em',
-          color: 'var(--text-tertiary)', paddingLeft: '0.25rem',
-        }}>
-          Today
-        </span>
-
-        {/* Quick stats: weight + streak */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-          <WeightCard
-            weight={user.weight}
-            weightDeltaStr={weightDeltaStr}
-            weightDeltaGood={weightDeltaGood}
-            onPress={() => { setTempWeight(user.weight); setIsWeightSheetOpen(true); }}
+        {/* ── 4. PROGRAM SNAPSHOT ── */}
+        <div>
+          <SectionLabel style={{ marginBottom: 8, display: 'block' }}>Today's Workout</SectionLabel>
+          <ProgramSnapshotCard
+            programName={programName}
+            onStartSession={() => navigate('/training')}
+            onSetProgram={() => navigate('/training')}
           />
-          <StreakCard streak={streak} />
         </div>
 
-        {/* Daily vitals 2×2 grid */}
-        <DailyHabitsCard
-          water={todayLog.waterGlasses}
-          steps={todayLog.steps || 0}
-          targetSteps={stepsTarget}
-          mealsLogged={mealsLogged}
-          workoutsToday={workoutsToday}
-          onWaterOpen={() => setIsWaterSheetOpen(true)}
-          onStepsOpen={() => { setTempSteps(todayLog.steps || 0); setIsStepsSheetOpen(true); }}
-          onMealsPress={() => navigate('/log')}
-          onTrainingPress={() => navigate('/training')}
-        />
-
-        {/* Recovery */}
-        <RecoveryCard
-          score={rec}
-          recColor={recColor}
-          recLabel={recLabel}
-          recCTA={recCTA}
-          onNavigate={navigate}
-        />
-
-        {/* THIS WEEK section label */}
-        <span style={{
-          fontSize: '0.625rem', fontWeight: 700,
-          textTransform: 'uppercase', letterSpacing: '0.1em',
-          color: 'var(--text-tertiary)', paddingLeft: '0.25rem',
-          marginTop: '0.25rem',
-        }}>
-          This Week
-        </span>
-
-        {/* Weekly chart */}
-        <WeeklyChartCard
-          data={weeklyData}
-          weekAvg={weekAvgCal}
-          target={targets.calories}
-        />
-
-        {/* COACHING section label — only when adaptive coaching is on */}
+        {/* ── 5. COACHING INSIGHT ── */}
         {settings.adaptiveCoaching && (
-          <span style={{
-            fontSize: '0.625rem', fontWeight: 700,
-            textTransform: 'uppercase', letterSpacing: '0.1em',
-            color: 'var(--text-tertiary)', paddingLeft: '0.25rem',
-            marginTop: '0.25rem',
-          }}>
-            Coaching
-          </span>
+          <div>
+            <SectionLabel style={{ marginBottom: 8, display: 'block' }}>Coaching</SectionLabel>
+            {settings.weeklyCheckIn ? (
+              <CoachingInsightCard
+                reasoning={evaluation.reasoning}
+                urgency={evaluation.urgency}
+                newTargets={evaluation.newTargets}
+                onApply={evaluation.newTargets ? () => {
+                  updateUser({ targets: evaluation.newTargets });
+                  showToast('Calorie target updated', 'success');
+                } : undefined}
+              />
+            ) : (
+              <WeeklyPauseCard />
+            )}
+          </div>
         )}
 
-        {/* AI Coaching */}
-        {settings.adaptiveCoaching && (
-          settings.weeklyCheckIn ? (
-            <CoachingInsightCard
-              reasoning={evaluation.reasoning}
-              urgency={evaluation.urgency}
-              newTargets={evaluation.newTargets}
-              onApply={evaluation.newTargets ? () => {
-                updateUser({ targets: evaluation.newTargets });
-                showToast('Calorie target updated', 'success');
-              } : undefined}
+        {/* ── 6. WEEKLY CHART ── */}
+        <div>
+          <WeeklyChartCard
+            data={weeklyData}
+            weekAvg={weekAvgCal}
+            target={targets.calories}
+            activeDays={activeDaysCount}
+          />
+        </div>
+
+        {/* ── 7. STREAK + RECOVERY ROW ── */}
+        <div>
+          <SectionLabel style={{ marginBottom: 8, display: 'block' }}>Stats</SectionLabel>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <StreakCard streak={streak} />
+            <RecoveryCard
+              score={rec}
+              recColor={recColor}
+              recLabel={null}
+              recCTA={recCTA}
+              onNavigate={navigate}
             />
-          ) : (
-            <WeeklyPauseCard />
-          )
-        )}
+          </div>
+        </div>
 
       </div>
 
@@ -390,7 +351,6 @@ export const Dashboard: React.FC = () => {
               />
             ))}
           </div>
-          {/* Done button to close the sheet */}
           <button
             className="btn-primary w-full"
             style={{ padding: '0.9rem' }}

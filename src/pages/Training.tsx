@@ -51,7 +51,6 @@ const getLastPerformance = (
   return null;
 };
 
-// Returns the best set (max weight × reps volume) across all history for a given exercise
 const getPersonalRecord = (
   logs: ReturnType<typeof useApp>['state']['logs'],
   exerciseId: string,
@@ -72,7 +71,6 @@ const getPersonalRecord = (
   return best;
 };
 
-// Returns trend direction comparing latest vs 2nd-to-last session
 const getProgressionTrend = (
   logs: ReturnType<typeof useApp>['state']['logs'],
   exerciseId: string,
@@ -120,7 +118,6 @@ const SUPERSET_COLORS: Record<string, string> = {
   E: 'rgba(191,90,242,0.9)',
 };
 
-// Movement pattern classification for Push/Pull/Legs tabs
 const PUSH_MUSCLES = ['Chest', 'Triceps', 'Delts', 'Shoulders'];
 const PULL_MUSCLES = ['Back', 'Arms', 'Traps', 'Biceps'];
 const LEG_MUSCLES = ['Legs', 'Glutes', 'Hamstrings', 'Calves', 'Quads'];
@@ -162,36 +159,51 @@ const ExercisePicker: React.FC<{
 
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--bg-primary)', zIndex: 9003, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '1rem 1rem 0' }}>
+      {/* Header */}
+      <div style={{ padding: '1.25rem 1.25rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>Add Exercise</h2>
-            <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: '2px' }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>Add Exercise</h2>
+            <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', fontWeight: 700, marginTop: '3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               {filtered.length} exercises
             </p>
           </div>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <X size={18} color="rgba(255,255,255,0.7)" />
+          <button
+            onClick={onClose}
+            style={{
+              background: 'rgba(255,255,255,0.07)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '50%',
+              width: 40,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <X size={18} color="rgba(255,255,255,0.6)" />
           </button>
         </div>
 
-        {/* Push / Pull / Legs tabs */}
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'none', marginBottom: '8px' }}>
+        {/* Pill tabs */}
+        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '12px', scrollbarWidth: 'none' }}>
           {PATTERN_TABS.map(tab => (
             <button
               key={tab.key}
               onClick={() => setPatternFilter(tab.key)}
               style={{
                 flexShrink: 0,
-                padding: '0.45rem 0.9rem',
-                borderRadius: '12px',
-                fontSize: '0.8rem',
+                padding: '0.45rem 1rem',
+                borderRadius: '50px',
+                fontSize: '0.78rem',
                 fontWeight: 800,
-                border: 'none',
+                border: patternFilter === tab.key ? 'none' : '1px solid rgba(255,255,255,0.1)',
                 cursor: 'pointer',
-                backgroundColor: patternFilter === tab.key ? 'white' : 'rgba(255,255,255,0.08)',
-                color: patternFilter === tab.key ? '#000' : 'rgba(255,255,255,0.6)',
+                backgroundColor: patternFilter === tab.key ? 'var(--accent-blue)' : 'rgba(255,255,255,0.05)',
+                color: patternFilter === tab.key ? '#fff' : 'rgba(255,255,255,0.5)',
                 transition: 'all 0.15s ease',
+                letterSpacing: '0.01em',
               }}
             >
               {tab.label}
@@ -200,22 +212,35 @@ const ExercisePicker: React.FC<{
         </div>
 
         {/* Search */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '12px', padding: '0.6rem 0.9rem', marginBottom: '6px' }}>
-          <Search size={15} color="rgba(255,255,255,0.35)" />
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          backgroundColor: 'rgba(255,255,255,0.05)',
+          borderRadius: '14px',
+          padding: '0.65rem 1rem',
+          marginBottom: '12px',
+          border: '1px solid rgba(255,255,255,0.07)',
+        }}>
+          <Search size={15} color="rgba(255,255,255,0.3)" />
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder={patternFilter === 'all' ? 'Search all exercises...' : `Search ${patternFilter} exercises...`}
             style={{ background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: '0.9rem', flex: 1 }}
           />
-          {query && <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}><X size={13} color="rgba(255,255,255,0.3)" /></button>}
+          {query && (
+            <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              <X size={13} color="rgba(255,255,255,0.3)" />
+            </button>
+          )}
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0.25rem 1rem 6rem' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 1.25rem 6rem' }}>
         {filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'rgba(255,255,255,0.3)' }}>
-            <p style={{ fontSize: '0.9rem' }}>No exercises found</p>
+            <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>No exercises found</p>
           </div>
         )}
         {filtered.map(ex => {
@@ -226,20 +251,51 @@ const ExercisePicker: React.FC<{
             <div
               key={ex.id}
               onClick={() => { if (!isAdded) { onAdd(ex.id, ex.name); onClose(); } }}
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 0.75rem', borderRadius: '14px', marginBottom: '3px', cursor: isAdded ? 'default' : 'pointer', backgroundColor: isAdded ? 'rgba(255,255,255,0.03)' : 'transparent', opacity: isAdded ? 0.45 : 1, transition: 'background-color 0.1s' }}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0.85rem 0.75rem',
+                borderRadius: '14px',
+                marginBottom: '3px',
+                cursor: isAdded ? 'default' : 'pointer',
+                backgroundColor: isAdded ? 'rgba(255,255,255,0.02)' : 'transparent',
+                opacity: isAdded ? 0.4 : 1,
+                transition: 'background-color 0.1s',
+              }}
             >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                 <span style={{ fontWeight: 700, fontSize: '0.95rem', color: isAdded ? 'rgba(255,255,255,0.5)' : '#fff' }}>{ex.name}</span>
-                <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{
+                    fontSize: '0.6rem',
+                    fontWeight: 800,
+                    padding: '2px 7px',
+                    borderRadius: '50px',
+                    backgroundColor: `${patternColor}18`,
+                    color: patternColor,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}>{pattern}</span>
                   {ex.targetMuscles.map(m => (
-                    <span key={m} style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 6px', borderRadius: '5px', backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)' }}>{m}</span>
+                    <span key={m} style={{ fontSize: '0.62rem', fontWeight: 600, padding: '2px 6px', borderRadius: '5px', backgroundColor: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}>{m}</span>
                   ))}
                 </div>
               </div>
               {isAdded
                 ? <Check size={18} color="var(--accent-green)" />
                 : (
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: `${patternColor}18`, border: `1px solid ${patternColor}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    backgroundColor: `${patternColor}15`,
+                    border: `1px solid ${patternColor}30`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
                     <Plus size={14} color={patternColor} />
                   </div>
                 )
@@ -281,7 +337,6 @@ const ActiveWorkoutScreen: React.FC<{
     clearTimeout(restRef.current);
   };
 
-  // Track which set inputs have out-of-range values for red border highlighting
   const [invalidSets, setInvalidSets] = useState<Record<string, boolean>>({});
 
   const updateSet = (exIdx: number, setIdx: number, field: 'weight' | 'reps' | 'rpe', value: string) => {
@@ -315,7 +370,6 @@ const ActiveWorkoutScreen: React.FC<{
   const toggleSetDone = (exIdx: number, setIdx: number) => {
     const set = exercises[exIdx]?.sets[setIdx];
     if (set && !set.done) {
-      // Require weight and reps before marking done
       if (!set.weight || !set.reps) {
         showToast('Enter weight and reps first', 'error');
         return;
@@ -355,158 +409,311 @@ const ActiveWorkoutScreen: React.FC<{
 
   const completedSets = exercises.reduce((acc, ex) => acc + ex.sets.filter(s => s.done).length, 0);
   const totalSets = exercises.reduce((acc, ex) => acc + ex.sets.length, 0);
+  const progressPct = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--bg-primary)', zIndex: 9002, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-      {/* Header */}
-      <div style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-primary)', zIndex: 10, padding: '1rem 1rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="flex-row justify-between align-center">
-          <div className="flex-col">
-            <span className="text-h3">{workoutName}</span>
-            <div className="flex-row gap-3 align-center mt-1">
-              <div className="flex-row align-center gap-1">
-                <Timer size={13} color="var(--accent-blue)" />
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-blue)', fontVariantNumeric: 'tabular-nums' }}>{formatDuration(elapsed)}</span>
-              </div>
-              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
-                {completedSets}/{totalSets} sets
-              </span>
-              {completedSets > 0 && totalSets > 0 && (
-                <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>
-                  · {Math.round((completedSets / totalSets) * 100)}%
+      {/* Sticky Header */}
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        backgroundColor: 'rgba(8,8,16,0.95)',
+        backdropFilter: 'blur(12px)',
+        zIndex: 10,
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        <div style={{ padding: '1rem 1.25rem 0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{
+                fontSize: '1.15rem',
+                fontWeight: 900,
+                letterSpacing: '-0.02em',
+                margin: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>{workoutName}</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '5px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Timer size={13} color="var(--accent-blue)" />
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--accent-blue)', fontVariantNumeric: 'tabular-nums' }}>{formatDuration(elapsed)}</span>
+                </div>
+                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>
+                  {completedSets}/{totalSets} sets
                 </span>
-              )}
+                {completedSets > 0 && totalSets > 0 && (
+                  <span style={{
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    color: 'var(--accent-green)',
+                    backgroundColor: 'rgba(50,215,75,0.1)',
+                    padding: '2px 8px',
+                    borderRadius: '50px',
+                  }}>
+                    {Math.round(progressPct)}%
+                  </span>
+                )}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+              <button
+                onClick={onFinish}
+                style={{
+                  padding: '0.55rem 1.2rem',
+                  backgroundColor: 'var(--accent-green)',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: '50px',
+                  fontWeight: 900,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  letterSpacing: '0.01em',
+                }}
+              >
+                Finish
+              </button>
+              <button
+                onClick={onCancel}
+                style={{
+                  padding: '0.55rem 0.85rem',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  color: 'rgba(255,255,255,0.5)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '50px',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </div>
-          <div className="flex-row gap-2">
-            <button onClick={onFinish} style={{ padding: '0.5rem 1.1rem', backgroundColor: 'var(--accent-green)', color: '#000', border: 'none', borderRadius: '12px', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}>Finish</button>
-            <button onClick={onCancel} style={{ padding: '0.5rem 0.75rem', backgroundColor: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>Cancel</button>
-          </div>
         </div>
-        <div style={{ marginTop: '0.75rem', height: '3px', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: '2px', overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${totalSets > 0 ? (completedSets / totalSets) * 100 : 0}%`, backgroundColor: 'var(--accent-green)', borderRadius: '2px', transition: 'width 0.3s ease' }} />
+        {/* Progress bar */}
+        <div style={{ height: '3px', backgroundColor: 'rgba(255,255,255,0.05)' }}>
+          <div style={{
+            height: '100%',
+            width: `${progressPct}%`,
+            background: 'linear-gradient(90deg, var(--accent-blue), var(--accent-green))',
+            transition: 'width 0.4s ease',
+          }} />
         </div>
       </div>
 
-      {/* Rest Timer Banner */}
+      {/* Rest Timer */}
       {restTimer !== null && restTimer > 0 && (
-        <div className="flex-row justify-between align-center" style={{ backgroundColor: 'rgba(10,132,255,0.1)', border: '1px solid rgba(10,132,255,0.2)', margin: '0.75rem 1rem 0', padding: '0.6rem 1rem', borderRadius: '12px' }}>
-          <div className="flex-row align-center gap-2">
-            <RotateCcw size={15} color="var(--accent-blue)" />
-            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-blue)' }}>Rest Timer</span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: 'rgba(10,132,255,0.08)',
+          border: '1px solid rgba(10,132,255,0.18)',
+          margin: '0.875rem 1.25rem 0',
+          padding: '0.75rem 1.1rem',
+          borderRadius: '16px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              border: '2px solid rgba(10,132,255,0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <RotateCcw size={14} color="var(--accent-blue)" />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'rgba(10,132,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Rest</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--accent-blue)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.1 }}>{formatDuration(restTimer)}</div>
+            </div>
           </div>
-          <div className="flex-row align-center gap-3">
-            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-blue)', fontVariantNumeric: 'tabular-nums' }}>{formatDuration(restTimer)}</span>
-            <button onClick={() => setRestTimer(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-              <X size={16} color="rgba(255,255,255,0.4)" />
-            </button>
-          </div>
+          <button onClick={() => setRestTimer(null)} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <X size={15} color="rgba(255,255,255,0.4)" />
+          </button>
         </div>
       )}
 
       {/* Exercises */}
-      <div style={{ flex: 1, padding: '0.75rem 1rem', paddingBottom: '2rem' }}>
+      <div style={{ flex: 1, padding: '0.875rem 1.25rem', paddingBottom: '3rem' }}>
         {exercises.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'rgba(255,255,255,0.3)' }}>
-            <Dumbbell size={40} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
-            <p style={{ fontSize: '0.9rem' }}>No exercises added yet.</p>
+          <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+            <div style={{
+              width: 64,
+              height: 64,
+              borderRadius: 20,
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1rem',
+            }}>
+              <Dumbbell size={28} color="rgba(255,255,255,0.2)" />
+            </div>
+            <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>No exercises yet — add your first one</p>
           </div>
         ) : (
-          <div className="flex-col gap-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {exercises.map((ex, exIdx) => {
               const lastPerf = getLastPerformance(logs, ex.libraryId, today);
               const isExpanded = expandedExercise === ex.libraryId;
               const isSwapOpen = swapOpenIdx === exIdx;
               const doneSets = ex.sets.filter(s => s.done).length;
               const supersetColor = ex.supersetGroup ? SUPERSET_COLORS[ex.supersetGroup] : null;
-
               const allSetsDone = doneSets === ex.sets.length && doneSets > 0;
+
               return (
-                <div key={`${ex.libraryId}-${exIdx}`} style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: `1px solid ${allSetsDone ? 'rgba(48,209,88,0.35)' : isExpanded ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)'}`, overflow: 'hidden', boxShadow: allSetsDone ? '0 0 0 1px rgba(48,209,88,0.1), 0 2px 16px rgba(48,209,88,0.08)' : 'none', transition: 'border-color 0.3s, box-shadow 0.3s' }}>
-                  {/* Superset connector */}
-                  {supersetColor && (
-                    <div style={{ height: '3px', backgroundColor: supersetColor, opacity: 0.7 }} />
-                  )}
+                <div
+                  key={`${ex.libraryId}-${exIdx}`}
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    borderRadius: '20px',
+                    border: `1px solid ${allSetsDone ? 'rgba(50,215,75,0.3)' : isExpanded ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)'}`,
+                    overflow: 'hidden',
+                    boxShadow: allSetsDone ? '0 0 0 1px rgba(50,215,75,0.08), inset 0 1px 0 rgba(255,255,255,0.04)' : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                    transition: 'border-color 0.3s, box-shadow 0.3s',
+                  }}
+                >
+                  {/* Superset / done stripe */}
+                  {supersetColor ? (
+                    <div style={{ height: '3px', backgroundColor: supersetColor }} />
+                  ) : allSetsDone ? (
+                    <div style={{ height: '3px', background: 'linear-gradient(90deg, transparent, rgba(50,215,75,0.6), transparent)' }} />
+                  ) : null}
 
                   {/* Exercise Header */}
-                  <div className="flex-row justify-between align-center" style={{ padding: '0.9rem 1rem', cursor: 'pointer' }} onClick={() => setExpandedExercise(isExpanded ? null : ex.libraryId)}>
-                    <div className="flex-col" style={{ flex: 1, minWidth: 0 }}>
-                      <div className="flex-row align-center gap-2">
+                  <div
+                    style={{ padding: '0.95rem 1rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                    onClick={() => setExpandedExercise(isExpanded ? null : ex.libraryId)}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {supersetColor && (
-                          <span style={{ fontSize: '0.6rem', fontWeight: 900, padding: '0.15rem 0.4rem', borderRadius: '5px', backgroundColor: `${supersetColor.replace('0.9', '0.15')}`, color: supersetColor, flexShrink: 0, letterSpacing: '0.03em' }}>
+                          <span style={{
+                            fontSize: '0.6rem',
+                            fontWeight: 900,
+                            padding: '2px 6px',
+                            borderRadius: '6px',
+                            backgroundColor: `${supersetColor.replace('0.9', '0.15')}`,
+                            color: supersetColor,
+                            flexShrink: 0,
+                            letterSpacing: '0.05em',
+                          }}>
                             {ex.supersetGroup}
                           </span>
                         )}
-                        <span style={{ fontWeight: 700, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</span>
-                        {doneSets === ex.sets.length && doneSets > 0 && <Check size={14} color="var(--accent-green)" />}
+                        <span style={{
+                          fontWeight: 800,
+                          fontSize: '0.95rem',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          color: allSetsDone ? 'rgba(255,255,255,0.6)' : '#fff',
+                        }}>
+                          {ex.name}
+                        </span>
+                        {allSetsDone && <Check size={14} color="var(--accent-green)" />}
                       </div>
-                      <div className="flex-row gap-2 mt-1 align-center flex-wrap">
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '5px', alignItems: 'center', flexWrap: 'wrap' }}>
                         {ex.targetReps && (
-                          <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>
+                          <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
                             {ex.sets.length} × {ex.targetReps}
                           </span>
                         )}
                         {ex.rest && (
-                          <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>· {ex.rest}s rest</span>
+                          <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.22)', fontWeight: 600 }}>· {ex.rest}s</span>
                         )}
                         {lastPerf ? (() => {
                           const trend = getProgressionTrend(logs, ex.libraryId, today);
                           const trendIcon = trend === 'up' || trend === 'pr'
-                            ? <TrendingUp size={11} color={trend === 'pr' ? '#fbbf24' : 'var(--accent-green)'} />
+                            ? <TrendingUp size={10} color={trend === 'pr' ? '#fbbf24' : 'var(--accent-green)'} />
                             : trend === 'down'
-                            ? <TrendingDown size={11} color="var(--accent-red)" />
-                            : <Minus size={11} color="rgba(255,255,255,0.25)" />;
-                          const prBadge = trend === 'pr' ? <span style={{ fontSize: '0.6rem', fontWeight: 900, color: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.12)', padding: '1px 5px', borderRadius: '4px' }}>PR</span> : null;
+                            ? <TrendingDown size={10} color="var(--accent-red)" />
+                            : <Minus size={10} color="rgba(255,255,255,0.2)" />;
                           return (
-                            <div className="flex-row align-center gap-1">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                               {trendIcon}
-                              <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>Last: {lastPerf.weight}kg × {lastPerf.reps}</span>
-                              {prBadge}
+                              <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                                {lastPerf.weight}kg × {lastPerf.reps}
+                              </span>
+                              {trend === 'pr' && (
+                                <span style={{ fontSize: '0.58rem', fontWeight: 900, color: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.1)', padding: '1px 5px', borderRadius: '4px' }}>PR</span>
+                              )}
                             </div>
                           );
                         })() : (
-                          <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>First time</span>
+                          <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.2)', fontWeight: 600 }}>First time</span>
                         )}
                       </div>
                     </div>
-                    <div className="flex-row gap-2 align-center">
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                       {ex.variations && ex.variations.length > 0 && (
                         <button
                           onClick={e => { e.stopPropagation(); setSwapOpenIdx(isSwapOpen ? null : exIdx); }}
-                          style={{ background: isSwapOpen ? 'rgba(255,159,10,0.15)' : 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '8px', width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                          style={{
+                            background: isSwapOpen ? 'rgba(255,159,10,0.12)' : 'rgba(255,255,255,0.05)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            width: 30,
+                            height: 30,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                          }}
                         >
-                          <RefreshCw size={13} color={isSwapOpen ? 'rgba(255,159,10,0.9)' : 'rgba(255,255,255,0.4)'} />
+                          <RefreshCw size={12} color={isSwapOpen ? 'rgba(255,159,10,0.9)' : 'rgba(255,255,255,0.35)'} />
                         </button>
                       )}
-                      <button onClick={e => { e.stopPropagation(); removeExercise(exIdx); }} style={{ background: 'rgba(255,59,48,0.08)', border: 'none', borderRadius: '8px', width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                        <Trash2 size={13} color="rgba(255,59,48,0.7)" />
+                      <button
+                        onClick={e => { e.stopPropagation(); removeExercise(exIdx); }}
+                        style={{ background: 'rgba(255,69,58,0.07)', border: 'none', borderRadius: '8px', width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                      >
+                        <Trash2 size={12} color="rgba(255,69,58,0.65)" />
                       </button>
-                      {isExpanded ? <ChevronUp size={16} color="rgba(255,255,255,0.3)" /> : <ChevronDown size={16} color="rgba(255,255,255,0.3)" />}
+                      {isExpanded ? <ChevronUp size={15} color="rgba(255,255,255,0.25)" /> : <ChevronDown size={15} color="rgba(255,255,255,0.25)" />}
                     </div>
                   </div>
 
                   {/* Notes */}
                   {ex.notes && isExpanded && (
-                    <div className="flex-row align-center gap-2" style={{ padding: '0 1rem 0.5rem' }}>
-                      <Info size={12} color="rgba(255,255,255,0.3)" />
-                      <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>{ex.notes}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 1rem 0.6rem' }}>
+                      <Info size={11} color="rgba(255,255,255,0.25)" />
+                      <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.28)', fontStyle: 'italic' }}>{ex.notes}</span>
                     </div>
                   )}
 
-                  {/* Variation Swap Panel */}
+                  {/* Swap Panel */}
                   {isSwapOpen && ex.variations && (
-                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '0.75rem 1rem', backgroundColor: 'rgba(255,159,10,0.04)' }}>
-                      <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,159,10,0.7)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.5rem' }}>Swap exercise</p>
-                      <div className="flex-col gap-1">
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '0.75rem 1rem', backgroundColor: 'rgba(255,159,10,0.03)' }}>
+                      <p style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,159,10,0.6)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '8px' }}>Swap exercise</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                         {ex.variations.map(v => (
                           <button
                             key={v}
                             onClick={() => swapExercise(exIdx, v)}
-                            className="flex-row justify-between align-center"
-                            style={{ width: '100%', textAlign: 'left', padding: '0.6rem 0.75rem', backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', color: '#fff', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
+                            style={{
+                              width: '100%',
+                              textAlign: 'left',
+                              padding: '0.65rem 0.875rem',
+                              backgroundColor: 'rgba(255,255,255,0.04)',
+                              border: '1px solid rgba(255,255,255,0.07)',
+                              borderRadius: '12px',
+                              color: '#fff',
+                              fontWeight: 700,
+                              fontSize: '0.85rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                            }}
                           >
                             {v}
-                            <ChevronRight size={14} color="rgba(255,255,255,0.3)" />
+                            <ChevronRight size={13} color="rgba(255,255,255,0.3)" />
                           </button>
                         ))}
                       </div>
@@ -515,58 +722,143 @@ const ActiveWorkoutScreen: React.FC<{
 
                   {/* Set Rows */}
                   {isExpanded && (
-                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '0.5rem 0.75rem 0.75rem' }}>
-                      <div style={{ display: 'flex', padding: '0.25rem 0.5rem', marginBottom: '4px' }}>
-                        <span style={{ width: 32, fontSize: '0.62rem', color: 'rgba(255,255,255,0.25)', fontWeight: 800, letterSpacing: '0.05em' }}>SET</span>
-                        <span style={{ flex: 1, fontSize: '0.62rem', color: 'rgba(255,255,255,0.25)', fontWeight: 800, textAlign: 'center' }}>WEIGHT (kg)</span>
-                        <span style={{ flex: 1, fontSize: '0.62rem', color: 'rgba(255,255,255,0.25)', fontWeight: 800, textAlign: 'center' }}>REPS</span>
-                        <span style={{ width: 44 }} />
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', padding: '0.6rem 0.875rem 0.875rem' }}>
+                      {/* Column headers */}
+                      <div style={{ display: 'flex', padding: '0 4px', marginBottom: '6px' }}>
+                        <span style={{ width: 34, fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)', fontWeight: 900, letterSpacing: '0.06em', textTransform: 'uppercase' }}>SET</span>
+                        <span style={{ flex: 1, fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)', fontWeight: 900, textAlign: 'center', letterSpacing: '0.06em', textTransform: 'uppercase' }}>KG</span>
+                        <span style={{ flex: 1, fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)', fontWeight: 900, textAlign: 'center', letterSpacing: '0.06em', textTransform: 'uppercase' }}>REPS</span>
+                        <span style={{ width: 46 }} />
                       </div>
 
                       {ex.sets.map((set, setIdx) => (
-                        <div key={setIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '7px', opacity: set.done ? 0.45 : 1, transition: 'opacity 0.2s' }}>
-                          <div style={{ width: 32, height: 44, borderRadius: '10px', backgroundColor: set.done ? 'rgba(48,209,88,0.2)' : 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: set.done ? '#4ade80' : 'rgba(255,255,255,0.4)' }}>{setIdx + 1}</span>
+                        <div key={setIdx} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          marginBottom: '7px',
+                          opacity: set.done ? 0.4 : 1,
+                          transition: 'opacity 0.25s',
+                        }}>
+                          {/* Set number badge */}
+                          <div style={{
+                            width: 34,
+                            height: 46,
+                            borderRadius: '10px',
+                            backgroundColor: set.done ? 'rgba(50,215,75,0.18)' : 'rgba(255,255,255,0.05)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            borderLeft: set.done ? '2px solid rgba(50,215,75,0.5)' : '2px solid transparent',
+                          }}>
+                            <span style={{ fontSize: '0.82rem', fontWeight: 900, color: set.done ? 'var(--accent-green)' : 'rgba(255,255,255,0.35)' }}>{setIdx + 1}</span>
                           </div>
+                          {/* Weight input */}
                           <input
-                            type="number" inputMode="decimal"
+                            type="number"
+                            inputMode="decimal"
                             placeholder={lastPerf ? String(lastPerf.weight) : '—'}
                             value={set.weight}
                             onChange={e => updateSet(exIdx, setIdx, 'weight', e.target.value)}
                             disabled={set.done}
                             style={{
-                              flex: 1, backgroundColor: 'rgba(255,255,255,0.06)',
-                              border: `1px solid ${invalidSets[`${exIdx}-${setIdx}-weight`] ? '#f87171' : 'rgba(255,255,255,0.09)'}`,
-                              borderRadius: '10px', color: '#fff', textAlign: 'center', padding: '0.7rem 0.4rem', fontSize: '1rem', fontWeight: 800, outline: 'none', fontVariantNumeric: 'tabular-nums',
+                              flex: 1,
+                              backgroundColor: 'rgba(255,255,255,0.05)',
+                              border: `1px solid ${invalidSets[`${exIdx}-${setIdx}-weight`] ? '#f87171' : 'rgba(255,255,255,0.08)'}`,
+                              borderRadius: '12px',
+                              color: '#fff',
+                              textAlign: 'center',
+                              padding: '0.75rem 0.4rem',
+                              fontSize: '1rem',
+                              fontWeight: 800,
+                              outline: 'none',
+                              fontVariantNumeric: 'tabular-nums',
                             }}
                           />
+                          {/* Reps input */}
                           <input
-                            type="number" inputMode="numeric"
+                            type="number"
+                            inputMode="numeric"
                             placeholder={lastPerf ? String(lastPerf.reps) : (ex.targetReps?.split('–')[0] || '—')}
                             value={set.reps}
                             onChange={e => updateSet(exIdx, setIdx, 'reps', e.target.value)}
                             disabled={set.done}
                             style={{
-                              flex: 1, backgroundColor: 'rgba(255,255,255,0.06)',
-                              border: `1px solid ${invalidSets[`${exIdx}-${setIdx}-reps`] ? '#f87171' : 'rgba(255,255,255,0.09)'}`,
-                              borderRadius: '10px', color: '#fff', textAlign: 'center', padding: '0.7rem 0.4rem', fontSize: '1rem', fontWeight: 800, outline: 'none', fontVariantNumeric: 'tabular-nums',
+                              flex: 1,
+                              backgroundColor: 'rgba(255,255,255,0.05)',
+                              border: `1px solid ${invalidSets[`${exIdx}-${setIdx}-reps`] ? '#f87171' : 'rgba(255,255,255,0.08)'}`,
+                              borderRadius: '12px',
+                              color: '#fff',
+                              textAlign: 'center',
+                              padding: '0.75rem 0.4rem',
+                              fontSize: '1rem',
+                              fontWeight: 800,
+                              outline: 'none',
+                              fontVariantNumeric: 'tabular-nums',
                             }}
                           />
+                          {/* Check button */}
                           <button
                             onClick={() => toggleSetDone(exIdx, setIdx)}
-                            style={{ width: 44, height: 44, borderRadius: '10px', border: 'none', backgroundColor: set.done ? 'rgba(48,209,88,0.25)' : (set.weight && set.reps ? 'rgba(48,209,88,0.15)' : 'rgba(255,255,255,0.06)'), cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                            style={{
+                              width: 46,
+                              height: 46,
+                              borderRadius: '12px',
+                              border: 'none',
+                              backgroundColor: set.done
+                                ? 'rgba(50,215,75,0.22)'
+                                : (set.weight && set.reps ? 'rgba(50,215,75,0.12)' : 'rgba(255,255,255,0.05)'),
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              transition: 'background-color 0.2s',
+                            }}
                           >
-                            {set.done ? <Check size={18} color="#4ade80" /> : <Check size={18} color={set.weight && set.reps ? 'rgba(48,209,88,0.8)' : 'rgba(255,255,255,0.2)'} />}
+                            <Check size={18} color={set.done ? '#4ade80' : (set.weight && set.reps ? 'rgba(50,215,75,0.7)' : 'rgba(255,255,255,0.18)')} />
                           </button>
                         </div>
                       ))}
 
-                      <div className="flex-row gap-2 mt-2">
-                        <button onClick={() => addSet(exIdx)} className="flex-row align-center justify-center gap-1" style={{ flex: 1, padding: '0.55rem', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.12)', borderRadius: '10px', color: 'rgba(255,255,255,0.5)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}>
+                      {/* Add set + rest timers */}
+                      <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                        <button
+                          onClick={() => addSet(exIdx)}
+                          style={{
+                            flex: 1,
+                            padding: '0.6rem',
+                            backgroundColor: 'rgba(255,255,255,0.04)',
+                            border: '1px dashed rgba(255,255,255,0.1)',
+                            borderRadius: '12px',
+                            color: 'rgba(255,255,255,0.45)',
+                            fontWeight: 700,
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '5px',
+                          }}
+                        >
                           <Plus size={13} /> Add Set
                         </button>
                         {[60, 90, ex.rest && ex.rest !== 60 && ex.rest !== 90 ? ex.rest : null, 180].filter((v, i, a) => v && a.indexOf(v) === i).map(t => t && (
-                          <button key={t} onClick={() => startRest(t)} style={{ padding: '0.55rem 0.8rem', backgroundColor: ex.rest === t ? 'rgba(10,132,255,0.15)' : 'rgba(10,132,255,0.08)', border: `1px solid ${ex.rest === t ? 'rgba(10,132,255,0.4)' : 'rgba(10,132,255,0.15)'}`, borderRadius: '10px', color: 'var(--accent-blue)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                          <button
+                            key={t}
+                            onClick={() => startRest(t)}
+                            style={{
+                              padding: '0.6rem 0.875rem',
+                              backgroundColor: ex.rest === t ? 'rgba(10,132,255,0.12)' : 'rgba(10,132,255,0.06)',
+                              border: `1px solid ${ex.rest === t ? 'rgba(10,132,255,0.35)' : 'rgba(10,132,255,0.12)'}`,
+                              borderRadius: '12px',
+                              color: 'var(--accent-blue)',
+                              fontWeight: 800,
+                              fontSize: '0.72rem',
+                              cursor: 'pointer',
+                            }}
+                          >
                             {t >= 60 ? `${t / 60}m` : `${t}s`}
                           </button>
                         ))}
@@ -579,7 +871,26 @@ const ActiveWorkoutScreen: React.FC<{
           </div>
         )}
 
-        <button onClick={onAddExercise} className="flex-row align-center justify-center gap-2" style={{ width: '100%', marginTop: '1rem', padding: '0.9rem', backgroundColor: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: '14px', color: 'rgba(255,255,255,0.5)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}>
+        {/* Add Exercise */}
+        <button
+          onClick={onAddExercise}
+          style={{
+            width: '100%',
+            marginTop: '14px',
+            padding: '1rem',
+            backgroundColor: 'rgba(10,132,255,0.06)',
+            border: '1px dashed rgba(10,132,255,0.2)',
+            borderRadius: '18px',
+            color: 'var(--accent-blue)',
+            fontWeight: 800,
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}
+        >
           <Plus size={16} /> Add Exercise
         </button>
       </div>
@@ -601,11 +912,9 @@ export const Training: React.FC = () => {
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
-  // ── Draft restore state ────────────────────────────────────────────────────
   const [showDraftRestore, setShowDraftRestore] = useState(false);
   const [savedDraft, setSavedDraft] = useState<any>(null);
 
-  // Check for an unfinished draft on mount
   useEffect(() => {
     const draft = localStorage.getItem('bbc_workout_draft');
     if (draft && !sessionActive) {
@@ -619,7 +928,6 @@ export const Training: React.FC = () => {
     }
   }, []);
 
-  // Auto-save draft whenever exercises change during an active session
   useEffect(() => {
     if (sessionActive && exercises.length > 0) {
       localStorage.setItem('bbc_workout_draft', JSON.stringify({
@@ -640,7 +948,6 @@ export const Training: React.FC = () => {
     return () => clearInterval(timerRef.current);
   }, [sessionActive]);
 
-  // ── Auto-compute next workout ──────────────────────────────────────────────
   const programData = useMemo(() => {
     if (!state.assignedProgram) return null;
     const program = getProgramById(state.assignedProgram);
@@ -649,7 +956,7 @@ export const Training: React.FC = () => {
     const now = new Date();
     const dayOfWeek = now.getDay();
     const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - ((dayOfWeek + 6) % 7)); // Monday
+    weekStart.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
     weekStart.setHours(0, 0, 0, 0);
     const weekStartStr = weekStart.toISOString().split('T')[0];
 
@@ -669,7 +976,6 @@ export const Training: React.FC = () => {
     return { program, nextDay, nextDayIndex: nextDayIndex >= 0 ? nextDayIndex : 0, completedDayNames: activeDone, allDone };
   }, [state.assignedProgram, state.logs]);
 
-  // ── Volume chart data ──────────────────────────────────────────────────────
   const volumeData = useMemo(() => {
     const muscleVolume: Record<string, number> = { Chest: 0, Back: 0, Legs: 0, Arms: 0, Delts: 0 };
     Object.values(state.logs).forEach(log => {
@@ -691,7 +997,6 @@ export const Training: React.FC = () => {
     [state.logs]
   );
 
-  // ── Session actions ────────────────────────────────────────────────────────
   const startProgramDay = (program: WorkoutProgram, day: ProgramDay) => {
     const preloaded: ActiveExercise[] = day.exercises.map(e => ({
       libraryId: e.exerciseId,
@@ -711,7 +1016,6 @@ export const Training: React.FC = () => {
   const startCustomSession = (name: string) => {
     setSessionName(name);
     setExercises([]);
-    // Pre-set the exercise picker to match the workout type
     const lower = name.toLowerCase();
     const pattern: 'all' | 'push' | 'pull' | 'legs' | 'core' =
       lower.includes('push') ? 'push' :
@@ -722,7 +1026,6 @@ export const Training: React.FC = () => {
     setPickerDefaultPattern(pattern);
     setSessionActive(true);
     setShowCustomPicker(false);
-    // Auto-open the exercise picker so they can immediately add exercises
     setShowPicker(true);
   };
 
@@ -739,7 +1042,6 @@ export const Training: React.FC = () => {
     const totalVolume = completedExercises.reduce((acc, ex) =>
       acc + ex.sets.filter(s => s.done).reduce((a, s) => a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0), 0);
 
-    // Detect personal records
     let prCount = 0;
     completedExercises.forEach(ex => {
       const prevPR = getPersonalRecord(state.logs, ex.libraryId);
@@ -783,60 +1085,104 @@ export const Training: React.FC = () => {
     showToast('Session cancelled', 'info');
   };
 
-  // ── Custom workout name picker ─────────────────────────────────────────────
+  // ── Custom workout picker view ─────────────────────────────────────────────
   if (showCustomPicker) {
     const templates = [
-      { name: 'Push Day',        emoji: '💪', muscles: 'Chest · Shoulders · Triceps', color: '#60a5fa', pattern: 'push' as const },
-      { name: 'Pull Day',        emoji: '🔄', muscles: 'Back · Biceps',               color: '#4ade80', pattern: 'pull' as const },
-      { name: 'Leg Day',         emoji: '🦵', muscles: 'Quads · Glutes · Hamstrings', color: '#fb923c', pattern: 'legs' as const },
-      { name: 'Upper Body',      emoji: '🏋️', muscles: 'Push + Pull combined',        color: '#a78bfa', pattern: 'push' as const },
-      { name: 'Full Body',       emoji: '⚡', muscles: 'All muscle groups',            color: '#f9a8d4', pattern: 'all' as const },
-      { name: 'Arms & Shoulders',emoji: '💥', muscles: 'Biceps · Triceps · Delts',    color: '#fbbf24', pattern: 'push' as const },
+      { name: 'Push Day',         emoji: '💪', muscles: 'Chest · Shoulders · Triceps', color: '#60a5fa', pattern: 'push' as const },
+      { name: 'Pull Day',         emoji: '🔄', muscles: 'Back · Biceps',               color: '#4ade80', pattern: 'pull' as const },
+      { name: 'Leg Day',          emoji: '🦵', muscles: 'Quads · Glutes · Hamstrings', color: '#fb923c', pattern: 'legs' as const },
+      { name: 'Upper Body',       emoji: '🏋️', muscles: 'Push + Pull combined',        color: '#a78bfa', pattern: 'push' as const },
+      { name: 'Full Body',        emoji: '⚡', muscles: 'All muscle groups',            color: '#f9a8d4', pattern: 'all' as const },
+      { name: 'Arms & Shoulders', emoji: '💥', muscles: 'Biceps · Triceps · Delts',    color: '#fbbf24', pattern: 'push' as const },
     ];
+
     return (
-      <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-primary)', padding: '1.5rem', paddingBottom: '6rem' }} className="animate-fade-in">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>What are you training?</h2>
-            <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: '2px' }}>Pick a focus — exercises are loaded for you</p>
+      <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-primary)', paddingBottom: '6rem' }} className="animate-fade-in">
+        {/* Header */}
+        <div style={{ padding: '1.5rem 1.25rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0, letterSpacing: '-0.025em' }}>What are you training?</h2>
+              <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: '4px' }}>Pick a focus — exercises load for you</p>
+            </div>
+            <button
+              onClick={() => setShowCustomPicker(false)}
+              style={{
+                background: 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '50%',
+                width: 40,
+                height: 40,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={18} color="rgba(255,255,255,0.6)" />
+            </button>
           </div>
-          <button onClick={() => setShowCustomPicker(false)} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <X size={18} color="rgba(255,255,255,0.7)" />
-          </button>
         </div>
 
-        {/* Push / Pull highlight row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-          {templates.slice(0, 2).map(t => (
-            <button
-              key={t.name}
-              onClick={() => startCustomSession(t.name)}
-              style={{ padding: '1.25rem 1rem', backgroundColor: 'var(--bg-card)', border: `1px solid ${t.color}25`, borderRadius: '18px', cursor: 'pointer', textAlign: 'left', position: 'relative', overflow: 'hidden' }}
-            >
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, ${t.color}, transparent)` }} />
-              <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>{t.emoji}</div>
-              <div style={{ fontWeight: 800, fontSize: '1rem', color: '#fff', marginBottom: '3px' }}>{t.name}</div>
-              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{t.muscles}</div>
-            </button>
-          ))}
-        </div>
+        <div style={{ padding: '1.25rem' }}>
+          {/* Primary 2×2 grid */}
+          <p style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
+            WHAT ARE YOU TRAINING TODAY?
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+            {templates.slice(0, 4).map(t => (
+              <button
+                key={t.name}
+                onClick={() => startCustomSession(t.name)}
+                style={{
+                  padding: '1.25rem 1rem',
+                  backgroundColor: 'var(--bg-card)',
+                  border: `1px solid rgba(255,255,255,0.06)`,
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '7px',
+                  minHeight: '90px',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                  transition: 'transform 0.15s ease',
+                }}
+              >
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, ${t.color}, transparent)` }} />
+                <span style={{ fontSize: '1.6rem' }}>{t.emoji}</span>
+                <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>{t.name}</span>
+                <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.35)', lineHeight: 1.3 }}>{t.muscles}</span>
+              </button>
+            ))}
+          </div>
 
-        {/* Rest of options */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {templates.slice(2).map(t => (
-            <button
-              key={t.name}
-              onClick={() => startCustomSession(t.name)}
-              style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '1rem 1.25rem', backgroundColor: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', cursor: 'pointer', textAlign: 'left' }}
-            >
-              <span style={{ fontSize: '1.5rem' }}>{t.emoji}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>{t.name}</div>
-                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: '2px' }}>{t.muscles}</div>
-              </div>
-              <ChevronRight size={16} color="rgba(255,255,255,0.25)" />
-            </button>
-          ))}
+          {/* Secondary pills row */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {templates.slice(4).map(t => (
+              <button
+                key={t.name}
+                onClick={() => startCustomSession(t.name)}
+                style={{
+                  flex: 1,
+                  padding: '0.9rem 1rem',
+                  backgroundColor: 'var(--bg-card)',
+                  border: `1px solid rgba(255,255,255,0.06)`,
+                  borderRadius: '16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                }}
+              >
+                <span style={{ fontSize: '1.25rem' }}>{t.emoji}</span>
+                <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fff' }}>{t.name}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -871,37 +1217,112 @@ export const Training: React.FC = () => {
     );
   }
 
-  // ── No program assigned ────────────────────────────────────────────────────
+  // ── No Program Assigned ────────────────────────────────────────────────────
   if (!state.assignedProgram) {
     return (
-      <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-primary)', padding: '2rem 1.5rem', paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '14px' }} className="animate-fade-in">
-        <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🏋️</div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>Pick your program</h1>
-          <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: '8px', lineHeight: 1.5 }}>Choose the one that fits your goal. You can change it any time in Settings.</p>
+      <div style={{
+        minHeight: '100dvh',
+        backgroundColor: 'var(--bg-primary)',
+        padding: '2rem 1.25rem',
+        paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        gap: '12px',
+      }} className="animate-fade-in">
+        <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+          <div style={{
+            width: 72,
+            height: 72,
+            borderRadius: 24,
+            backgroundColor: 'rgba(10,132,255,0.1)',
+            border: '1px solid rgba(10,132,255,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px',
+          }}>
+            <Dumbbell size={32} color="var(--accent-blue)" />
+          </div>
+          <h1 style={{ fontSize: '1.7rem', fontWeight: 900, letterSpacing: '-0.025em', margin: 0 }}>Pick your program</h1>
+          <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: '8px', lineHeight: 1.5, maxWidth: '280px', margin: '8px auto 0' }}>
+            Choose the one that fits your goal. You can change it any time in Settings.
+          </p>
         </div>
+
         {[
-          { id: 'male_phase2' as const, emoji: '💪', label: 'Strength & Size', sub: 'Push · Pull · Legs · Upper', desc: '4 days/week · Build muscle and strength', color: '#60a5fa' },
-          { id: 'female_phase1' as const, emoji: '🍑', label: 'Glute & Tone Focus', sub: 'Lower · Upper · Lower · Upper', desc: '4 days/week · Glute & posterior emphasis', color: '#f9a8d4' },
+          {
+            id: 'male_phase2' as const,
+            emoji: '💪',
+            label: 'Strength & Size',
+            tag: 'Push · Pull · Legs',
+            desc: '4 days/week · Build muscle and strength',
+            color: '#60a5fa',
+          },
+          {
+            id: 'female_phase1' as const,
+            emoji: '🍑',
+            label: 'Glute & Tone Focus',
+            tag: 'Lower · Upper',
+            desc: '4 days/week · Glute & posterior emphasis',
+            color: '#f9a8d4',
+          },
         ].map(opt => (
           <button
             key={opt.id}
             onClick={() => setAssignedProgram(opt.id)}
-            style={{ padding: '1.5rem', backgroundColor: 'var(--bg-card)', border: `1px solid ${opt.color}20`, borderRadius: '22px', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', overflow: 'hidden' }}
+            style={{
+              padding: '1.5rem',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: '22px',
+              cursor: 'pointer',
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+            }}
           >
             <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: '2px', background: `linear-gradient(90deg, transparent, ${opt.color}, transparent)` }} />
             <div style={{ fontSize: '2rem' }}>{opt.emoji}</div>
-            <div style={{ fontWeight: 900, fontSize: '1.2rem', color: '#fff' }}>{opt.label}</div>
-            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: opt.color }}>{opt.sub}</div>
-            <div style={{ fontWeight: 600, fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>{opt.desc}</div>
+            <div style={{ fontWeight: 900, fontSize: '1.25rem', color: '#fff', letterSpacing: '-0.02em' }}>{opt.label}</div>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '3px 10px',
+              borderRadius: '50px',
+              backgroundColor: `${opt.color}15`,
+              border: `1px solid ${opt.color}30`,
+            }}>
+              <span style={{ fontWeight: 800, fontSize: '0.72rem', color: opt.color, letterSpacing: '0.03em' }}>{opt.tag}</span>
+            </div>
+            <div style={{ fontWeight: 600, fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)' }}>{opt.desc}</div>
           </button>
         ))}
+
         <button
           onClick={() => setShowCustomPicker(true)}
-          style={{ padding: '1rem', backgroundColor: 'transparent', border: '1px dashed rgba(255,255,255,0.15)', borderRadius: '16px', cursor: 'pointer', color: 'rgba(255,255,255,0.45)', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          style={{
+            padding: '1rem',
+            backgroundColor: 'transparent',
+            border: '1px dashed rgba(255,255,255,0.12)',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            color: 'rgba(255,255,255,0.4)',
+            fontWeight: 700,
+            fontSize: '0.9rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+          }}
         >
-          <Plus size={16} /> Or start a custom workout
+          <Plus size={15} /> Or start a custom workout
         </button>
+
         {showCustomPicker && (
           <ExercisePicker
             library={state.workoutLibrary}
@@ -915,7 +1336,7 @@ export const Training: React.FC = () => {
     );
   }
 
-  // ── Main View ──────────────────────────────────────────────────────────────
+  // ── Main View (program assigned) ───────────────────────────────────────────
   const { program, nextDay, nextDayIndex, completedDayNames, allDone } = programData!;
   const estimatedMinutes = Math.round(
     nextDay.exercises.reduce((acc, ex) => acc + (ex.sets * ex.rest) / 60, 0) + nextDay.exercises.length * 1.5
@@ -933,252 +1354,421 @@ export const Training: React.FC = () => {
     acc + w.exercises.reduce((a, ex) => a + ex.sets.reduce((s, set) => s + set.weight * set.reps, 0), 0), 0);
 
   return (
-    <div className="flex-col gap-4 p-4 animate-fade-in" style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))', backgroundColor: 'var(--bg-primary)', minHeight: '100dvh' }}>
+    <div style={{
+      paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))',
+      backgroundColor: 'var(--bg-primary)',
+      minHeight: '100dvh',
+    }} className="animate-fade-in">
 
-      {/* Header */}
-      <div className="flex-row justify-between align-center mb-1">
-        <div>
-          <h1 className="text-h2">Training</h1>
-          <p className="text-subtitle">{program.name} · Phase {program.phase}</p>
-        </div>
-      </div>
-
-      {/* ── Draft Restore Banner ── */}
-      {showDraftRestore && savedDraft && (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0.75rem 1rem',
-          backgroundColor: 'rgba(251,191,36,0.08)',
-          border: '1px solid rgba(251,191,36,0.2)',
-          borderRadius: '16px',
-        }}>
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fbbf24' }}>Resume your last workout?</div>
-            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, marginTop: '2px' }}>
-              {savedDraft.sessionName} · {savedDraft.exercises?.length} exercise{savedDraft.exercises?.length !== 1 ? 's' : ''}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <button
-              onClick={() => {
-                setSessionName(savedDraft.sessionName);
-                setExercises(savedDraft.exercises);
-                setSessionActive(true);
-                setShowDraftRestore(false);
-              }}
-              style={{ padding: '0.45rem 0.9rem', background: '#fbbf24', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '0.78rem', color: '#000', cursor: 'pointer' }}
-            >
-              Resume
-            </button>
-            <button
-              onClick={() => {
-                localStorage.removeItem('bbc_workout_draft');
-                setShowDraftRestore(false);
-                setSavedDraft(null);
-              }}
-              style={{ padding: '0.45rem 0.75rem', background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
-            >
-              Discard
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── WORKOUT TYPE SELECTOR (PRIMARY ACTION) ── */}
-      <div>
-        <p style={{ fontSize: '0.68rem', fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>What are you training today?</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
-          {[
-            { name: 'Push Day',  emoji: '💪', muscles: 'Chest · Shoulders · Triceps', color: '#60a5fa' },
-            { name: 'Pull Day',  emoji: '🔄', muscles: 'Back · Biceps',               color: '#4ade80' },
-            { name: 'Leg Day',   emoji: '🦵', muscles: 'Quads · Glutes · Hamstrings', color: '#fb923c' },
-            { name: 'Upper Body',emoji: '🏋️', muscles: 'Push + Pull combined',        color: '#a78bfa' },
-          ].map(t => (
-            <button
-              key={t.name}
-              onClick={() => startCustomSession(t.name)}
-              style={{ padding: '1.1rem', backgroundColor: 'var(--bg-card)', border: `1px solid ${t.color}30`, borderRadius: '18px', cursor: 'pointer', textAlign: 'left', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '6px' }}
-            >
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, ${t.color}, transparent)` }} />
-              <span style={{ fontSize: '1.6rem' }}>{t.emoji}</span>
-              <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>{t.name}</span>
-              <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.35)', lineHeight: 1.3 }}>{t.muscles}</span>
-            </button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {[
-            { name: 'Full Body',        emoji: '⚡', color: '#f9a8d4' },
-            { name: 'Arms & Shoulders', emoji: '💥', color: '#fbbf24' },
-          ].map(t => (
-            <button
-              key={t.name}
-              onClick={() => startCustomSession(t.name)}
-              style={{ flex: 1, padding: '0.85rem 1rem', backgroundColor: 'var(--bg-card)', border: `1px solid ${t.color}22`, borderRadius: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
-            >
-              <span style={{ fontSize: '1.2rem' }}>{t.emoji}</span>
-              <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#fff' }}>{t.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── TODAY'S PROGRAM DAY (SECONDARY) ── */}
-      <div>
-        <p style={{ fontSize: '0.68rem', fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Or follow your program</p>
-        <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-        {/* Top label */}
-        <div style={{ padding: '0.6rem 1.25rem', backgroundColor: 'rgba(10,132,255,0.07)', borderBottom: '1px solid rgba(10,132,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            {allDone ? 'NEW WEEK — DAY 1' : `DAY ${nextDayIndex + 1} OF ${program.days.length}`}
-          </span>
-          <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>{estimatedMinutes} min</span>
-        </div>
-
-        {/* Day info */}
-        <div style={{ padding: '1.1rem 1.25rem 0.75rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>{nextDay.name}</h2>
-          <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginTop: '3px' }}>{nextDay.focus} · {nextDay.exercises.length} exercises</p>
-        </div>
-
-        {/* Exercise preview */}
-        <div style={{ padding: '0 1.25rem 1rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          {nextDay.exercises.map((ex, j) => {
-            const supersetColor = ex.supersetGroup ? SUPERSET_COLORS[ex.supersetGroup] : null;
-            return (
-              <div key={j} className="flex-row justify-between align-center" style={{ padding: '0.3rem 0', borderBottom: j < nextDay.exercises.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                <div className="flex-row align-center gap-2">
-                  {supersetColor && (
-                    <span style={{ fontSize: '0.55rem', fontWeight: 900, padding: '0.1rem 0.35rem', borderRadius: '4px', backgroundColor: `${supersetColor.replace('0.9', '0.12')}`, color: supersetColor, flexShrink: 0 }}>
-                      {ex.supersetGroup}
-                    </span>
-                  )}
-                  <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{ex.name}</span>
-                </div>
-                <div className="flex-row align-center gap-2">
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)' }}>{ex.sets} × {ex.reps}</span>
-                  <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)' }}>{ex.rest}s</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Start button */}
-        <div style={{ padding: '0 1.25rem 1.25rem' }}>
+      {/* ── Page Header ── */}
+      <div style={{ padding: '1.25rem 1.25rem 1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 style={{
+            fontSize: '1.5rem',
+            fontWeight: 900,
+            letterSpacing: '-0.025em',
+            margin: 0,
+            fontFamily: "'Outfit', sans-serif",
+          }}>Training</h1>
           <button
-            onClick={() => startProgramDay(program, nextDay)}
-            style={{ width: '100%', padding: '0.9rem', backgroundColor: 'var(--accent-blue)', color: '#fff', border: 'none', borderRadius: '14px', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            onClick={() => setShowCustomPicker(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '0.5rem 1rem',
+              backgroundColor: 'var(--accent-blue)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '50px',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              letterSpacing: '0.01em',
+            }}
           >
-            <Play size={18} fill="currentColor" /> Start {nextDay.name}
+            <Plus size={13} /> Start Custom
           </button>
         </div>
       </div>
-      </div>
 
-      {/* ── WEEK PROGRESS ── */}
-      <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', padding: '1rem 1.25rem', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="flex-row justify-between align-center mb-3">
-          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>This Week</span>
-          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>{completedDayNames.size} / {program.days.length} done</span>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-          {program.days.map((day, i) => {
-            const isDone = completedDayNames.has(`${program.name} — ${day.name}`);
-            const isNext = day === nextDay;
-            return (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                <div
-                  style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: isDone ? 'rgba(48,209,88,0.15)' : isNext ? 'rgba(10,132,255,0.15)' : 'rgba(255,255,255,0.04)', border: `2px solid ${isDone ? 'rgba(48,209,88,0.5)' : isNext ? 'rgba(10,132,255,0.6)' : 'rgba(255,255,255,0.08)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
-                >
-                  {isDone
-                    ? <Check size={18} color="var(--accent-green)" />
-                    : <span style={{ fontSize: '0.85rem', fontWeight: 900, color: isNext ? 'var(--accent-blue)' : 'rgba(255,255,255,0.25)' }}>{i + 1}</span>
-                  }
-                </div>
-                <span style={{ fontSize: '0.62rem', fontWeight: 700, color: isDone ? 'var(--accent-green)' : isNext ? 'var(--accent-blue)' : 'rgba(255,255,255,0.25)', textAlign: 'center', maxWidth: 50 }}>
-                  {day.name.split(' ')[0]}
-                </span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '0 1.25rem' }}>
+
+        {/* ── Draft Restore Banner ── */}
+        {showDraftRestore && savedDraft && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.875rem 1rem',
+            backgroundColor: 'rgba(251,191,36,0.07)',
+            border: '1px solid rgba(251,191,36,0.18)',
+            borderRadius: '18px',
+          }}>
+            <div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fbbf24' }}>Resume your last workout?</div>
+              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: '3px' }}>
+                {savedDraft.sessionName} · {savedDraft.exercises?.length} exercise{savedDraft.exercises?.length !== 1 ? 's' : ''}
               </div>
-            );
-          })}
-        </div>
-        {allDone && (
-          <div style={{ marginTop: '0.75rem', textAlign: 'center', padding: '0.5rem', backgroundColor: 'rgba(48,209,88,0.08)', borderRadius: '10px', border: '1px solid rgba(48,209,88,0.15)' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-green)' }}>Week complete — program restarts</span>
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button
+                onClick={() => {
+                  setSessionName(savedDraft.sessionName);
+                  setExercises(savedDraft.exercises);
+                  setSessionActive(true);
+                  setShowDraftRestore(false);
+                }}
+                style={{ padding: '0.45rem 0.9rem', background: '#fbbf24', border: 'none', borderRadius: '50px', fontWeight: 800, fontSize: '0.78rem', color: '#000', cursor: 'pointer' }}
+              >
+                Resume
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.removeItem('bbc_workout_draft');
+                  setShowDraftRestore(false);
+                  setSavedDraft(null);
+                }}
+                style={{ padding: '0.45rem 0.75rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '50px', fontWeight: 700, fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', cursor: 'pointer' }}
+              >
+                Discard
+              </button>
+            </div>
           </div>
         )}
-      </div>
 
-      {/* ── STATS ROW ── */}
-      {recentWorkouts.length > 0 && (
-        <div className="flex-row gap-3">
-          {[
-            { label: 'This Week', value: String(thisWeekWorkouts.length), sub: 'sessions' },
-            { label: 'Volume', value: totalVolumeLast5 > 1000 ? `${(totalVolumeLast5 / 1000).toFixed(1)}k` : String(Math.round(totalVolumeLast5)), sub: 'kg lifted' },
-            { label: 'Last', value: recentWorkouts[0] ? `${recentWorkouts[0].durationMinutes}m` : '—', sub: recentWorkouts[0]?.name?.split('—')[1]?.trim()?.slice(0, 8) || '—' },
-          ].map(stat => (
-            <div key={stat.label} style={{ flex: 1, backgroundColor: 'var(--bg-card)', borderRadius: '14px', padding: '0.9rem', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{stat.value}</div>
-              <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', fontWeight: 700, textTransform: 'uppercase', marginTop: '2px' }}>{stat.sub}</div>
+        {/* ── WORKOUT TYPE SELECTOR ── */}
+        <div>
+          <p style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
+            WHAT ARE YOU TRAINING TODAY?
+          </p>
+          {/* 2×2 primary grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '8px' }}>
+            {[
+              { name: 'Push Day',   emoji: '💪', muscles: 'Chest · Shoulders · Triceps', color: '#60a5fa' },
+              { name: 'Pull Day',   emoji: '🔄', muscles: 'Back · Biceps',               color: '#4ade80' },
+              { name: 'Leg Day',    emoji: '🦵', muscles: 'Quads · Glutes · Hamstrings', color: '#fb923c' },
+              { name: 'Upper Body', emoji: '🏋️', muscles: 'Push + Pull combined',        color: '#a78bfa' },
+            ].map(t => (
+              <button
+                key={t.name}
+                onClick={() => startCustomSession(t.name)}
+                style={{
+                  padding: '1.1rem',
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  minHeight: '80px',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                }}
+              >
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, transparent, ${t.color}, transparent)` }} />
+                <span style={{ fontSize: '1.6rem' }}>{t.emoji}</span>
+                <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>{t.name}</span>
+                <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'rgba(255,255,255,0.35)', lineHeight: 1.3 }}>{t.muscles}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Secondary pill row */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[
+              { name: 'Full Body',        emoji: '⚡', color: '#f9a8d4' },
+              { name: 'Arms & Shoulders', emoji: '💥', color: '#fbbf24' },
+            ].map(t => (
+              <button
+                key={t.name}
+                onClick={() => startCustomSession(t.name)}
+                style={{
+                  flex: 1,
+                  padding: '0.85rem 1rem',
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: '14px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                }}
+              >
+                <span style={{ fontSize: '1.2rem' }}>{t.emoji}</span>
+                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#fff' }}>{t.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── OR FOLLOW YOUR PROGRAM ── */}
+        <div>
+          <p style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
+            OR FOLLOW YOUR PROGRAM
+          </p>
+          <div style={{
+            backgroundColor: 'var(--bg-card)',
+            borderRadius: '20px',
+            border: '1px solid rgba(255,255,255,0.08)',
+            overflow: 'hidden',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+          }}>
+            {/* Day badge row */}
+            <div style={{
+              padding: '0.7rem 1.25rem',
+              backgroundColor: 'rgba(10,132,255,0.06)',
+              borderBottom: '1px solid rgba(10,132,255,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '3px 10px',
+                borderRadius: '50px',
+                backgroundColor: 'rgba(10,132,255,0.15)',
+                border: '1px solid rgba(10,132,255,0.25)',
+                fontSize: '0.62rem',
+                fontWeight: 900,
+                color: 'var(--accent-blue)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.07em',
+              }}>
+                {allDone ? 'NEW WEEK — DAY 1' : `DAY ${nextDayIndex + 1} OF ${program.days.length}`}
+              </span>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>{estimatedMinutes} min</span>
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* ── VOLUME CHART ── */}
-      <Card className="flex-col gap-4 p-4 card-glass">
-        <div className="flex-col mb-2">
-          <span className="text-h3">Volume Distribution</span>
-          <span className="text-caption text-muted mt-1">Total sets per muscle group (all-time)</span>
-        </div>
-        <div style={{ height: '160px', width: '100%', marginLeft: '-15px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            {/* @ts-ignore */}
-            <BarChart data={volumeData} margin={{ top: 8, right: 10, left: 0, bottom: 0 }}>
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-muted)', fontWeight: 600 }} dy={10} />
-              <Tooltip contentStyle={{ borderRadius: '16px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', padding: '12px' }} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-              <Bar dataKey="sets" radius={[6, 6, 0, 0]} barSize={32}>
-                {volumeData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.sets > 0 ? (MUSCLE_COLORS[entry.name] || 'var(--accent-blue)') : 'rgba(255,255,255,0.05)'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </Card>
+            {/* Workout info */}
+            <div style={{ padding: '1.1rem 1.25rem 0.75rem' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', margin: 0 }}>{nextDay.name}</h2>
+              <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.38)', marginTop: '4px', fontWeight: 500 }}>
+                {nextDay.focus} · {nextDay.exercises.length} exercises
+              </p>
+            </div>
 
-      {/* ── RECENT HISTORY ── */}
-      <div className="flex-row justify-between align-center" style={{ marginTop: '0.5rem' }}>
-        <h3 className="text-h3">Recent History</h3>
+            {/* Exercise preview */}
+            <div style={{ padding: '0 1.25rem 1rem' }}>
+              {nextDay.exercises.slice(0, 5).map((ex, j) => {
+                const supersetColor = ex.supersetGroup ? SUPERSET_COLORS[ex.supersetGroup] : null;
+                return (
+                  <div key={j} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0.35rem 0',
+                    borderBottom: j < Math.min(nextDay.exercises.length, 5) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {supersetColor && (
+                        <span style={{
+                          fontSize: '0.55rem',
+                          fontWeight: 900,
+                          padding: '1px 5px',
+                          borderRadius: '4px',
+                          backgroundColor: `${supersetColor.replace('0.9', '0.12')}`,
+                          color: supersetColor,
+                          flexShrink: 0,
+                        }}>
+                          {ex.supersetGroup}
+                        </span>
+                      )}
+                      <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{ex.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>{ex.sets} × {ex.reps}</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {nextDay.exercises.length > 5 && (
+                <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600, marginTop: '6px', marginBottom: 0 }}>
+                  + {nextDay.exercises.length - 5} more exercises
+                </p>
+              )}
+            </div>
+
+            {/* CTA */}
+            <div style={{ padding: '0 1.25rem 1.25rem' }}>
+              <button
+                onClick={() => startProgramDay(program, nextDay)}
+                style={{
+                  width: '100%',
+                  padding: '0.9rem',
+                  backgroundColor: 'var(--accent-blue)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '14px',
+                  fontWeight: 900,
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  letterSpacing: '0.01em',
+                }}
+              >
+                <Play size={17} fill="currentColor" /> Start {nextDay.name} →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ── WEEK PROGRESS ── */}
+        <div style={{
+          backgroundColor: 'var(--bg-card)',
+          borderRadius: '20px',
+          padding: '1rem 1.25rem',
+          border: '1px solid rgba(255,255,255,0.06)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>THIS WEEK</span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>{completedDayNames.size} / {program.days.length} done</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+            {program.days.map((day, i) => {
+              const isDone = completedDayNames.has(`${program.name} — ${day.name}`);
+              const isNext = day === nextDay;
+              return (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                  <div style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: '50%',
+                    backgroundColor: isDone ? 'rgba(50,215,75,0.12)' : isNext ? 'rgba(10,132,255,0.12)' : 'rgba(255,255,255,0.04)',
+                    border: `2px solid ${isDone ? 'rgba(50,215,75,0.45)' : isNext ? 'rgba(10,132,255,0.55)' : 'rgba(255,255,255,0.07)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease',
+                  }}>
+                    {isDone
+                      ? <Check size={17} color="var(--accent-green)" />
+                      : <span style={{ fontSize: '0.85rem', fontWeight: 900, color: isNext ? 'var(--accent-blue)' : 'rgba(255,255,255,0.22)' }}>{i + 1}</span>
+                    }
+                  </div>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 700, color: isDone ? 'var(--accent-green)' : isNext ? 'var(--accent-blue)' : 'rgba(255,255,255,0.22)', textAlign: 'center', maxWidth: 50 }}>
+                    {day.name.split(' ')[0]}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          {allDone && (
+            <div style={{ marginTop: '10px', textAlign: 'center', padding: '0.5rem', backgroundColor: 'rgba(50,215,75,0.07)', borderRadius: '10px', border: '1px solid rgba(50,215,75,0.13)' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-green)' }}>Week complete — program restarts</span>
+            </div>
+          )}
+        </div>
+
+        {/* ── STATS ROW ── */}
         {recentWorkouts.length > 0 && (
-          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>{recentWorkouts.length} sessions</span>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {[
+              { label: 'THIS WEEK', value: String(thisWeekWorkouts.length), sub: 'sessions' },
+              { label: 'VOLUME', value: totalVolumeLast5 > 1000 ? `${(totalVolumeLast5 / 1000).toFixed(1)}k` : String(Math.round(totalVolumeLast5)), sub: 'kg lifted' },
+              { label: 'LAST', value: recentWorkouts[0] ? `${recentWorkouts[0].durationMinutes}m` : '—', sub: recentWorkouts[0]?.name?.split('—')[1]?.trim()?.slice(0, 8) || '—' },
+            ].map(stat => (
+              <div key={stat.label} style={{
+                flex: 1,
+                backgroundColor: 'var(--bg-card)',
+                borderRadius: '16px',
+                padding: '0.9rem',
+                border: '1px solid rgba(255,255,255,0.06)',
+                textAlign: 'center',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+              }}>
+                <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#fff', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>{stat.value}</div>
+                <div style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.28)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', marginTop: '3px' }}>{stat.sub}</div>
+              </div>
+            ))}
+          </div>
         )}
-      </div>
-      <div className="flex-col gap-3">
-        {recentWorkouts.length === 0 ? (
-          <EmptyState
-            emoji="🏋️"
-            title="No workouts yet"
-            subtitle="Hit Start Workout above to log your first session."
-          />
-        ) : (
-          recentWorkouts.map(workout => {
-            const totalVolume = workout.exercises.reduce((acc, ex) =>
-              acc + ex.sets.reduce((s, set) => s + set.weight * set.reps, 0), 0);
-            const dateStr = new Date(workout.timestamp).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-            return (
-              <WorkoutCard
-                key={workout.id}
-                name={workout.name}
-                date={dateStr}
-                durationMinutes={workout.durationMinutes}
-                exerciseCount={workout.exercises.length}
-                totalVolume={totalVolume > 0 ? Math.round(totalVolume) : undefined}
-              />
-            );
-          })
-        )}
+
+        {/* ── VOLUME CHART ── */}
+        <Card className="flex-col gap-4 p-4 card-glass">
+          <div className="flex-col mb-2">
+            <span className="text-h3">Volume Distribution</span>
+            <span className="text-caption text-muted mt-1">Total sets per muscle group (all-time)</span>
+          </div>
+          <div style={{ height: '160px', width: '100%', marginLeft: '-15px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              {/* @ts-ignore */}
+              <BarChart data={volumeData} margin={{ top: 8, right: 10, left: 0, bottom: 0 }}>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-muted)', fontWeight: 600 }} dy={10} />
+                <Tooltip contentStyle={{ borderRadius: '16px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', padding: '12px' }} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                <Bar dataKey="sets" radius={[6, 6, 0, 0]} barSize={32}>
+                  {volumeData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.sets > 0 ? (MUSCLE_COLORS[entry.name] || 'var(--accent-blue)') : 'rgba(255,255,255,0.05)'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        {/* ── RECENT HISTORY ── */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <p style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>
+              RECENT WORKOUTS
+            </p>
+            {recentWorkouts.length > 0 && (
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.25)' }}>{recentWorkouts.length} sessions</span>
+            )}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {recentWorkouts.length === 0 ? (
+              <div style={{
+                backgroundColor: 'var(--bg-card)',
+                borderRadius: '20px',
+                border: '1px dashed rgba(255,255,255,0.08)',
+                padding: '2.5rem 1.5rem',
+                textAlign: 'center',
+              }}>
+                <div style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 16,
+                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 12px',
+                }}>
+                  <Dumbbell size={22} color="rgba(255,255,255,0.2)" />
+                </div>
+                <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', margin: 0 }}>No workouts yet</p>
+                <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.2)', fontWeight: 500, marginTop: '4px' }}>Start your first session above</p>
+              </div>
+            ) : (
+              recentWorkouts.map(workout => {
+                const totalVolume = workout.exercises.reduce((acc, ex) =>
+                  acc + ex.sets.reduce((s, set) => s + set.weight * set.reps, 0), 0);
+                const dateStr = new Date(workout.timestamp).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                return (
+                  <WorkoutCard
+                    key={workout.id}
+                    name={workout.name}
+                    date={dateStr}
+                    durationMinutes={workout.durationMinutes}
+                    exerciseCount={workout.exercises.length}
+                    totalVolume={totalVolume > 0 ? Math.round(totalVolume) : undefined}
+                  />
+                );
+              })
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );
