@@ -204,15 +204,18 @@ export const Settings: React.FC = () => {
     reader.onload = (ev) => {
       try {
         const text = ev.target?.result as string;
-        JSON.parse(text); // validate JSON before writing
+        const parsed = JSON.parse(text);
+        // Basic validation — must have logs and settings keys
+        if (typeof parsed !== 'object' || parsed === null) throw new Error('Invalid structure');
+        if (!('logs' in parsed || 'user' in parsed)) throw new Error('Missing required fields');
         localStorage.setItem('bbc_state', text);
-        showToast('Data imported — reload to apply', 'success');
-      } catch {
-        showToast('Invalid file — import failed', 'error');
+        showToast('Data imported — reloading...', 'success');
+        setTimeout(() => window.location.reload(), 1200);
+      } catch (err: any) {
+        showToast(`Import failed: ${err.message || 'Invalid file'}`, 'error');
       }
     };
     reader.readAsText(file);
-    // Reset so same file can be re-selected
     e.target.value = '';
   };
 

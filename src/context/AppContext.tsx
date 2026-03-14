@@ -1,22 +1,36 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import {
   AppState, AppSettings, UserProfile, DailyLog, FoodItem, MealType,
   MealEntry, WorkoutSession, HealthMetrics, SavedMeal, NutritionData,
   NutritionTotals, ProgressionRecord, ConnectionStatus,
 } from '../types';
 import { additionalExercises } from '../data/workoutPrograms';
+import { safeLoadState } from '../utils/persistence';
 
 const SCHEMA_VERSION = 4;
 const APP_VERSION = '2.0.0';
 
-interface ToastState {
+// ─── Toast queue types ────────────────────────────────────────────────────────
+
+interface ToastItem {
+  id: string;
   message: string;
   type: 'success' | 'error' | 'info';
-  visible: boolean;
 }
+
+// ─── Workout draft type ───────────────────────────────────────────────────────
+
+interface WorkoutDraft {
+  sessionName: string;
+  exercises: any[]; // ActiveExercise type from workout flow
+  startedAt: string;
+}
+
+// ─── Context interface ────────────────────────────────────────────────────────
 
 interface AppContextType {
   state: AppState;
+  toasts: ToastItem[];
   updateUser: (user: Partial<UserProfile>) => void;
   updateDailyLog: (date: string, logUpdate: Partial<DailyLog>) => void;
   addFoodToLog: (date: string, mealType: MealType, food: FoodItem, amount: number) => void;
@@ -38,9 +52,17 @@ interface AppContextType {
   setAssignedProgram: (programId: 'male_phase2' | 'female_phase1' | null) => void;
   resetApp: () => void;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  // Weight
+  updateWeight: (weight: number, date: string) => void;
+  // Workout draft
+  saveWorkoutDraft: (draft: WorkoutDraft) => void;
+  clearWorkoutDraft: () => void;
+  getWorkoutDraft: () => WorkoutDraft | null;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
+
+// ─── Defaults ─────────────────────────────────────────────────────────────────
 
 const DEFAULT_SETTINGS: AppSettings = {
   adaptiveCoaching: true,
@@ -87,62 +109,15 @@ const defaultState: AppState = {
   assignedProgram: null,
 };
 
+// ─── Load initial state via persistence.ts (improvement #6) ──────────────────
+
 function loadInitialState(): AppState {
-  try {
-    const raw = localStorage.getItem('bbc_state');
-    if (!raw) return defaultState;
-    const parsed = JSON.parse(raw);
-
-    // Merge settings with defaults so any new fields are always present
-    const settings: AppSettings = {
-      ...DEFAULT_SETTINGS,
-      ...(parsed.settings || {}),
-    };
-
-    // Ensure connectedApps exists and has all keys
-    if (!settings.connectedApps) {
-      settings.connectedApps = DEFAULT_SETTINGS.connectedApps;
-    } else {
-      settings.connectedApps = {
-        ...DEFAULT_SETTINGS.connectedApps,
-        ...settings.connectedApps,
-      };
-    }
-
-    // Migrate legacy camelCase connectedApps keys to snake_case
-    const legacyApps = settings.connectedApps as Record<string, ConnectionStatus>;
-    if ('appleHealth' in legacyApps && !('apple_health' in legacyApps)) {
-      settings.connectedApps.apple_health = legacyApps['appleHealth'];
-      delete (legacyApps as Record<string, unknown>)['appleHealth'];
-    }
-    if ('googleFit' in legacyApps && !('google_fit' in legacyApps)) {
-      settings.connectedApps.google_fit = legacyApps['googleFit'];
-      delete (legacyApps as Record<string, unknown>)['googleFit'];
-    }
-
-    // Migrations for other fields
-    if (!parsed.savedMeals) parsed.savedMeals = [];
-    if (!parsed.recentFoods || (parsed.recentFoods.length > 0 && typeof parsed.recentFoods[0] === 'string')) {
-      parsed.recentFoods = [];
-    }
-    if (!parsed.favoriteFoods || (parsed.favoriteFoods.length > 0 && typeof parsed.favoriteFoods[0] === 'string')) {
-      parsed.favoriteFoods = [];
-    }
-    if (!('assignedProgram' in parsed)) parsed.assignedProgram = null;
-
-    // Always use the full in-memory library so newly added exercises are available
-    parsed.workoutLibrary = baseWorkoutLibrary;
-
-    return {
-      ...defaultState,
-      ...parsed,
-      settings,
-    };
-  } catch (e) {
-    console.warn('[BBC] Failed to load state, using defaults', e);
-    return defaultState;
-  }
+  const loaded = safeLoadState('bbc_state', defaultState);
+  // Always use the full in-memory library so newly added exercises are available
+  return { ...loaded, workoutLibrary: baseWorkoutLibrary };
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const computeNutritionTotal = (entries: Array<{ food: FoodItem; amount: number }>): NutritionData => {
   return entries.reduce(
@@ -162,27 +137,40 @@ const emptyLog = (date: string): DailyLog => ({
   workouts: [], health: {}, adherenceScore: 0
 });
 
+// ─── Provider ────────────────────────────────────────────────────────────────
+
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AppState>(loadInitialState);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [workoutDraft, setWorkoutDraftState] = useState<WorkoutDraft | null>(null);
 
-  const [toast, setToast] = useState<ToastState>({ message: '', type: 'info', visible: false });
-
+  // Improvement #1: Debounced localStorage save with change detection
+  const lastSavedRef = useRef<string>('');
   useEffect(() => {
-    try {
-      localStorage.setItem('bbc_state', JSON.stringify({
+    const timer = setTimeout(() => {
+      const serialized = JSON.stringify({
         ...state,
         _meta: {
           schemaVersion: SCHEMA_VERSION,
           lastSaved: new Date().toISOString(),
           appVersion: APP_VERSION,
         },
-      }));
-    } catch (e) {
-      if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-        console.warn('[BBC] localStorage quota exceeded');
+      });
+      if (serialized !== lastSavedRef.current) {
+        try {
+          localStorage.setItem('bbc_state', serialized);
+          lastSavedRef.current = serialized;
+        } catch (e) {
+          if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+            console.warn('[BBC] localStorage quota exceeded');
+          }
+        }
       }
-    }
+    }, 500);
+    return () => clearTimeout(timer);
   }, [state]);
+
+  // ─── Actions ──────────────────────────────────────────────────────────────
 
   const updateUser = (updates: Partial<UserProfile>) => {
     setState(prev => ({
@@ -201,7 +189,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
+  // Improvement #5: Input validation in addFoodToLog
   const addFoodToLog = (date: string, mealType: MealType, food: FoodItem, amount: number) => {
+    if (amount <= 0) {
+      showToast('Amount must be greater than 0', 'error');
+      return;
+    }
+    if (food.calories < 0 || food.protein < 0 || food.carbs < 0 || food.fats < 0) {
+      showToast('Food has invalid nutrition values', 'error');
+      return;
+    }
+
     const newEntry: MealEntry = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       foodId: food.id,
@@ -280,14 +278,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
+  // Improvement #8: Clamp caloriesBurned in addWorkout
   const addWorkout = (date: string, workout: WorkoutSession) => {
+    const clampedCalories = Math.max(0, Math.min(2000, workout.caloriesBurned || 0));
+    const safeWorkout: WorkoutSession = { ...workout, caloriesBurned: clampedCalories };
+
     setState(prev => {
       const log = prev.logs[date] || emptyLog(date);
       return {
         ...prev,
         logs: {
           ...prev.logs,
-          [date]: { ...log, workouts: [...log.workouts, workout] }
+          [date]: { ...log, workouts: [...log.workouts, safeWorkout] }
         }
       };
     });
@@ -306,7 +308,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
+  // Improvement #7: Validate addCustomFood
   const addCustomFood = (food: FoodItem) => {
+    if (!food.name || food.name.trim() === '') {
+      showToast('Food name cannot be empty', 'error');
+      return;
+    }
+    if (food.calories < 0 || food.protein < 0 || food.carbs < 0 || food.fats < 0) {
+      showToast('Nutrition values cannot be negative', 'error');
+      return;
+    }
+    if (food.servingSize <= 0) {
+      showToast('Serving size must be greater than 0', 'error');
+      return;
+    }
     setState(prev => ({ ...prev, customFoods: [...prev.customFoods, { ...food, source: 'custom' }] }));
   };
 
@@ -396,6 +411,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   };
 
+  // Improvement #4: Atomic weight update — single setState call
+  const updateWeight = (weight: number, date: string) => {
+    setState(prev => {
+      const log = prev.logs[date] || emptyLog(date);
+      return {
+        ...prev,
+        user: prev.user ? { ...prev.user, weight } : prev.user,
+        logs: {
+          ...prev.logs,
+          [date]: { ...log, weight },
+        },
+      };
+    });
+  };
+
   const getNutritionTotals = (date: string): NutritionTotals => {
     const log = state.logs[date];
     if (!log) return { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
@@ -447,7 +477,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     }
 
-    // Return sorted oldest → newest
     return records.sort((a, b) => a.date.localeCompare(b.date));
   };
 
@@ -474,58 +503,119 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setState(prev => ({ ...prev, assignedProgram: programId }));
   };
 
+  // Improvement #2: Toast queue (max 3, auto-remove after 3000ms)
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    setToast({ message, type, visible: true });
-    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
+    const id = `toast_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    setToasts(prev => {
+      const trimmed = prev.length >= 3 ? prev.slice(prev.length - 2) : prev;
+      return [...trimmed, { id, message, type }];
+    });
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3000);
   };
 
   const resetApp = () => {
     localStorage.removeItem('bbc_state');
     setState(defaultState);
+    setToasts([]);
+    setWorkoutDraftState(null);
+  };
+
+  // Improvement #3: Workout draft actions
+  const saveWorkoutDraft = (draft: WorkoutDraft) => {
+    setWorkoutDraftState(draft);
+    try {
+      localStorage.setItem('bbc_workout_draft', JSON.stringify(draft));
+    } catch (e) {
+      console.warn('[BBC] Failed to save workout draft to localStorage', e);
+    }
+  };
+
+  const clearWorkoutDraft = () => {
+    setWorkoutDraftState(null);
+    localStorage.removeItem('bbc_workout_draft');
+  };
+
+  const getWorkoutDraft = (): WorkoutDraft | null => {
+    if (workoutDraft) return workoutDraft;
+    try {
+      const raw = localStorage.getItem('bbc_workout_draft');
+      if (!raw) return null;
+      return JSON.parse(raw) as WorkoutDraft;
+    } catch {
+      return null;
+    }
   };
 
   return (
     <AppContext.Provider value={{
-      state, updateUser, updateDailyLog, addFoodToLog, removeFoodEntry, editFoodEntry,
+      state, toasts, updateUser, updateDailyLog, addFoodToLog, removeFoodEntry, editFoodEntry,
       addCustomFood, addWorkout, updateHealthMetrics, saveMeal, deleteSavedMeal,
       logSavedMeal, updateSettings, updateConnectionStatus, updateUnits,
       getNutritionTotals, getProgressionHistory,
       trackRecentFood, toggleFavoriteFood,
       setAssignedProgram, resetApp, showToast,
+      updateWeight,
+      saveWorkoutDraft, clearWorkoutDraft, getWorkoutDraft,
     }}>
       {children}
-      <Toast message={toast.message} type={toast.type} visible={toast.visible} />
+      <ToastStack toasts={toasts} />
     </AppContext.Provider>
   );
 };
 
-const Toast: React.FC<ToastState> = ({ message, type, visible }) => {
-  if (!visible || !message) return null;
+// ─── Toast stack renderer (improvement #2) ───────────────────────────────────
 
-  const bg = type === 'success' ? 'var(--accent-green)' : type === 'error' ? 'var(--accent-red)' : '#333';
+const ToastStack: React.FC<{ toasts: ToastItem[] }> = ({ toasts }) => {
+  if (toasts.length === 0) return null;
 
   return (
-    <div className="animate-fade-in" style={{
+    <div style={{
       position: 'fixed',
       bottom: '100px',
       left: '20px',
       right: '20px',
+      zIndex: 9000,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+      alignItems: 'center',
+      pointerEvents: 'none',
+    }}>
+      {toasts.map(toast => (
+        <ToastItem key={toast.id} toast={toast} />
+      ))}
+    </div>
+  );
+};
+
+const ToastItem: React.FC<{ toast: ToastItem }> = ({ toast }) => {
+  const bg =
+    toast.type === 'success' ? 'var(--accent-green)' :
+    toast.type === 'error' ? 'var(--accent-red)' :
+    '#333';
+
+  return (
+    <div className="animate-fade-in" style={{
       backgroundColor: bg,
       color: 'white',
       padding: '12px 20px',
       borderRadius: 'var(--radius-md)',
-      zIndex: 9000,
-      textAlign: 'center',
       boxShadow: 'var(--shadow-lg)',
       fontWeight: 600,
       fontSize: '0.9rem',
+      width: '100%',
       maxWidth: '460px',
-      margin: '0 auto'
+      textAlign: 'center',
+      pointerEvents: 'auto',
     }}>
-      {message}
+      {toast.message}
     </div>
   );
 };
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export const useApp = () => {
   const context = useContext(AppContext);

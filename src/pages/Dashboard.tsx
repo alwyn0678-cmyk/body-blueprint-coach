@@ -24,17 +24,19 @@ export const Dashboard: React.FC = () => {
   const { user, logs, settings } = state;
   const navigate = useNavigate();
 
-  const [selectedDate, setSelectedDate]     = useState(getLocalISOString());
+  const todayDate = getLocalISOString();
+
+  const [selectedDate, setSelectedDate]     = useState(todayDate);
   const [isWaterSheetOpen, setIsWaterSheetOpen]   = useState(false);
   const [isWeightSheetOpen, setIsWeightSheetOpen] = useState(false);
   const [isStepsSheetOpen, setIsStepsSheetOpen]   = useState(false);
   const [tempWeight, setTempWeight] = useState(user?.weight || 0);
   const [tempSteps, setTempSteps]   = useState(0);
 
+  // Guard: user must exist before any derived computation
   if (!user) return null;
 
   // ── Derived data ─────────────────────────────────────────────────────────────
-  const todayDate = getLocalISOString();
   const todayLog  = logs[selectedDate] || {
     id: selectedDate, date: selectedDate, steps: 0, waterGlasses: 0,
     meals: { breakfast: [], lunch: [], dinner: [], snacks: [] },
@@ -45,24 +47,33 @@ export const Dashboard: React.FC = () => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + days);
     const next = getLocalISOString(d);
-    if (next <= todayDate) setSelectedDate(next);
+    // Guard: never navigate to a future date
+    if (next > todayDate) return;
+    setSelectedDate(next);
   };
 
-  const consumed = getMacrosFromLog(todayLog as any);
+  const rawConsumed = getMacrosFromLog(todayLog as any);
+  // Guard all macro values against NaN
+  const consumed = {
+    calories: isNaN(rawConsumed.calories) ? 0 : Math.max(0, rawConsumed.calories),
+    protein:  isNaN(rawConsumed.protein)  ? 0 : Math.max(0, rawConsumed.protein),
+    carbs:    isNaN(rawConsumed.carbs)    ? 0 : Math.max(0, rawConsumed.carbs),
+    fats:     isNaN(rawConsumed.fats)     ? 0 : Math.max(0, rawConsumed.fats),
+  };
   const targets  = user.targets;
 
-  // Weekly chart
+  // Weekly chart — clamp calories to 0 to avoid negative bars
   const weeklyData = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() - (6 - i));
     const dateStr = getLocalISOString(d);
-    const m = logs[dateStr] ? getMacrosFromLog(logs[dateStr] as any) : { calories: 0, protein: 0 };
-    const isFuture = d > new Date();
+    const rawMacros = logs[dateStr] ? getMacrosFromLog(logs[dateStr] as any) : { calories: 0, protein: 0 };
+    const isFuture = dateStr > todayDate;
     return {
       day: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()],
       dateStr,
-      calories: Math.round(m.calories),
-      protein:  Math.round(m.protein),
+      calories: Math.max(0, Math.round(isNaN(rawMacros.calories) ? 0 : rawMacros.calories)),
+      protein:  Math.max(0, Math.round(isNaN(rawMacros.protein)  ? 0 : rawMacros.protein)),
       target:   targets.calories,
       isToday:  dateStr === todayDate,
       isFuture,
@@ -80,9 +91,14 @@ export const Dashboard: React.FC = () => {
   const evaluation = evaluateWeeklyCheckIn(user, logs, currentEma, { plateauDetection: settings.plateauDetection });
   const streak     = calculateStreak(logs);
 
+  // Weight delta — guard against null/NaN
   const weekAgoEma  = trendData.length >= 7 ? trendData[trendData.length - 7]?.trend : null;
-  const weightDelta = currentEma && weekAgoEma ? currentEma - weekAgoEma : null;
-  const weightDeltaStr  = weightDelta !== null ? `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)}kg` : null;
+  const weightDelta = (currentEma != null && weekAgoEma != null && !isNaN(currentEma) && !isNaN(weekAgoEma))
+    ? currentEma - weekAgoEma
+    : null;
+  const weightDeltaStr  = weightDelta !== null
+    ? `${weightDelta > 0 ? '+' : ''}${weightDelta.toFixed(1)}kg`
+    : null;
   const weightDeltaGood = weightDelta === null ? null
     : user.goalType === 'fat_loss' ? weightDelta <= 0
     : weightDelta >= 0;
@@ -127,6 +143,8 @@ export const Dashboard: React.FC = () => {
     Haptics.impact({ style: ImpactStyle.Light }).catch(() => {});
     const v = Math.max(0, Math.min(20, todayLog.waterGlasses + n));
     updateDailyLog(todayDate, { waterGlasses: v });
+    // Auto-close after reaching 0 or 20 would be odd; keep open so user can adjust freely.
+    // Sheet stays open — they close it with the sheet handle.
   };
 
   const handleWeightSave = () => {
@@ -215,6 +233,15 @@ export const Dashboard: React.FC = () => {
       {/* ── Content sections ── */}
       <div className="flex-col gap-3" style={{ padding: '1rem' }}>
 
+        {/* TODAY section label */}
+        <span style={{
+          fontSize: '0.625rem', fontWeight: 700,
+          textTransform: 'uppercase', letterSpacing: '0.1em',
+          color: 'var(--text-tertiary)', paddingLeft: '0.25rem',
+        }}>
+          Today
+        </span>
+
         {/* Quick stats: weight + streak */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
           <WeightCard
@@ -226,31 +253,7 @@ export const Dashboard: React.FC = () => {
           <StreakCard streak={streak} />
         </div>
 
-        {/* Weekly chart */}
-        <WeeklyChartCard
-          data={weeklyData}
-          weekAvg={weekAvgCal}
-          target={targets.calories}
-        />
-
-        {/* AI Coaching */}
-        {settings.adaptiveCoaching && (
-          settings.weeklyCheckIn ? (
-            <CoachingInsightCard
-              reasoning={evaluation.reasoning}
-              urgency={evaluation.urgency}
-              newTargets={evaluation.newTargets}
-              onApply={evaluation.newTargets ? () => {
-                updateUser({ targets: evaluation.newTargets });
-                showToast('Calorie target updated', 'success');
-              } : undefined}
-            />
-          ) : (
-            <WeeklyPauseCard />
-          )
-        )}
-
-        {/* Daily vitals 2×2 grid + recovery */}
+        {/* Daily vitals 2×2 grid */}
         <DailyHabitsCard
           water={todayLog.waterGlasses}
           steps={todayLog.steps || 0}
@@ -271,6 +274,52 @@ export const Dashboard: React.FC = () => {
           recCTA={recCTA}
           onNavigate={navigate}
         />
+
+        {/* THIS WEEK section label */}
+        <span style={{
+          fontSize: '0.625rem', fontWeight: 700,
+          textTransform: 'uppercase', letterSpacing: '0.1em',
+          color: 'var(--text-tertiary)', paddingLeft: '0.25rem',
+          marginTop: '0.25rem',
+        }}>
+          This Week
+        </span>
+
+        {/* Weekly chart */}
+        <WeeklyChartCard
+          data={weeklyData}
+          weekAvg={weekAvgCal}
+          target={targets.calories}
+        />
+
+        {/* COACHING section label — only when adaptive coaching is on */}
+        {settings.adaptiveCoaching && (
+          <span style={{
+            fontSize: '0.625rem', fontWeight: 700,
+            textTransform: 'uppercase', letterSpacing: '0.1em',
+            color: 'var(--text-tertiary)', paddingLeft: '0.25rem',
+            marginTop: '0.25rem',
+          }}>
+            Coaching
+          </span>
+        )}
+
+        {/* AI Coaching */}
+        {settings.adaptiveCoaching && (
+          settings.weeklyCheckIn ? (
+            <CoachingInsightCard
+              reasoning={evaluation.reasoning}
+              urgency={evaluation.urgency}
+              newTargets={evaluation.newTargets}
+              onApply={evaluation.newTargets ? () => {
+                updateUser({ targets: evaluation.newTargets });
+                showToast('Calorie target updated', 'success');
+              } : undefined}
+            />
+          ) : (
+            <WeeklyPauseCard />
+          )
+        )}
 
       </div>
 
@@ -324,6 +373,14 @@ export const Dashboard: React.FC = () => {
               />
             ))}
           </div>
+          {/* Done button to close the sheet */}
+          <button
+            className="btn-primary w-full"
+            style={{ padding: '0.9rem' }}
+            onClick={() => setIsWaterSheetOpen(false)}
+          >
+            Done
+          </button>
         </div>
       </BottomSheet>
 
@@ -350,7 +407,7 @@ export const Dashboard: React.FC = () => {
             />
             <span style={{ fontSize: '1.375rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>kg</span>
           </div>
-          {currentEma && (
+          {currentEma != null && !isNaN(currentEma) && (
             <div style={{
               backgroundColor: 'rgba(255,255,255,0.04)',
               borderRadius: 'var(--radius-md)',

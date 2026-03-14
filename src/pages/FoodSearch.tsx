@@ -226,6 +226,13 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
   const localIds = new Set(localResults.map(f => f.id));
   const deduplicatedApi = apiResults.filter(f => !localIds.has(f.id));
 
+  const handleQuickAdd = (f: FoodItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    trackRecentFood(f);
+    onAdd(f, 1); // 1 = 1 serving multiplier
+    showToast(`${f.name} added to ${mealType}`, 'success');
+  };
+
   const renderFoodRow = (f: FoodItem, isApi = false) => {
     const isFav = state.favoriteFoods.some(fav => fav.id === f.id);
     return (
@@ -236,28 +243,40 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         style={{ padding: '0.85rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', alignItems: 'center' }}
       >
         <div className="flex-col gap-1" style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
-          <span className="text-body font-bold" style={{ color: '#fff', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {f.name}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="text-body font-bold" style={{ color: '#fff', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {f.name}
+            </span>
+            {f.source === 'custom' && (
+              <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.12)', padding: '1px 5px', borderRadius: '4px', flexShrink: 0 }}>CUSTOM</span>
+            )}
+          </div>
           <span className="text-caption" style={{ color: 'rgba(255,255,255,0.38)', fontSize: '0.68rem' }}>
             {f.brand ? `${f.brand} · ` : ''}{f.servingSize}{f.servingUnit}
             {isApi && <span style={{ color: 'rgba(10,132,255,0.7)', marginLeft: '4px' }}>· online</span>}
           </span>
         </div>
         <div className="flex-row gap-2 align-center" style={{ flexShrink: 0 }}>
-          <div className="flex-col align-end">
-            <span className="text-body font-bold" style={{ fontVariantNumeric: 'tabular-nums', lineHeight: 1, fontSize: '0.95rem' }}>{f.calories}</span>
-            <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.28)', fontWeight: 700 }}>KCAL</span>
+          <div className="flex-col align-end" style={{ marginRight: '4px' }}>
+            <span style={{ fontVariantNumeric: 'tabular-nums', lineHeight: 1, fontSize: '0.9rem', fontWeight: 700, color: '#fff' }}>{Math.round(f.calories)}</span>
+            <span style={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.28)', fontWeight: 700 }}>KCAL</span>
           </div>
+          {f.protein > 0 && (
+            <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--color-protein)', backgroundColor: 'rgba(255,159,10,0.1)', padding: '2px 6px', borderRadius: '6px' }}>{Math.round(f.protein)}P</span>
+          )}
           <button
             onClick={e => { e.stopPropagation(); toggleFavoriteFood(f); }}
             style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex' }}
           >
-            <Heart size={15} color={isFav ? 'var(--accent-red)' : 'rgba(255,255,255,0.2)'} fill={isFav ? 'var(--accent-red)' : 'none'} />
+            <Heart size={14} color={isFav ? 'var(--accent-red)' : 'rgba(255,255,255,0.2)'} fill={isFav ? 'var(--accent-red)' : 'none'} />
           </button>
-          <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)', padding: '0.4rem', borderRadius: '9px', display: 'flex' }}>
+          <button
+            onClick={e => handleQuickAdd(f, e)}
+            style={{ background: 'var(--accent-blue)', border: 'none', color: '#fff', padding: '0.4rem 0.5rem', borderRadius: '9px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+            title="Quick add 1 serving"
+          >
             <Plus size={15} />
-          </div>
+          </button>
         </div>
       </div>
     );

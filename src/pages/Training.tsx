@@ -263,7 +263,8 @@ const ActiveWorkoutScreen: React.FC<{
   onAddExercise: () => void;
   onFinish: () => void;
   onCancel: () => void;
-}> = ({ workoutName, exercises, elapsed, logs, today, onUpdateExercises, onAddExercise, onFinish, onCancel }) => {
+  showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
+}> = ({ workoutName, exercises, elapsed, logs, today, onUpdateExercises, onAddExercise, onFinish, onCancel, showToast }) => {
   const [expandedExercise, setExpandedExercise] = useState<string | null>(exercises[0]?.libraryId ?? null);
   const [swapOpenIdx, setSwapOpenIdx] = useState<number | null>(null);
   const [restTimer, setRestTimer] = useState<number | null>(null);
@@ -280,18 +281,51 @@ const ActiveWorkoutScreen: React.FC<{
     clearTimeout(restRef.current);
   };
 
+  // Track which set inputs have out-of-range values for red border highlighting
+  const [invalidSets, setInvalidSets] = useState<Record<string, boolean>>({});
+
   const updateSet = (exIdx: number, setIdx: number, field: 'weight' | 'reps' | 'rpe', value: string) => {
+    let clamped = value;
+    let isInvalid = false;
+    if (field === 'weight' && value !== '') {
+      const n = parseFloat(value);
+      if (!isNaN(n)) {
+        if (n < 0 || n > 500) {
+          clamped = String(Math.min(500, Math.max(0, n)));
+          isInvalid = true;
+        }
+      }
+    }
+    if (field === 'reps' && value !== '') {
+      const n = parseInt(value);
+      if (!isNaN(n)) {
+        if (n < 0 || n > 100) {
+          clamped = String(Math.min(100, Math.max(0, n)));
+          isInvalid = true;
+        }
+      }
+    }
+    const key = `${exIdx}-${setIdx}-${field}`;
+    setInvalidSets(prev => ({ ...prev, [key]: isInvalid }));
     onUpdateExercises(prev => prev.map((ex, i) => i !== exIdx ? ex : {
-      ...ex, sets: ex.sets.map((s, j) => j !== setIdx ? s : { ...s, [field]: value })
+      ...ex, sets: ex.sets.map((s, j) => j !== setIdx ? s : { ...s, [field]: clamped })
     }));
   };
 
   const toggleSetDone = (exIdx: number, setIdx: number) => {
+    const set = exercises[exIdx]?.sets[setIdx];
+    if (set && !set.done) {
+      // Require weight and reps before marking done
+      if (!set.weight || !set.reps) {
+        showToast('Enter weight and reps first', 'error');
+        return;
+      }
+    }
     const restTime = exercises[exIdx]?.rest ?? 90;
     onUpdateExercises(prev => prev.map((ex, i) => i !== exIdx ? ex : {
       ...ex, sets: ex.sets.map((s, j) => j !== setIdx ? s : { ...s, done: !s.done })
     }));
-    startRest(restTime);
+    if (!set?.done) startRest(restTime);
   };
 
   const addSet = (exIdx: number) => {
@@ -334,7 +368,14 @@ const ActiveWorkoutScreen: React.FC<{
                 <Timer size={13} color="var(--accent-blue)" />
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-blue)', fontVariantNumeric: 'tabular-nums' }}>{formatDuration(elapsed)}</span>
               </div>
-              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{completedSets}/{totalSets} sets done</span>
+              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+                {completedSets}/{totalSets} sets
+              </span>
+              {completedSets > 0 && totalSets > 0 && (
+                <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>
+                  · {Math.round((completedSets / totalSets) * 100)}%
+                </span>
+              )}
             </div>
           </div>
           <div className="flex-row gap-2">
@@ -379,8 +420,9 @@ const ActiveWorkoutScreen: React.FC<{
               const doneSets = ex.sets.filter(s => s.done).length;
               const supersetColor = ex.supersetGroup ? SUPERSET_COLORS[ex.supersetGroup] : null;
 
+              const allSetsDone = doneSets === ex.sets.length && doneSets > 0;
               return (
-                <div key={`${ex.libraryId}-${exIdx}`} style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: `1px solid ${isExpanded ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)'}`, overflow: 'hidden' }}>
+                <div key={`${ex.libraryId}-${exIdx}`} style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: `1px solid ${allSetsDone ? 'rgba(48,209,88,0.35)' : isExpanded ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)'}`, overflow: 'hidden', boxShadow: allSetsDone ? '0 0 0 1px rgba(48,209,88,0.1), 0 2px 16px rgba(48,209,88,0.08)' : 'none', transition: 'border-color 0.3s, box-shadow 0.3s' }}>
                   {/* Superset connector */}
                   {supersetColor && (
                     <div style={{ height: '3px', backgroundColor: supersetColor, opacity: 0.7 }} />
@@ -492,7 +534,11 @@ const ActiveWorkoutScreen: React.FC<{
                             value={set.weight}
                             onChange={e => updateSet(exIdx, setIdx, 'weight', e.target.value)}
                             disabled={set.done}
-                            style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '10px', color: '#fff', textAlign: 'center', padding: '0.7rem 0.4rem', fontSize: '1rem', fontWeight: 800, outline: 'none', fontVariantNumeric: 'tabular-nums' }}
+                            style={{
+                              flex: 1, backgroundColor: 'rgba(255,255,255,0.06)',
+                              border: `1px solid ${invalidSets[`${exIdx}-${setIdx}-weight`] ? '#f87171' : 'rgba(255,255,255,0.09)'}`,
+                              borderRadius: '10px', color: '#fff', textAlign: 'center', padding: '0.7rem 0.4rem', fontSize: '1rem', fontWeight: 800, outline: 'none', fontVariantNumeric: 'tabular-nums',
+                            }}
                           />
                           <input
                             type="number" inputMode="numeric"
@@ -500,13 +546,17 @@ const ActiveWorkoutScreen: React.FC<{
                             value={set.reps}
                             onChange={e => updateSet(exIdx, setIdx, 'reps', e.target.value)}
                             disabled={set.done}
-                            style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '10px', color: '#fff', textAlign: 'center', padding: '0.7rem 0.4rem', fontSize: '1rem', fontWeight: 800, outline: 'none', fontVariantNumeric: 'tabular-nums' }}
+                            style={{
+                              flex: 1, backgroundColor: 'rgba(255,255,255,0.06)',
+                              border: `1px solid ${invalidSets[`${exIdx}-${setIdx}-reps`] ? '#f87171' : 'rgba(255,255,255,0.09)'}`,
+                              borderRadius: '10px', color: '#fff', textAlign: 'center', padding: '0.7rem 0.4rem', fontSize: '1rem', fontWeight: 800, outline: 'none', fontVariantNumeric: 'tabular-nums',
+                            }}
                           />
                           <button
-                            onClick={() => set.done ? toggleSetDone(exIdx, setIdx) : (set.weight && set.reps ? toggleSetDone(exIdx, setIdx) : removeSet(exIdx, setIdx))}
-                            style={{ width: 44, height: 44, borderRadius: '10px', border: 'none', backgroundColor: set.done ? 'rgba(48,209,88,0.25)' : (set.weight && set.reps ? 'rgba(48,209,88,0.15)' : 'rgba(255,59,48,0.1)'), cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                            onClick={() => toggleSetDone(exIdx, setIdx)}
+                            style={{ width: 44, height: 44, borderRadius: '10px', border: 'none', backgroundColor: set.done ? 'rgba(48,209,88,0.25)' : (set.weight && set.reps ? 'rgba(48,209,88,0.15)' : 'rgba(255,255,255,0.06)'), cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                           >
-                            {set.done ? <Check size={18} color="#4ade80" /> : (set.weight && set.reps) ? <Check size={18} color="rgba(48,209,88,0.8)" /> : <X size={14} color="rgba(255,59,48,0.6)" />}
+                            {set.done ? <Check size={18} color="#4ade80" /> : <Check size={18} color={set.weight && set.reps ? 'rgba(48,209,88,0.8)' : 'rgba(255,255,255,0.2)'} />}
                           </button>
                         </div>
                       ))}
@@ -550,6 +600,35 @@ export const Training: React.FC = () => {
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
+
+  // ── Draft restore state ────────────────────────────────────────────────────
+  const [showDraftRestore, setShowDraftRestore] = useState(false);
+  const [savedDraft, setSavedDraft] = useState<any>(null);
+
+  // Check for an unfinished draft on mount
+  useEffect(() => {
+    const draft = localStorage.getItem('bbc_workout_draft');
+    if (draft && !sessionActive) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed.exercises?.length > 0) {
+          setSavedDraft(parsed);
+          setShowDraftRestore(true);
+        }
+      } catch {}
+    }
+  }, []);
+
+  // Auto-save draft whenever exercises change during an active session
+  useEffect(() => {
+    if (sessionActive && exercises.length > 0) {
+      localStorage.setItem('bbc_workout_draft', JSON.stringify({
+        sessionName,
+        exercises,
+        startedAt: new Date().toISOString(),
+      }));
+    }
+  }, [exercises, sessionActive, sessionName]);
 
   useEffect(() => {
     if (sessionActive) {
@@ -691,12 +770,14 @@ export const Training: React.FC = () => {
       caloriesBurned: Math.round(elapsed / 60 * 5.5 * ((state.user?.weight ?? 70) / 70)),
     };
     addWorkout(today, session);
+    localStorage.removeItem('bbc_workout_draft');
     setSessionActive(false);
     const prMsg = prCount > 0 ? ` · 🏆 ${prCount} PR${prCount > 1 ? 's' : ''}` : '';
     showToast(`${sessionName} complete · ${Math.round(totalVolume)}kg${prMsg}`, 'success');
   }, [exercises, sessionName, elapsed, today, state.logs, addWorkout, showToast]);
 
   const cancelWorkout = () => {
+    localStorage.removeItem('bbc_workout_draft');
     setSessionActive(false);
     setExercises([]);
     showToast('Session cancelled', 'info');
@@ -775,6 +856,7 @@ export const Training: React.FC = () => {
           onAddExercise={() => setShowPicker(true)}
           onFinish={finishWorkout}
           onCancel={cancelWorkout}
+          showToast={showToast}
         />
         {showPicker && (
           <ExercisePicker
@@ -860,6 +942,47 @@ export const Training: React.FC = () => {
           <p className="text-subtitle">{program.name} · Phase {program.phase}</p>
         </div>
       </div>
+
+      {/* ── Draft Restore Banner ── */}
+      {showDraftRestore && savedDraft && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0.75rem 1rem',
+          backgroundColor: 'rgba(251,191,36,0.08)',
+          border: '1px solid rgba(251,191,36,0.2)',
+          borderRadius: '16px',
+        }}>
+          <div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fbbf24' }}>Resume your last workout?</div>
+            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, marginTop: '2px' }}>
+              {savedDraft.sessionName} · {savedDraft.exercises?.length} exercise{savedDraft.exercises?.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              onClick={() => {
+                setSessionName(savedDraft.sessionName);
+                setExercises(savedDraft.exercises);
+                setSessionActive(true);
+                setShowDraftRestore(false);
+              }}
+              style={{ padding: '0.45rem 0.9rem', background: '#fbbf24', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '0.78rem', color: '#000', cursor: 'pointer' }}
+            >
+              Resume
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem('bbc_workout_draft');
+                setShowDraftRestore(false);
+                setSavedDraft(null);
+              }}
+              style={{ padding: '0.45rem 0.75rem', background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── WORKOUT TYPE SELECTOR (PRIMARY ACTION) ── */}
       <div>
