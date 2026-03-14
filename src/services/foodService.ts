@@ -1,6 +1,7 @@
 import { FoodItem } from '../types';
 import { localFoodDatabase } from '../utils/foodDatabase';
-import { searchOpenFoodFacts, lookupBarcode as lookupBarcodeApi } from '../utils/openFoodFacts';
+import { searchOpenFoodFacts, lookupBarcode as lookupBarcodeOFF } from '../utils/openFoodFacts';
+import { lookupBarcodeUSDA, searchUSDA } from '../utils/usdaFoodData';
 
 // ─── Result shape ─────────────────────────────────────────────────────────────
 
@@ -238,14 +239,27 @@ export async function searchFoods(
   // Local is synchronous — run before kicking off the API call
   const local = searchLocal(trimmed, customFoods);
 
+  // Fire both remote sources in parallel
   let api: FoodItem[] = [];
   let apiError = false;
   try {
-    api = await searchOpenFoodFacts(trimmed);
-    // Re-score API results against the query for consistent ordering
-    api = filterAndSort(api, trimmed);
+    const [offResults, usdaResults] = await Promise.allSettled([
+      searchOpenFoodFacts(trimmed),
+      searchUSDA(trimmed),
+    ]);
+
+    const off  = offResults.status  === 'fulfilled' ? offResults.value  : [];
+    const usda = usdaResults.status === 'fulfilled' ? usdaResults.value : [];
+
+    if (offResults.status === 'rejected' && usdaResults.status === 'rejected') {
+      apiError = true;
+    }
+
+    // Merge: interleave OFF + USDA results by score, then deduplicate
+    const merged = deduplicateById([...off, ...usda]);
+    api = filterAndSort(merged, trimmed);
   } catch (err) {
-    console.warn('[foodService] OpenFoodFacts search failed:', err);
+    console.warn('[foodService] Remote search failed:', err);
     api = [];
     apiError = true;
   }
@@ -261,15 +275,33 @@ export async function searchFoods(
 // ─── Barcode lookup ───────────────────────────────────────────────────────────
 
 /**
- * Looks up a food by barcode via OpenFoodFacts.
- * Returns null on any failure — never throws.
+ * Looks up a food by barcode using a multi-source cascade:
+ *   1. Open Food Facts  (world → us → uk endpoints in parallel)
+ *   2. USDA FoodData Central (Branded foods — same database as MyFitnessPal)
+ *
+ * Returns the first successful result or null on total failure — never throws.
  */
 export async function lookupBarcode(barcode: string): Promise<FoodItem | null> {
-  if (!barcode || !barcode.trim()) return null;
+  const clean = barcode?.trim();
+  if (!clean) return null;
 
+  // Race both sources in parallel — take whichever resolves first with a result
   try {
-    const result = await retryFetch(() => lookupBarcodeApi(barcode.trim()), 2, 800);
-    return result;
+    const [offResult, usdaResult] = await Promise.allSettled([
+      retryFetch(() => lookupBarcodeOFF(clean), 1, 600),
+      retryFetch(() => lookupBarcodeUSDA(clean), 1, 600),
+    ]);
+
+    // Prefer OFF if it found something (generally richer serving data)
+    if (offResult.status === 'fulfilled' && offResult.value) {
+      return offResult.value;
+    }
+    if (usdaResult.status === 'fulfilled' && usdaResult.value) {
+      return usdaResult.value;
+    }
+
+    console.warn('[foodService] Barcode not found in any database:', clean);
+    return null;
   } catch (err) {
     console.warn('[foodService] Barcode lookup failed:', err);
     return null;

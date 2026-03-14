@@ -104,10 +104,14 @@ export const searchOpenFoodFacts = async (query: string): Promise<FoodItem[]> =>
   }
 };
 
-export const lookupBarcode = async (barcode: string): Promise<FoodItem | null> => {
+const OFF_FIELDS = 'code,product_name,product_name_en,brands,serving_size,serving_quantity,nutriments';
+
+/**
+ * Try a single OFF endpoint for a barcode. Returns null on any failure.
+ */
+const tryOFFEndpoint = async (url: string): Promise<FoodItem | null> => {
   try {
-    const url = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json?fields=code,product_name,product_name_en,brands,serving_size,serving_quantity,nutriments`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
     if (!res.ok) return null;
     const data = await res.json();
     if (data.status !== 1 || !data.product) return null;
@@ -115,4 +119,27 @@ export const lookupBarcode = async (barcode: string): Promise<FoodItem | null> =
   } catch {
     return null;
   }
+};
+
+/**
+ * Looks up a barcode in Open Food Facts.
+ * Cascades through: world → us → uk → org v2 endpoints.
+ */
+export const lookupBarcode = async (barcode: string): Promise<FoodItem | null> => {
+  if (!barcode) return null;
+
+  // Try each OFF regional endpoint in order until one succeeds
+  const endpoints = [
+    `https://world.openfoodfacts.org/api/v2/product/${barcode}?fields=${OFF_FIELDS}`,
+    `https://us.openfoodfacts.org/api/v0/product/${barcode}.json?fields=${OFF_FIELDS}`,
+    `https://uk.openfoodfacts.org/api/v0/product/${barcode}.json?fields=${OFF_FIELDS}`,
+    `https://world.openfoodfacts.org/api/v0/product/${barcode}.json?fields=${OFF_FIELDS}`,
+  ];
+
+  for (const url of endpoints) {
+    const result = await tryOFFEndpoint(url);
+    if (result) return result;
+  }
+
+  return null;
 };

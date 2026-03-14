@@ -174,6 +174,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
   const [showManualBarcode, setShowManualBarcode] = useState(false);
 
   const handleBarcodeResult = async (barcode: string) => {
+    setScanStatus('scanning'); // show "looking up..." while we wait
     try {
       const result = await lookupBarcodeService(barcode);
       if (result) {
@@ -182,10 +183,16 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         setSelectedFood(result);
         showToast(`Found: ${result.name}`, 'success');
       } else {
+        // Product not in any database — close scanner, switch to search tab
+        // so user can search by name as the natural next step
         setScanStatus('notfound');
         setScanNotFound(true);
         setIsScanning(false);
-        showToast('Product not found — try searching by name', 'info');
+        await stopCamera();
+        // Auto-populate the search query with the barcode so user can try manually
+        setQuery(barcode);
+        setTab('search');
+        showToast('Product not found — searched Open Food Facts + USDA. Try searching by name.', 'info');
       }
     } catch {
       setScanStatus('error');
