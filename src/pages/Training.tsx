@@ -914,6 +914,8 @@ export const Training: React.FC = () => {
 
   const [showDraftRestore, setShowDraftRestore] = useState(false);
   const [savedDraft, setSavedDraft] = useState<any>(null);
+  const [selectedDayOverride, setSelectedDayOverride] = useState<number | null>(null);
+  const swipeTouchStartX = useRef<number | null>(null);
 
   useEffect(() => {
     const draft = localStorage.getItem('bbc_workout_draft');
@@ -1338,8 +1340,10 @@ export const Training: React.FC = () => {
 
   // ── Main View (program assigned) ───────────────────────────────────────────
   const { program, nextDay, nextDayIndex, completedDayNames, allDone } = programData!;
+  const selectedDayIdx = selectedDayOverride !== null ? selectedDayOverride : nextDayIndex;
+  const selectedDay = program.days[selectedDayIdx] ?? nextDay;
   const estimatedMinutes = Math.round(
-    nextDay.exercises.reduce((acc, ex) => acc + (ex.sets * ex.rest) / 60, 0) + nextDay.exercises.length * 1.5
+    selectedDay.exercises.reduce((acc, ex) => acc + (ex.sets * ex.rest) / 60, 0) + selectedDay.exercises.length * 1.5
   );
 
   const thisWeekWorkouts = Object.entries(state.logs)
@@ -1505,18 +1509,18 @@ export const Training: React.FC = () => {
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-                {allDone ? 'PROGRAM · NEW WEEK' : `PROGRAM · DAY ${nextDayIndex + 1}`}
+                {`PROGRAM · DAY ${selectedDayIdx + 1}`}
               </div>
               <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#fff', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {nextDay.name}
+                {selectedDay.name}
               </div>
               <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: '1px' }}>
-                {nextDay.exercises.length} exercises · ~{estimatedMinutes} min
+                {selectedDay.exercises.length} exercises · ~{estimatedMinutes} min
               </div>
             </div>
           </div>
           <button
-            onClick={() => startProgramDay(program, nextDay)}
+            onClick={() => startProgramDay(program, selectedDay)}
             style={{
               padding: '0.5rem 1rem',
               backgroundColor: 'var(--accent-blue)',
@@ -1549,29 +1553,47 @@ export const Training: React.FC = () => {
             <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>THIS WEEK</span>
             <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>{completedDayNames.size} / {program.days.length} done</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+          <div
+            style={{ display: 'flex', justifyContent: 'space-around' }}
+            onTouchStart={e => { swipeTouchStartX.current = e.touches[0].clientX; }}
+            onTouchEnd={e => {
+              if (swipeTouchStartX.current === null) return;
+              const dx = e.changedTouches[0].clientX - swipeTouchStartX.current;
+              swipeTouchStartX.current = null;
+              if (Math.abs(dx) < 40) return;
+              const next = dx < 0
+                ? Math.min(selectedDayIdx + 1, program.days.length - 1)
+                : Math.max(selectedDayIdx - 1, 0);
+              setSelectedDayOverride(next);
+            }}
+          >
             {program.days.map((day, i) => {
               const isDone = completedDayNames.has(`${program.name} — ${day.name}`);
-              const isNext = day === nextDay;
+              const isSelected = i === selectedDayIdx;
               return (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                <div
+                  key={i}
+                  onClick={() => setSelectedDayOverride(i)}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                >
                   <div style={{
                     width: 44,
                     height: 44,
                     borderRadius: '50%',
-                    backgroundColor: isDone ? 'rgba(50,215,75,0.12)' : isNext ? 'rgba(10,132,255,0.12)' : 'rgba(255,255,255,0.04)',
-                    border: `2px solid ${isDone ? 'rgba(50,215,75,0.45)' : isNext ? 'rgba(10,132,255,0.55)' : 'rgba(255,255,255,0.07)'}`,
+                    backgroundColor: isDone ? 'rgba(50,215,75,0.12)' : isSelected ? 'rgba(10,132,255,0.18)' : 'rgba(255,255,255,0.04)',
+                    border: `2px solid ${isDone ? 'rgba(50,215,75,0.45)' : isSelected ? 'rgba(10,132,255,0.75)' : 'rgba(255,255,255,0.07)'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.2s ease',
+                    boxShadow: isSelected && !isDone ? '0 0 0 3px rgba(10,132,255,0.15)' : 'none',
                   }}>
                     {isDone
                       ? <Check size={17} color="var(--accent-green)" />
-                      : <span style={{ fontSize: '0.85rem', fontWeight: 900, color: isNext ? 'var(--accent-blue)' : 'rgba(255,255,255,0.22)' }}>{i + 1}</span>
+                      : <span style={{ fontSize: '0.85rem', fontWeight: 900, color: isSelected ? 'var(--accent-blue)' : 'rgba(255,255,255,0.22)' }}>{i + 1}</span>
                     }
                   </div>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 700, color: isDone ? 'var(--accent-green)' : isNext ? 'var(--accent-blue)' : 'rgba(255,255,255,0.22)', textAlign: 'center', maxWidth: 50 }}>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 700, color: isDone ? 'var(--accent-green)' : isSelected ? 'var(--accent-blue)' : 'rgba(255,255,255,0.22)', textAlign: 'center', maxWidth: 50 }}>
                     {day.name.split(' ')[0]}
                   </span>
                 </div>
