@@ -133,15 +133,17 @@ export interface WeeklyStats {
   workoutsCompleted: number;
 }
 
-export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'failed';
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'failed' | 'disabled';
 
 export interface AppSettings {
   adaptiveCoaching: boolean;
   plateauDetection: boolean;
   weeklyCheckIn: boolean;
+  notificationsEnabled: boolean;
+  units: 'metric' | 'imperial';
   connectedApps: {
-    appleHealth: ConnectionStatus;
-    googleFit: ConnectionStatus;
+    apple_health: ConnectionStatus;
+    google_fit: ConnectionStatus;
     garmin: ConnectionStatus;
     whoop: ConnectionStatus;
   };
@@ -157,4 +159,29 @@ export interface AppState {
   recentFoods: FoodItem[]; // full objects, most recent first, max 20
   favoriteFoods: FoodItem[]; // full objects
   assignedProgram: 'male_phase2' | 'female_phase1' | null;
+}
+
+// NutritionTotals helper type for summing meals across a day
+export interface NutritionTotals {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  fiber: number;
+}
+
+// ProgressionRecord for building training history per exercise
+export interface ProgressionRecord {
+  date: string;
+  exerciseId: string;
+  maxWeight: number;
+  totalVolume: number;
+  bestSet: { weight: number; reps: number };
+}
+
+// AppMetadata for schema versioning, written alongside persisted state
+export interface AppMetadata {
+  schemaVersion: number;
+  lastSaved: string;
+  appVersion: string;
 }

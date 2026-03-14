@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FoodItem, MealType } from '../types';
 import { ArrowLeft, Search, ScanLine, Plus, CheckCircle2, Loader2, Globe, Database, Heart, Clock, X, Camera, PenLine } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { localFoodDatabase } from '../utils/foodDatabase';
-import { searchOpenFoodFacts, lookupBarcode } from '../utils/openFoodFacts';
+import { FoodRow, EmptyState } from '../components/SharedUI';
+import { searchFoods, lookupBarcode as lookupBarcodeService } from '../services/foodService';
 
 interface FoodSearchProps {
   mealType: MealType;
@@ -50,47 +50,34 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
     };
   }, []);
 
-  // ── Local search (instant) ───────────────────────────────────────────────
+  // ── Unified search via foodService ─────────────────────────────────────
   useEffect(() => {
-    const allFoods = [...state.customFoods, ...localFoodDatabase];
-    if (query.trim() === '') {
-      setLocalResults(allFoods.slice(0, 12));
+    const q = query.trim();
+    if (q === '') {
+      // Show popular/default foods when no query
+      searchFoods('', state.customFoods).then(r => {
+        setLocalResults(r.local.slice(0, 12));
+        setApiResults([]);
+      });
       return;
     }
-    const q = query.toLowerCase().trim();
-    const filtered = allFoods
-      .filter(f => f.name.toLowerCase().includes(q) || (f.brand?.toLowerCase().includes(q)))
-      .sort((a, b) => {
-        const aStart = a.name.toLowerCase().startsWith(q);
-        const bStart = b.name.toLowerCase().startsWith(q);
-        if (aStart && !bStart) return -1;
-        if (!aStart && bStart) return 1;
-        return 0;
-      })
-      .slice(0, 20);
-    setLocalResults(filtered);
-  }, [query, state.customFoods]);
 
-  // ── OpenFoodFacts API search (debounced) ─────────────────────────────────
-  const triggerApiSearch = useCallback(async (q: string) => {
-    if (q.trim().length < 2) { setApiResults([]); return; }
-    setIsApiLoading(true);
-    try {
-      const results = await searchOpenFoodFacts(q);
-      setApiResults(results);
-    } catch {
-      setApiResults([]);
-    } finally {
-      setIsApiLoading(false);
-    }
-  }, []);
+    // Instant local results
+    searchFoods(q, state.customFoods).then(r => {
+      setLocalResults(r.local);
+    });
 
-  useEffect(() => {
+    // Debounced API search
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (query.trim().length < 2) { setApiResults([]); setIsApiLoading(false); return; }
-    debounceRef.current = setTimeout(() => triggerApiSearch(query), DEBOUNCE_MS);
+    if (q.length < 2) { setApiResults([]); setIsApiLoading(false); return; }
+    setIsApiLoading(true);
+    debounceRef.current = setTimeout(async () => {
+      const r = await searchFoods(q, state.customFoods);
+      setApiResults(r.api);
+      setIsApiLoading(false);
+    }, DEBOUNCE_MS);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [query, triggerApiSearch]);
+  }, [query, state.customFoods]);
 
   // ── Serving amount → multiplier ──────────────────────────────────────────
   const getMultiplier = (): number => {
@@ -175,7 +162,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
 
   const handleBarcodeResult = async (barcode: string) => {
     try {
-      const result = await lookupBarcode(barcode);
+      const result = await lookupBarcodeService(barcode);
       if (result) {
         scanRetriesRef.current = 0;
         stopCamera();

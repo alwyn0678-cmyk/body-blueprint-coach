@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Card } from '../components/SharedUI';
+import { Card, WorkoutCard, EmptyState } from '../components/SharedUI';
 import {
   Dumbbell, Plus, Timer, ChevronRight, X, Check, RotateCcw, Search,
-  TrendingUp, ChevronDown, ChevronUp, Trash2, Play, RefreshCw, Info,
+  TrendingUp, TrendingDown, Minus, Award, ChevronDown, ChevronUp, Trash2, Play, RefreshCw, Info,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useApp } from '../context/AppContext';
@@ -49,6 +49,56 @@ const getLastPerformance = (
     }
   }
   return null;
+};
+
+// Returns the best set (max weight × reps volume) across all history for a given exercise
+const getPersonalRecord = (
+  logs: ReturnType<typeof useApp>['state']['logs'],
+  exerciseId: string,
+): { weight: number; reps: number; date: string } | null => {
+  let best: { weight: number; reps: number; date: string } | null = null;
+  for (const [date, log] of Object.entries(logs)) {
+    for (const workout of log.workouts) {
+      const ex = workout.exercises.find(e => e.exerciseId === exerciseId);
+      if (ex) {
+        for (const set of ex.sets) {
+          if (!best || set.weight * set.reps > best.weight * best.reps) {
+            best = { weight: set.weight, reps: set.reps, date };
+          }
+        }
+      }
+    }
+  }
+  return best;
+};
+
+// Returns trend direction comparing latest vs 2nd-to-last session
+const getProgressionTrend = (
+  logs: ReturnType<typeof useApp>['state']['logs'],
+  exerciseId: string,
+  excludeDate?: string,
+): 'pr' | 'up' | 'same' | 'down' | null => {
+  const sorted = Object.entries(logs)
+    .filter(([date]) => date !== excludeDate)
+    .sort((a, b) => b[0].localeCompare(a[0]));
+  const sessions: number[] = [];
+  for (const [, log] of sorted) {
+    for (const workout of log.workouts) {
+      const ex = workout.exercises.find(e => e.exerciseId === exerciseId);
+      if (ex && ex.sets.length > 0) {
+        const vol = ex.sets.reduce((a, s) => a + s.weight * s.reps, 0);
+        sessions.push(vol);
+        if (sessions.length >= 3) break;
+      }
+    }
+    if (sessions.length >= 3) break;
+  }
+  if (sessions.length < 2) return null;
+  const [latest, previous] = sessions;
+  const pct = previous > 0 ? (latest - previous) / previous : 0;
+  if (pct > 0.05) return 'up';
+  if (pct < -0.05) return 'down';
+  return 'same';
 };
 
 const MUSCLE_COLORS: Record<string, string> = {
@@ -357,12 +407,22 @@ const ActiveWorkoutScreen: React.FC<{
                         {ex.rest && (
                           <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>· {ex.rest}s rest</span>
                         )}
-                        {lastPerf ? (
-                          <div className="flex-row align-center gap-1">
-                            <TrendingUp size={11} color="var(--accent-orange)" />
-                            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>Last: {lastPerf.weight}kg × {lastPerf.reps}</span>
-                          </div>
-                        ) : (
+                        {lastPerf ? (() => {
+                          const trend = getProgressionTrend(logs, ex.libraryId, today);
+                          const trendIcon = trend === 'up' || trend === 'pr'
+                            ? <TrendingUp size={11} color={trend === 'pr' ? '#fbbf24' : 'var(--accent-green)'} />
+                            : trend === 'down'
+                            ? <TrendingDown size={11} color="var(--accent-red)" />
+                            : <Minus size={11} color="rgba(255,255,255,0.25)" />;
+                          const prBadge = trend === 'pr' ? <span style={{ fontSize: '0.6rem', fontWeight: 900, color: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.12)', padding: '1px 5px', borderRadius: '4px' }}>PR</span> : null;
+                          return (
+                            <div className="flex-row align-center gap-1">
+                              {trendIcon}
+                              <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>Last: {lastPerf.weight}kg × {lastPerf.reps}</span>
+                              {prBadge}
+                            </div>
+                          );
+                        })() : (
                           <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>First time</span>
                         )}
                       </div>
@@ -599,6 +659,18 @@ export const Training: React.FC = () => {
     }
     const totalVolume = completedExercises.reduce((acc, ex) =>
       acc + ex.sets.filter(s => s.done).reduce((a, s) => a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0), 0);
+
+    // Detect personal records
+    let prCount = 0;
+    completedExercises.forEach(ex => {
+      const prevPR = getPersonalRecord(state.logs, ex.libraryId);
+      ex.sets.filter(s => s.done).forEach(s => {
+        const w = parseFloat(s.weight) || 0;
+        const r = parseInt(s.reps) || 0;
+        if (!prevPR || w * r > prevPR.weight * prevPR.reps) prCount++;
+      });
+    });
+
     const exerciseEntries: ExerciseEntry[] = completedExercises.map(ex => ({
       id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
       exerciseId: ex.libraryId,
@@ -620,8 +692,9 @@ export const Training: React.FC = () => {
     };
     addWorkout(today, session);
     setSessionActive(false);
-    showToast(`${sessionName} complete · ${Math.round(totalVolume)}kg total volume`, 'success');
-  }, [exercises, sessionName, elapsed, today, addWorkout, showToast]);
+    const prMsg = prCount > 0 ? ` · 🏆 ${prCount} PR${prCount > 1 ? 's' : ''}` : '';
+    showToast(`${sessionName} complete · ${Math.round(totalVolume)}kg${prMsg}`, 'success');
+  }, [exercises, sessionName, elapsed, today, state.logs, addWorkout, showToast]);
 
   const cancelWorkout = () => {
     setSessionActive(false);
@@ -948,37 +1021,33 @@ export const Training: React.FC = () => {
       </Card>
 
       {/* ── RECENT HISTORY ── */}
-      <h3 className="text-h3" style={{ marginTop: '0.5rem' }}>Recent History</h3>
+      <div className="flex-row justify-between align-center" style={{ marginTop: '0.5rem' }}>
+        <h3 className="text-h3">Recent History</h3>
+        {recentWorkouts.length > 0 && (
+          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>{recentWorkouts.length} sessions</span>
+        )}
+      </div>
       <div className="flex-col gap-3">
         {recentWorkouts.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.25)', backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <Dumbbell size={32} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
-            <p style={{ fontSize: '0.85rem' }}>No workouts yet. Hit Start Workout above.</p>
-          </div>
+          <EmptyState
+            emoji="🏋️"
+            title="No workouts yet"
+            subtitle="Hit Start Workout above to log your first session."
+          />
         ) : (
           recentWorkouts.map(workout => {
             const totalVolume = workout.exercises.reduce((acc, ex) =>
               acc + ex.sets.reduce((s, set) => s + set.weight * set.reps, 0), 0);
+            const dateStr = new Date(workout.timestamp).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
             return (
-              <div key={workout.id} style={{ backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                <div className="flex-row justify-between align-center" style={{ padding: '1rem' }}>
-                  <div className="flex-row gap-3 align-center">
-                    <div style={{ backgroundColor: 'rgba(10,132,255,0.1)', padding: '8px', borderRadius: '10px' }}>
-                      <Dumbbell size={18} color="var(--accent-blue)" />
-                    </div>
-                    <div className="flex-col">
-                      <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{workout.name}</span>
-                      <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: '2px' }}>
-                        {new Date(workout.timestamp).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })} · {workout.durationMinutes}m
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex-col" style={{ textAlign: 'right', gap: '2px' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent-green)' }}>{totalVolume > 0 ? `${Math.round(totalVolume)}kg` : 'Done'}</span>
-                    <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)' }}>{workout.exercises.length} exercises</span>
-                  </div>
-                </div>
-              </div>
+              <WorkoutCard
+                key={workout.id}
+                name={workout.name}
+                date={dateStr}
+                durationMinutes={workout.durationMinutes}
+                exerciseCount={workout.exercises.length}
+                totalVolume={totalVolume > 0 ? Math.round(totalVolume) : undefined}
+              />
             );
           })
         )}

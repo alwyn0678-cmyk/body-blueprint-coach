@@ -1,9 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
   AppState, AppSettings, UserProfile, DailyLog, FoodItem, MealType,
-  MealEntry, WorkoutSession, HealthMetrics, SavedMeal, NutritionData
+  MealEntry, WorkoutSession, HealthMetrics, SavedMeal, NutritionData,
+  NutritionTotals, ProgressionRecord, ConnectionStatus,
 } from '../types';
 import { additionalExercises } from '../data/workoutPrograms';
+
+const SCHEMA_VERSION = 4;
+const APP_VERSION = '2.0.0';
 
 interface ToastState {
   message: string;
@@ -25,6 +29,10 @@ interface AppContextType {
   deleteSavedMeal: (id: string) => void;
   logSavedMeal: (date: string, mealType: MealType, savedMealId: string) => void;
   updateSettings: (updates: Partial<AppSettings>) => void;
+  updateConnectionStatus: (app: string, status: ConnectionStatus) => void;
+  updateUnits: (units: 'metric' | 'imperial') => void;
+  getNutritionTotals: (date: string) => NutritionTotals;
+  getProgressionHistory: (exerciseId: string) => ProgressionRecord[];
   trackRecentFood: (food: FoodItem) => void;
   toggleFavoriteFood: (food: FoodItem) => void;
   setAssignedProgram: (programId: 'male_phase2' | 'female_phase1' | null) => void;
@@ -34,13 +42,15 @@ interface AppContextType {
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const defaultSettings: AppSettings = {
+const DEFAULT_SETTINGS: AppSettings = {
   adaptiveCoaching: true,
   plateauDetection: true,
   weeklyCheckIn: true,
+  notificationsEnabled: false,
+  units: 'metric',
   connectedApps: {
-    appleHealth: 'disconnected',
-    googleFit: 'disconnected',
+    apple_health: 'disconnected',
+    google_fit: 'disconnected',
     garmin: 'disconnected',
     whoop: 'disconnected',
   },
@@ -71,12 +81,68 @@ const defaultState: AppState = {
   customFoods: [],
   savedMeals: [],
   workoutLibrary: baseWorkoutLibrary,
-  settings: defaultSettings,
+  settings: DEFAULT_SETTINGS,
   recentFoods: [],
   favoriteFoods: [],
   assignedProgram: null,
 };
 
+function loadInitialState(): AppState {
+  try {
+    const raw = localStorage.getItem('bbc_state');
+    if (!raw) return defaultState;
+    const parsed = JSON.parse(raw);
+
+    // Merge settings with defaults so any new fields are always present
+    const settings: AppSettings = {
+      ...DEFAULT_SETTINGS,
+      ...(parsed.settings || {}),
+    };
+
+    // Ensure connectedApps exists and has all keys
+    if (!settings.connectedApps) {
+      settings.connectedApps = DEFAULT_SETTINGS.connectedApps;
+    } else {
+      settings.connectedApps = {
+        ...DEFAULT_SETTINGS.connectedApps,
+        ...settings.connectedApps,
+      };
+    }
+
+    // Migrate legacy camelCase connectedApps keys to snake_case
+    const legacyApps = settings.connectedApps as Record<string, ConnectionStatus>;
+    if ('appleHealth' in legacyApps && !('apple_health' in legacyApps)) {
+      settings.connectedApps.apple_health = legacyApps['appleHealth'];
+      delete (legacyApps as Record<string, unknown>)['appleHealth'];
+    }
+    if ('googleFit' in legacyApps && !('google_fit' in legacyApps)) {
+      settings.connectedApps.google_fit = legacyApps['googleFit'];
+      delete (legacyApps as Record<string, unknown>)['googleFit'];
+    }
+
+    // Migrations for other fields
+    if (!parsed.savedMeals) parsed.savedMeals = [];
+    if (!parsed.recentFoods || (parsed.recentFoods.length > 0 && typeof parsed.recentFoods[0] === 'string')) {
+      parsed.recentFoods = [];
+    }
+    if (!parsed.favoriteFoods || (parsed.favoriteFoods.length > 0 && typeof parsed.favoriteFoods[0] === 'string')) {
+      parsed.favoriteFoods = [];
+    }
+    if (!('assignedProgram' in parsed)) parsed.assignedProgram = null;
+
+    // Always use the full in-memory library so newly added exercises are available
+    parsed.workoutLibrary = baseWorkoutLibrary;
+
+    return {
+      ...defaultState,
+      ...parsed,
+      settings,
+    };
+  } catch (e) {
+    console.warn('[BBC] Failed to load state, using defaults', e);
+    return defaultState;
+  }
+}
 
 const computeNutritionTotal = (entries: Array<{ food: FoodItem; amount: number }>): NutritionData => {
   return entries.reduce(
@@ -97,33 +163,25 @@ const emptyLog = (date: string): DailyLog => ({
 });
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<AppState>(() => {
-    try {
-      const saved = localStorage.getItem('bbc_state');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Migration: ensure new fields exist
-        if (!parsed.savedMeals) parsed.savedMeals = [];
-        if (!parsed.settings) parsed.settings = defaultSettings;
-        if (!parsed.settings.connectedApps) parsed.settings.connectedApps = defaultSettings.connectedApps;
-        // Migrate: old shape stored string IDs, new shape stores FoodItem objects
-        if (!parsed.recentFoods || (parsed.recentFoods.length > 0 && typeof parsed.recentFoods[0] === 'string')) parsed.recentFoods = [];
-        if (!parsed.favoriteFoods || (parsed.favoriteFoods.length > 0 && typeof parsed.favoriteFoods[0] === 'string')) parsed.favoriteFoods = [];
-        if (!('assignedProgram' in parsed)) parsed.assignedProgram = null;
-        // Always use full library (includes newly added exercises)
-        parsed.workoutLibrary = baseWorkoutLibrary;
-        return parsed;
-      }
-    } catch {
-      // Corrupted state — start fresh
-    }
-    return defaultState;
-  });
+  const [state, setState] = useState<AppState>(loadInitialState);
 
   const [toast, setToast] = useState<ToastState>({ message: '', type: 'info', visible: false });
 
   useEffect(() => {
-    localStorage.setItem('bbc_state', JSON.stringify(state));
+    try {
+      localStorage.setItem('bbc_state', JSON.stringify({
+        ...state,
+        _meta: {
+          schemaVersion: SCHEMA_VERSION,
+          lastSaved: new Date().toISOString(),
+          appVersion: APP_VERSION,
+        },
+      }));
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+        console.warn('[BBC] localStorage quota exceeded');
+      }
+    }
   }, [state]);
 
   const updateUser = (updates: Partial<UserProfile>) => {
@@ -318,6 +376,81 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   };
 
+  const updateConnectionStatus = (app: string, status: ConnectionStatus) => {
+    setState(prev => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        connectedApps: {
+          ...prev.settings.connectedApps,
+          [app]: status,
+        },
+      },
+    }));
+  };
+
+  const updateUnits = (units: 'metric' | 'imperial') => {
+    setState(prev => ({
+      ...prev,
+      settings: { ...prev.settings, units },
+    }));
+  };
+
+  const getNutritionTotals = (date: string): NutritionTotals => {
+    const log = state.logs[date];
+    if (!log) return { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
+
+    const allEntries: MealEntry[] = [
+      ...log.meals.breakfast,
+      ...log.meals.lunch,
+      ...log.meals.dinner,
+      ...log.meals.snacks,
+    ];
+
+    return allEntries.reduce(
+      (acc, entry) => ({
+        calories: acc.calories + entry.nutrition.calories * entry.amount,
+        protein: acc.protein + entry.nutrition.protein * entry.amount,
+        carbs: acc.carbs + entry.nutrition.carbs * entry.amount,
+        fats: acc.fats + entry.nutrition.fats * entry.amount,
+        fiber: acc.fiber + (entry.nutrition.fiber ?? 0) * entry.amount,
+      }),
+      { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
+    );
+  };
+
+  const getProgressionHistory = (exerciseId: string): ProgressionRecord[] => {
+    const records: ProgressionRecord[] = [];
+
+    for (const [date, log] of Object.entries(state.logs)) {
+      for (const workout of log.workouts) {
+        for (const exercise of workout.exercises) {
+          if (exercise.exerciseId !== exerciseId) continue;
+          if (exercise.sets.length === 0) continue;
+
+          let maxWeight = 0;
+          let totalVolume = 0;
+          let bestSet = { weight: 0, reps: 0 };
+
+          for (const set of exercise.sets) {
+            totalVolume += set.weight * set.reps;
+            if (set.weight > maxWeight) {
+              maxWeight = set.weight;
+            }
+            if (set.weight * set.reps > bestSet.weight * bestSet.reps) {
+              bestSet = { weight: set.weight, reps: set.reps };
+            }
+          }
+
+          records.push({ date, exerciseId, maxWeight, totalVolume, bestSet });
+        }
+      }
+    }
+
+    // Return sorted oldest → newest
+    return records.sort((a, b) => a.date.localeCompare(b.date));
+  };
+
   const trackRecentFood = (food: FoodItem) => {
     setState(prev => {
       const filtered = prev.recentFoods.filter(f => f.id !== food.id);
@@ -355,8 +488,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     <AppContext.Provider value={{
       state, updateUser, updateDailyLog, addFoodToLog, removeFoodEntry, editFoodEntry,
       addCustomFood, addWorkout, updateHealthMetrics, saveMeal, deleteSavedMeal,
-      logSavedMeal, updateSettings, trackRecentFood, toggleFavoriteFood,
-      setAssignedProgram, resetApp, showToast
+      logSavedMeal, updateSettings, updateConnectionStatus, updateUnits,
+      getNutritionTotals, getProgressionHistory,
+      trackRecentFood, toggleFavoriteFood,
+      setAssignedProgram, resetApp, showToast,
     }}>
       {children}
       <Toast message={toast.message} type={toast.type} visible={toast.visible} />
