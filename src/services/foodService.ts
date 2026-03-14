@@ -8,6 +8,27 @@ export interface FoodSearchResult {
   local: FoodItem[];
   api: FoodItem[];
   combined: FoodItem[];
+  apiError: boolean;
+}
+
+// ─── Retry wrapper ────────────────────────────────────────────────────────────
+
+/**
+ * Retries `fn` up to `retries` times with `delayMs` delay between attempts on failure.
+ */
+export async function retryFetch<T>(fn: () => Promise<T>, retries = 2, delayMs = 800): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  throw lastError;
 }
 
 // ─── Scoring ──────────────────────────────────────────────────────────────────
@@ -159,19 +180,22 @@ export function normalizeFoodItem(raw: any): FoodItem {
 
   const id = raw.id ?? (raw.code ? `off_${raw.code}` : `food_${Date.now()}_${Math.random().toString(36).slice(2)}`);
 
+  const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val));
+  const rawServingSize = hasServing ? (raw.serving_quantity ?? servingSize) : 100;
+
   return {
     id,
     name: name || 'Unknown Food',
     brand,
-    servingSize: hasServing ? (raw.serving_quantity ?? servingSize) : 100,
+    servingSize: clamp(parseNum(rawServingSize), 0.1, 9999),
     servingUnit: hasServing ? servingUnit : 'g',
-    calories: Math.round(cal),
-    protein,
-    carbs,
-    fats,
-    ...(fiber !== undefined && { fiber }),
-    ...(sugar !== undefined && { sugar }),
-    ...(sodium !== undefined && { sodium }),
+    calories: clamp(Math.round(cal), 0, 9999),
+    protein: clamp(protein, 0, 999),
+    carbs: clamp(carbs, 0, 999),
+    fats: clamp(fats, 0, 999),
+    ...(fiber !== undefined && { fiber: clamp(fiber, 0, 999) }),
+    ...(sugar !== undefined && { sugar: clamp(sugar, 0, 999) }),
+    ...(sodium !== undefined && { sodium: clamp(sodium, 0, 9999) }),
     source: raw.source ?? 'openfoodfacts',
   };
 }
@@ -208,13 +232,14 @@ export async function searchFoods(
   const trimmed = query.trim();
 
   if (!trimmed) {
-    return { local: [], api: [], combined: [] };
+    return { local: [], api: [], combined: [], apiError: false };
   }
 
   // Local is synchronous — run before kicking off the API call
   const local = searchLocal(trimmed, customFoods);
 
   let api: FoodItem[] = [];
+  let apiError = false;
   try {
     api = await searchOpenFoodFacts(trimmed);
     // Re-score API results against the query for consistent ordering
@@ -222,6 +247,7 @@ export async function searchFoods(
   } catch (err) {
     console.warn('[foodService] OpenFoodFacts search failed:', err);
     api = [];
+    apiError = true;
   }
 
   // Combined: local results first (already scored), then API results not already in local
@@ -229,7 +255,7 @@ export async function searchFoods(
   const apiDeduped = api.filter(f => !localIds.has(f.id));
   const combined = deduplicateById([...local, ...apiDeduped]);
 
-  return { local, api, combined };
+  return { local, api, combined, apiError };
 }
 
 // ─── Barcode lookup ───────────────────────────────────────────────────────────
@@ -242,7 +268,7 @@ export async function lookupBarcode(barcode: string): Promise<FoodItem | null> {
   if (!barcode || !barcode.trim()) return null;
 
   try {
-    const result = await lookupBarcodeApi(barcode.trim());
+    const result = await retryFetch(() => lookupBarcodeApi(barcode.trim()), 2, 800);
     return result;
   } catch (err) {
     console.warn('[foodService] Barcode lookup failed:', err);

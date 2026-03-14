@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FoodItem, MealType } from '../types';
-import { ArrowLeft, Search, ScanLine, Plus, CheckCircle2, Loader2, Globe, Database, Heart, Clock, X, Camera, PenLine } from 'lucide-react';
+import { ArrowLeft, Search, ScanLine, Plus, CheckCircle2, Loader2, Globe, Database, Heart, Clock, X, Camera, PenLine, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useApp } from '../context/AppContext';
 import { FoodRow, EmptyState } from '../components/SharedUI';
@@ -15,19 +15,44 @@ interface FoodSearchProps {
 const DEBOUNCE_MS = 600;
 type Tab = 'search' | 'recent' | 'favorites';
 
+// ── Skeleton row component ────────────────────────────────────────────────────
+const SkeletonRow: React.FC = () => (
+  <div style={{ display: 'flex', alignItems: 'center', padding: '0.85rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.04)', gap: '12px' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div style={{
+        height: '14px', borderRadius: '7px', width: '65%',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        animation: 'pulse 1.4s ease-in-out infinite',
+      }} />
+      <div style={{
+        height: '10px', borderRadius: '5px', width: '40%',
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        animation: 'pulse 1.4s ease-in-out infinite 0.2s',
+      }} />
+    </div>
+    <div style={{
+      height: '28px', width: '42px', borderRadius: '8px',
+      backgroundColor: 'rgba(255,255,255,0.06)',
+      animation: 'pulse 1.4s ease-in-out infinite 0.1s',
+    }} />
+  </div>
+);
+
 
 export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCancel }) => {
-  const { state, showToast, toggleFavoriteFood, trackRecentFood, addCustomFood } = useApp();
+  const { state, showToast, toggleFavoriteFood, trackRecentFood, addCustomFood, clearRecentFoods } = useApp();
   const [tab, setTab] = useState<Tab>('search');
   const [query, setQuery] = useState('');
   const [localResults, setLocalResults] = useState<FoodItem[]>([]);
   const [apiResults, setApiResults] = useState<FoodItem[]>([]);
   const [isApiLoading, setIsApiLoading] = useState(false);
+  const [apiError, setApiError] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
-  const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'found' | 'notfound' | 'error'>('idle');
+  const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'found' | 'notfound' | 'error' | 'permission_denied' | 'unsupported'>('idle');
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [measurementValue, setMeasurementValue] = useState('1');
   const [measurementUnit, setMeasurementUnit] = useState('serving');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const html5QrRef = useRef<Html5Qrcode | null>(null);
   const SCANNER_ID = 'bbc-qr-scanner';
@@ -45,6 +70,16 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
     return () => { stopCamera(); };
   }, []);
 
+  // ── Run search with apiError tracking ──────────────────────────────────
+  const runSearch = useCallback(async (q: string) => {
+    if (q.length < 2) { setApiResults([]); setIsApiLoading(false); return; }
+    setIsApiLoading(true);
+    const r = await searchFoods(q, state.customFoods);
+    setApiResults(r.api);
+    setApiError(r.apiError);
+    setIsApiLoading(false);
+  }, [state.customFoods]);
+
   // ── Unified search via foodService ─────────────────────────────────────
   useEffect(() => {
     const q = query.trim();
@@ -53,6 +88,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
       searchFoods('', state.customFoods).then(r => {
         setLocalResults(r.local.slice(0, 12));
         setApiResults([]);
+        setApiError(false);
       });
       return;
     }
@@ -64,15 +100,11 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
 
     // Debounced API search
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (q.length < 2) { setApiResults([]); setIsApiLoading(false); return; }
     setIsApiLoading(true);
-    debounceRef.current = setTimeout(async () => {
-      const r = await searchFoods(q, state.customFoods);
-      setApiResults(r.api);
-      setIsApiLoading(false);
-    }, DEBOUNCE_MS);
+    setApiError(false);
+    debounceRef.current = setTimeout(() => runSearch(q), DEBOUNCE_MS);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [query, state.customFoods]);
+  }, [query, state.customFoods, runSearch]);
 
   // ── Serving amount → multiplier ──────────────────────────────────────────
   const getMultiplier = (): number => {
@@ -119,15 +151,21 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         () => { /* scan error (no barcode visible) — called continuously, ignore */ }
       );
     } catch (err: any) {
-      setScanStatus('error');
-      const msg = String(err).includes('Permission') || String(err).includes('permission')
-        ? 'Camera access denied — allow camera in browser settings'
-        : 'Camera not available on this device';
-      showToast(msg, 'error');
+      const msg = String(err);
+      const isPermissionDenied = msg.includes('Permission') || msg.includes('permission') || msg.includes('NotAllowed') || msg.includes('denied');
+      if (isPermissionDenied) {
+        setScanStatus('permission_denied');
+      } else {
+        setScanStatus('error');
+        showToast('Camera not available on this device', 'error');
+      }
     }
   };
 
   const [scanNotFound, setScanNotFound] = useState(false);
+  const [manualBarcodeInput, setManualBarcodeInput] = useState('');
+  const [manualBarcodeLookingUp, setManualBarcodeLookingUp] = useState(false);
+  const [showManualBarcode, setShowManualBarcode] = useState(false);
 
   const handleBarcodeResult = async (barcode: string) => {
     try {
@@ -151,6 +189,12 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
   };
 
   const openScanner = () => {
+    // Check if camera API exists at all
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setIsScanning(true);
+      setScanStatus('unsupported');
+      return;
+    }
     setScanNotFound(false);
     setIsScanning(true);
     setScanStatus('idle');
@@ -162,9 +206,33 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
     setIsScanning(false);
     setScanStatus('idle');
     setScanNotFound(false);
+    setShowManualBarcode(false);
+    setManualBarcodeInput('');
+    setManualBarcodeLookingUp(false);
   };
 
-  const [manualBarcode, setManualBarcode] = useState('');
+  const handleManualBarcodeSubmit = async () => {
+    const code = manualBarcodeInput.trim();
+    if (!code) return;
+    setManualBarcodeLookingUp(true);
+    try {
+      const result = await lookupBarcodeService(code);
+      if (result) {
+        setIsScanning(false);
+        setScanStatus('idle');
+        setShowManualBarcode(false);
+        setManualBarcodeInput('');
+        setSelectedFood(result);
+        showToast(`Found: ${result.name}`, 'success');
+      } else {
+        showToast('Not found — try searching by name', 'info');
+      }
+    } catch {
+      showToast('Lookup failed — try searching by name', 'error');
+    } finally {
+      setManualBarcodeLookingUp(false);
+    }
+  };
 
   // ── Custom food creation ─────────────────────────────────────────────────
   const [showCustomForm, setShowCustomForm] = useState(false);
@@ -207,15 +275,6 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
     setShowCustomForm(false);
     resetCustomForm();
     showToast('Custom food added', 'success');
-  };
-
-  const handleManualBarcodeSubmit = async () => {
-    const code = manualBarcode.trim();
-    if (!code) return;
-    showToast('Looking up barcode...', 'info');
-    setScanStatus('scanning');
-    await handleBarcodeResult(code);
-    setManualBarcode('');
   };
 
   // recentFoods and favoriteFoods now store full FoodItem objects
@@ -479,6 +538,96 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
 
   // ── Barcode Scanner Overlay ──────────────────────────────────────────────
   if (isScanning) {
+    // ── Unsupported device state ─────────────────────────────────────────
+    if (scanStatus === 'unsupported') {
+      return (
+        <div className="animate-fade-in" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 150, backgroundColor: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+          <Camera size={40} color="rgba(255,255,255,0.2)" style={{ marginBottom: '1rem' }} />
+          <h3 style={{ fontSize: '1rem', fontWeight: 800, textAlign: 'center', marginBottom: '0.5rem' }}>Camera not available on this device</h3>
+          <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginBottom: '1.5rem' }}>Enter the barcode number manually below</p>
+          <div style={{ width: '100%', maxWidth: '360px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="e.g. 5000112637939"
+              value={manualBarcodeInput}
+              onChange={e => setManualBarcodeInput(e.target.value.replace(/\D/g, ''))}
+              onKeyDown={e => e.key === 'Enter' && handleManualBarcodeSubmit()}
+              style={{ padding: '0.85rem 1rem', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', color: '#fff', fontSize: '1rem', fontWeight: 600, outline: 'none' }}
+            />
+            <button
+              onClick={handleManualBarcodeSubmit}
+              disabled={!manualBarcodeInput.trim() || manualBarcodeLookingUp}
+              style={{ padding: '0.85rem', backgroundColor: 'var(--accent-blue)', border: 'none', borderRadius: '12px', color: '#fff', fontWeight: 700, fontSize: '0.9rem', opacity: manualBarcodeInput.trim() && !manualBarcodeLookingUp ? 1 : 0.4, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            >
+              {manualBarcodeLookingUp ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Looking up...</> : 'Look up barcode'}
+            </button>
+          </div>
+          <button onClick={closeScanner} style={{ marginTop: '1.5rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}>
+            Cancel
+          </button>
+        </div>
+      );
+    }
+
+    // ── Permission denied state ──────────────────────────────────────────
+    if (scanStatus === 'permission_denied') {
+      return (
+        <div className="animate-fade-in" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 150, backgroundColor: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+            <Camera size={28} color="#fb923c" />
+          </div>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, textAlign: 'center', marginBottom: '0.5rem' }}>Camera access required</h3>
+          <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginBottom: '1.75rem', lineHeight: 1.5 }}>
+            Allow camera permission in Settings, then tap retry
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '320px' }}>
+            <button
+              onClick={() => {
+                setScanStatus('idle');
+                setTimeout(() => startCamera(), 200);
+              }}
+              style={{ padding: '0.9rem', backgroundColor: 'var(--accent-blue)', border: 'none', borderRadius: '14px', color: '#fff', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer' }}
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => setShowManualBarcode(true)}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', padding: '0.5rem' }}
+            >
+              Enter barcode manually
+            </button>
+          </div>
+
+          {showManualBarcode && (
+            <div style={{ width: '100%', maxWidth: '320px', marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="e.g. 5000112637939"
+                value={manualBarcodeInput}
+                onChange={e => setManualBarcodeInput(e.target.value.replace(/\D/g, ''))}
+                onKeyDown={e => e.key === 'Enter' && handleManualBarcodeSubmit()}
+                autoFocus
+                style={{ padding: '0.75rem 1rem', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', color: '#fff', fontSize: '0.95rem', fontWeight: 600, outline: 'none' }}
+              />
+              <button
+                onClick={handleManualBarcodeSubmit}
+                disabled={!manualBarcodeInput.trim() || manualBarcodeLookingUp}
+                style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', color: '#fff', fontWeight: 700, fontSize: '0.85rem', opacity: manualBarcodeInput.trim() && !manualBarcodeLookingUp ? 1 : 0.4, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              >
+                {manualBarcodeLookingUp ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Looking up...</> : 'Look up'}
+              </button>
+            </div>
+          )}
+
+          <button onClick={closeScanner} style={{ marginTop: '1.5rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>
+            Cancel
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="animate-fade-in" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 150, backgroundColor: '#000', display: 'flex', flexDirection: 'column' }}>
         <div className="flex-row justify-between p-4 mt-4 align-center" style={{ zIndex: 160, position: 'relative' }}>
@@ -525,16 +674,17 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
               type="text"
               inputMode="numeric"
               placeholder="e.g. 5000112637939"
-              value={manualBarcode}
-              onChange={e => setManualBarcode(e.target.value)}
+              value={manualBarcodeInput}
+              onChange={e => setManualBarcodeInput(e.target.value.replace(/\D/g, ''))}
               onKeyDown={e => e.key === 'Enter' && handleManualBarcodeSubmit()}
               style={{ flex: 1, padding: '0.75rem 1rem', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '12px', color: '#fff', fontSize: '0.95rem', fontWeight: 600, outline: 'none' }}
             />
             <button
               onClick={handleManualBarcodeSubmit}
-              disabled={!manualBarcode.trim()}
-              style={{ padding: '0.75rem 1rem', backgroundColor: 'var(--accent-blue)', border: 'none', borderRadius: '12px', color: '#fff', fontWeight: 700, fontSize: '0.85rem', opacity: manualBarcode.trim() ? 1 : 0.4, cursor: 'pointer' }}
+              disabled={!manualBarcodeInput.trim() || manualBarcodeLookingUp}
+              style={{ padding: '0.75rem 1rem', backgroundColor: 'var(--accent-blue)', border: 'none', borderRadius: '12px', color: '#fff', fontWeight: 700, fontSize: '0.85rem', opacity: manualBarcodeInput.trim() && !manualBarcodeLookingUp ? 1 : 0.4, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
+              {manualBarcodeLookingUp ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : null}
               Look up
             </button>
           </div>
@@ -574,6 +724,30 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         </button>
       </div>
 
+      {/* API Error Banner */}
+      {apiError && tab === 'search' && query.length >= 2 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0.65rem 0.9rem', marginBottom: '0.75rem',
+          backgroundColor: 'rgba(251,146,60,0.1)',
+          border: '1px solid rgba(251,146,60,0.25)',
+          borderRadius: '12px', gap: '10px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+            <AlertTriangle size={14} color="#fb923c" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)', lineHeight: 1.35 }}>
+              Live search unavailable — showing local results only.
+            </span>
+          </div>
+          <button
+            onClick={() => runSearch(query.trim())}
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '0.4rem 0.7rem', backgroundColor: 'rgba(251,146,60,0.15)', border: '1px solid rgba(251,146,60,0.3)', borderRadius: '8px', color: '#fb923c', fontWeight: 700, fontSize: '0.72rem', cursor: 'pointer', flexShrink: 0 }}
+          >
+            <RefreshCw size={12} /> Retry
+          </button>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="flex-row gap-1 mb-4" style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '3px' }}>
         {([
@@ -603,11 +777,37 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             </div>
           ) : (
             <>
-              <div className="flex-row align-center gap-2 mb-2 px-1">
-                <Clock size={12} color="rgba(255,255,255,0.3)" />
-                <span className="text-caption font-semibold" style={{ color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
-                  Recently Logged
-                </span>
+              <div className="flex-row align-center justify-between mb-2 px-1">
+                <div className="flex-row align-center gap-2">
+                  <Clock size={12} color="rgba(255,255,255,0.3)" />
+                  <span className="text-caption font-semibold" style={{ color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
+                    Recently Logged
+                  </span>
+                </div>
+                {showClearConfirm ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)' }}>Clear recent foods?</span>
+                    <button
+                      onClick={() => { clearRecentFoods(); setShowClearConfirm(false); }}
+                      style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '6px', color: '#f87171', fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', cursor: 'pointer' }}
+                    >
+                      OK
+                    </button>
+                    <button
+                      onClick={() => setShowClearConfirm(false)}
+                      style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowClearConfirm(true)}
+                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Clear recent
+                  </button>
+                )}
               </div>
               {recentFoodItems.map(f => renderFoodRow(f, false))}
             </>
@@ -661,29 +861,50 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             {query.length >= 2 && (
               <div style={{ marginTop: localResults.length > 0 ? '1.5rem' : 0 }}>
                 <div className="flex-row align-center gap-2 mb-2 px-1">
-                  <Globe size={12} color="var(--accent-blue)" />
-                  <span className="text-caption font-semibold" style={{ color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
-                    Online Database
+                  <Globe size={12} color={apiError ? '#fb923c' : 'var(--accent-blue)'} />
+                  <span className="text-caption font-semibold" style={{ color: apiError ? '#fb923c' : 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem' }}>
+                    {apiError ? 'Online Unavailable' : 'Online Database'}
                   </span>
                   {isApiLoading && (
                     <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)' }}>searching...</span>
                   )}
                 </div>
 
+                {/* Loading skeleton — 3 rows */}
                 {isApiLoading && deduplicatedApi.length === 0 && (
-                  <div style={{ padding: '1.5rem', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>
-                    <Loader2 size={20} style={{ animation: 'spin 1s linear infinite', marginBottom: '8px' }} />
-                    <div>Searching Open Food Facts...</div>
+                  <>
+                    <SkeletonRow />
+                    <SkeletonRow />
+                    <SkeletonRow />
+                  </>
+                )}
+
+                {/* Empty state — no results and no error */}
+                {!isApiLoading && !apiError && deduplicatedApi.length === 0 && localResults.length === 0 && query.length >= 2 && (
+                  <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'rgba(255,255,255,0.3)' }}>
+                    <Search size={28} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
+                    <p style={{ fontSize: '0.88rem', fontWeight: 600, marginBottom: '4px' }}>No results for "{query}"</p>
+                    <p style={{ fontSize: '0.75rem', opacity: 0.7 }}>Try a shorter search or scan the barcode</p>
                   </div>
                 )}
 
-                {!isApiLoading && deduplicatedApi.length === 0 && query.length >= 2 && (
-                  <div style={{ padding: '1.5rem', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>
-                    No online results found
+                {/* Empty online results but local has results */}
+                {!isApiLoading && !apiError && deduplicatedApi.length === 0 && localResults.length > 0 && query.length >= 2 && (
+                  <div style={{ padding: '1rem', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '0.8rem' }}>
+                    No additional online results
                   </div>
                 )}
 
                 {deduplicatedApi.map(f => renderFoodRow(f, true))}
+              </div>
+            )}
+
+            {/* Empty state when local also has no results */}
+            {query.length >= 2 && !isApiLoading && localResults.length === 0 && deduplicatedApi.length === 0 && !apiError && (
+              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'rgba(255,255,255,0.3)' }}>
+                <Search size={28} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
+                <p style={{ fontSize: '0.88rem', fontWeight: 600, marginBottom: '4px' }}>No results for "{query}"</p>
+                <p style={{ fontSize: '0.75rem', opacity: 0.7 }}>Try a shorter search or scan the barcode</p>
               </div>
             )}
           </>
@@ -692,6 +913,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
       `}</style>
     </div>
   );

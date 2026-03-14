@@ -116,6 +116,8 @@ export const Health: React.FC = () => {
     hrv: health.hrv?.toString() || '',
     restingHR: health.restingHR?.toString() || '',
   });
+  const [hrvError, setHrvError] = useState('');
+  const [rhrError, setRhrError] = useState('');
 
   const workoutsLast48h = useMemo(() => {
     const cutoff = Date.now() - 48 * 3600 * 1000;
@@ -176,14 +178,16 @@ export const Health: React.FC = () => {
 
     // Validate HRV range 0–300
     if (hrvRaw !== undefined && (isNaN(hrvRaw) || hrvRaw < 0 || hrvRaw > 300)) {
-      showToast('HRV must be between 0 and 300 ms', 'error');
+      setHrvError('HRV must be between 0 and 300 ms');
       return;
     }
-    // Validate resting HR range 20–200
-    if (rhrRaw !== undefined && (isNaN(rhrRaw) || rhrRaw < 20 || rhrRaw > 200)) {
-      showToast('Resting HR must be between 20 and 200 bpm', 'error');
+    setHrvError('');
+    // Validate resting HR range 30–220
+    if (rhrRaw !== undefined && (isNaN(rhrRaw) || rhrRaw < 30 || rhrRaw > 220)) {
+      setRhrError('Resting HR must be between 30 and 220 bpm');
       return;
     }
+    setRhrError('');
 
     const result = calculateRecovery({ sleepMinutes: totalMinutes, hrv: hrvRaw, restingHR: rhrRaw, workoutsLast48h });
 
@@ -197,6 +201,9 @@ export const Health: React.FC = () => {
       restingHR: rhrRaw,
       recoveryScore: clampedScore,
     });
+
+    // Clear form fields after successful save
+    setVitals({ sleepHours: '7', sleepMins: '30', hrv: '', restingHR: '' });
     setIsLoggingVitals(false);
     showToast(`Readiness: ${clampedScore}% · ${recoveryLabel(clampedScore).label}`, 'success');
   };
@@ -217,6 +224,8 @@ export const Health: React.FC = () => {
       hrv: health.hrv?.toString() || '',
       restingHR: health.restingHR?.toString() || '',
     });
+    setHrvError('');
+    setRhrError('');
     setIsLoggingVitals(true);
   };
 
@@ -267,45 +276,54 @@ export const Health: React.FC = () => {
       )}
 
       {/* ── Hero Readiness Score — only show if any vitals have been logged today ── */}
-      {health.recoveryScore != null && (
-        <div style={{ position: 'relative', backgroundColor: 'var(--bg-card)', borderRadius: '24px', border: `1px solid ${recInfo ? recInfo.color + '30' : 'rgba(255,255,255,0.06)'}`, padding: '1.5rem', overflow: 'hidden' }}>
-          {recInfo && (
-            <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '180px', height: '180px', borderRadius: '50%', background: `radial-gradient(circle, ${recInfo.color}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
-          )}
-          <div style={{ position: 'absolute', top: 0, left: '10%', right: '10%', height: '2px', borderRadius: '0 0 2px 2px', background: recInfo ? `linear-gradient(90deg, transparent, ${recInfo.color}, transparent)` : 'transparent' }} />
+      {health.recoveryScore != null && (() => {
+        // Count how many of the 3 key metrics were provided today
+        const metricCount = [health.sleepDurationMinutes, health.hrv, health.restingHR].filter(v => v != null).length;
+        return (
+          <div style={{ position: 'relative', backgroundColor: 'var(--bg-card)', borderRadius: '24px', border: `1px solid ${recInfo ? recInfo.color + '30' : 'rgba(255,255,255,0.06)'}`, padding: '1.5rem', overflow: 'hidden' }}>
+            {recInfo && (
+              <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '180px', height: '180px', borderRadius: '50%', background: `radial-gradient(circle, ${recInfo.color}18 0%, transparent 70%)`, pointerEvents: 'none' }} />
+            )}
+            <div style={{ position: 'absolute', top: 0, left: '10%', right: '10%', height: '2px', borderRadius: '0 0 2px 2px', background: recInfo ? `linear-gradient(90deg, transparent, ${recInfo.color}, transparent)` : 'transparent' }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <ReadinessArc score={currentRecovery} color={recInfo?.color || 'rgba(255,255,255,0.1)'} />
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '2rem', fontWeight: 800, color: recInfo?.color || 'rgba(255,255,255,0.2)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                  {currentRecovery > 0 ? currentRecovery : '—'}
-                </span>
-                {currentRecovery > 0 && <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>/ 100</span>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <ReadinessArc score={currentRecovery} color={recInfo?.color || 'rgba(255,255,255,0.1)'} />
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '2rem', fontWeight: 800, color: recInfo?.color || 'rgba(255,255,255,0.2)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                    {currentRecovery > 0 ? currentRecovery : '—'}
+                  </span>
+                  {currentRecovery > 0 && <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>/ 100</span>}
+                </div>
               </div>
-            </div>
 
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)' }}>Readiness</span>
-                {currentRecovery > 0 && recoveryTrend !== 'flat' && (
-                  recoveryTrend === 'up'
-                    ? <TrendingUp size={13} color="#4ade80" />
-                    : <TrendingDown size={13} color="#f87171" />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)' }}>Readiness</span>
+                  {currentRecovery > 0 && recoveryTrend !== 'flat' && (
+                    recoveryTrend === 'up'
+                      ? <TrendingUp size={13} color="#4ade80" />
+                      : <TrendingDown size={13} color="#f87171" />
+                  )}
+                </div>
+                {recInfo ? (
+                  <>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: recInfo.color, letterSpacing: '-0.01em', marginBottom: '6px' }}>{recInfo.label}</div>
+                    <p style={{ fontSize: '0.77rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, margin: 0 }}>{recInfo.advice}</p>
+                  </>
+                ) : (
+                  <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.5, margin: 0 }}>Log your morning vitals to calculate your daily readiness score.</p>
+                )}
+                {metricCount < 3 && (
+                  <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600, margin: '6px 0 0' }}>
+                    Based on {metricCount} of 3 metrics
+                  </p>
                 )}
               </div>
-              {recInfo ? (
-                <>
-                  <div style={{ fontSize: '1.3rem', fontWeight: 800, color: recInfo.color, letterSpacing: '-0.01em', marginBottom: '6px' }}>{recInfo.label}</div>
-                  <p style={{ fontSize: '0.77rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, margin: 0 }}>{recInfo.advice}</p>
-                </>
-              ) : (
-                <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', lineHeight: 1.5, margin: 0 }}>Log your morning vitals to calculate your daily readiness score.</p>
-              )}
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Metrics Grid — only show if any vitals today ── */}
       {(health.sleepDurationMinutes != null || health.hrv != null || health.restingHR != null) && (
@@ -520,7 +538,7 @@ export const Health: React.FC = () => {
               </div>
 
               {/* HRV card */}
-              <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', padding: '1.25rem', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', padding: '1.25rem', border: `1px solid ${hrvError ? 'rgba(248,113,113,0.4)' : 'rgba(255,255,255,0.06)'}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                   <div style={{ padding: '6px', borderRadius: '9px', backgroundColor: 'rgba(74,222,128,0.12)' }}>
                     <Activity size={15} color="#4ade80" />
@@ -533,16 +551,20 @@ export const Health: React.FC = () => {
                 <input
                   type="number" inputMode="numeric" placeholder="65"
                   value={vitals.hrv}
-                  onChange={e => setVitals(v => ({ ...v, hrv: e.target.value }))}
+                  onChange={e => { setVitals(v => ({ ...v, hrv: e.target.value })); setHrvError(''); }}
                   onBlur={e => { if (e.target.value) setVitals(v => ({ ...v, hrv: clampInt(e.target.value, 0, 300) })); }}
                   className="input-field"
                   style={{ fontSize: '2rem', fontWeight: 800, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}
                 />
-                <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginTop: '6px', fontWeight: 600 }}>milliseconds · range 0–300 ms</p>
+                {hrvError ? (
+                  <p style={{ fontSize: '0.68rem', color: '#f87171', textAlign: 'center', marginTop: '6px', fontWeight: 700 }}>{hrvError}</p>
+                ) : (
+                  <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginTop: '6px', fontWeight: 600 }}>milliseconds · range 0–300 ms</p>
+                )}
               </div>
 
               {/* RHR card */}
-              <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', padding: '1.25rem', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', padding: '1.25rem', border: `1px solid ${rhrError ? 'rgba(248,113,113,0.4)' : 'rgba(255,255,255,0.06)'}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                   <div style={{ padding: '6px', borderRadius: '9px', backgroundColor: 'rgba(251,146,60,0.12)' }}>
                     <Zap size={15} color="#fb923c" />
@@ -552,12 +574,16 @@ export const Health: React.FC = () => {
                 <input
                   type="number" inputMode="numeric" placeholder="52"
                   value={vitals.restingHR}
-                  onChange={e => setVitals(v => ({ ...v, restingHR: e.target.value }))}
-                  onBlur={e => { if (e.target.value) setVitals(v => ({ ...v, restingHR: clampInt(e.target.value, 20, 200) })); }}
+                  onChange={e => { setVitals(v => ({ ...v, restingHR: e.target.value })); setRhrError(''); }}
+                  onBlur={e => { if (e.target.value) setVitals(v => ({ ...v, restingHR: clampInt(e.target.value, 30, 220) })); }}
                   className="input-field"
                   style={{ fontSize: '2rem', fontWeight: 800, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}
                 />
-                <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginTop: '6px', fontWeight: 600 }}>beats per minute · range 20–200 bpm</p>
+                {rhrError ? (
+                  <p style={{ fontSize: '0.68rem', color: '#f87171', textAlign: 'center', marginTop: '6px', fontWeight: 700 }}>{rhrError}</p>
+                ) : (
+                  <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginTop: '6px', fontWeight: 600 }}>beats per minute · range 30–220 bpm</p>
+                )}
               </div>
 
               {/* Live preview */}
@@ -567,12 +593,18 @@ export const Health: React.FC = () => {
                 if (isNaN(h) || isNaN(m)) return null;
                 const totalMin = h * 60 + m;
                 if (totalMin < 60) return null;
+                const hrvNum = vitals.hrv ? parseInt(vitals.hrv, 10) : undefined;
+                const rhrNum = vitals.restingHR ? parseInt(vitals.restingHR, 10) : undefined;
+                // Skip live preview if inputs are out of valid range (would produce misleading score)
+                if (hrvNum !== undefined && (isNaN(hrvNum) || hrvNum < 0 || hrvNum > 300)) return null;
+                if (rhrNum !== undefined && (isNaN(rhrNum) || rhrNum < 30 || rhrNum > 220)) return null;
                 const preview = calculateRecovery({
                   sleepMinutes: totalMin,
-                  hrv: vitals.hrv ? parseInt(vitals.hrv, 10) : undefined,
-                  restingHR: vitals.restingHR ? parseInt(vitals.restingHR, 10) : undefined,
+                  hrv: hrvNum,
+                  restingHR: rhrNum,
                   workoutsLast48h,
                 });
+                if (!isFinite(preview.score) || isNaN(preview.score)) return null;
                 const info = recoveryLabel(preview.score);
                 return (
                   <div style={{ padding: '1.25rem', backgroundColor: info.color + '0d', border: `1px solid ${info.color}25`, borderRadius: '20px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>

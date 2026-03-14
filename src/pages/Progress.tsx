@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card } from '../components/SharedUI';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, ReferenceLine, AreaChart, Area } from 'recharts';
-import { TrendingDown, TrendingUp, Scale, Plus, Target, CheckCircle2, Flame, ChevronRight, Award } from 'lucide-react';
+import { TrendingDown, TrendingUp, Scale, Plus, Target, CheckCircle2, Flame, ChevronRight, Award, BarChart2 } from 'lucide-react';
 import { calculateWeightTrend, getMacrosFromLog, computeWeeklyStats } from '../utils/aiCoachingEngine';
 import { getLocalISOString } from '../utils/dateUtils';
 import { BottomSheet } from '../components/MotionUI';
@@ -15,6 +15,18 @@ const safeNum = (v: number | undefined | null, fallback = 0): number => {
   return v;
 };
 
+// Count how many of the last 7 days have actual calorie data
+const countLoggedDaysInWeek = (logs: Record<string, any>): number => {
+  let count = 0;
+  const d = new Date();
+  for (let i = 0; i < 7; i++) {
+    const dateStr = d.toISOString().split('T')[0];
+    if (logs[dateStr]) count++;
+    d.setDate(d.getDate() - 1);
+  }
+  return count;
+};
+
 export const Progress: React.FC = () => {
   const { state, updateDailyLog, updateUser, showToast } = useApp();
   const { user, logs } = state;
@@ -23,6 +35,8 @@ export const Progress: React.FC = () => {
   const [showGoalEdit, setShowGoalEdit] = useState(false);
   const [newWeight, setNewWeight] = useState(user?.weight?.toString() || '');
   const [newGoalWeight, setNewGoalWeight] = useState(user?.goalWeight?.toString() || '');
+  const [weightInputError, setWeightInputError] = useState('');
+  const [goalWeightError, setGoalWeightError] = useState('');
 
   const todayDate = getLocalISOString();
 
@@ -86,6 +100,10 @@ export const Progress: React.FC = () => {
   }, [logs, timeframe, user]);
 
   const weeklyStats = user ? computeWeeklyStats(logs, user.targets) : null;
+  const loggedDaysInWeek = countLoggedDaysInWeek(logs);
+
+  // Whether the user has ever logged any weight entries
+  const hasAnyWeightData = Object.values(logs).some(l => l.weight != null && !isNaN(l.weight as number));
 
   // Weight trend delta — null-safe and NaN-safe
   const lastTrend = allTrendData.filter(t => t.trend != null && !isNaN(t.trend as number));
@@ -120,25 +138,27 @@ export const Progress: React.FC = () => {
 
   const handleLogWeight = () => {
     const val = parseFloat(newWeight);
-    if (!isNaN(val) && isFinite(val) && val > 20 && val < 400) {
-      updateDailyLog(todayDate, { weight: val });
-      updateUser({ weight: val });
-      showToast('Weight logged', 'success');
-      setShowLogWeight(false);
-    } else {
-      showToast('Enter a valid weight (20–400 kg)', 'error');
+    if (isNaN(val) || !isFinite(val) || val < 20 || val > 400) {
+      setWeightInputError('Weight must be between 20 and 400 kg');
+      return;
     }
+    setWeightInputError('');
+    updateDailyLog(todayDate, { weight: val });
+    updateUser({ weight: val });
+    showToast('Weight logged', 'success');
+    setShowLogWeight(false);
   };
 
   const handleSaveGoal = () => {
     const val = parseFloat(newGoalWeight);
-    if (!isNaN(val) && isFinite(val) && val > 20 && val < 400) {
-      updateUser({ goalWeight: val });
-      showToast('Goal weight updated', 'success');
-      setShowGoalEdit(false);
-    } else {
-      showToast('Enter a valid goal weight', 'error');
+    if (isNaN(val) || !isFinite(val) || val < 20 || val > 400) {
+      setGoalWeightError('Goal weight must be between 20 and 400 kg');
+      return;
     }
+    setGoalWeightError('');
+    updateUser({ goalWeight: val });
+    showToast('Goal weight updated', 'success');
+    setShowGoalEdit(false);
   };
 
   const calAdherenceColor = weeklyStats
@@ -290,6 +310,46 @@ export const Progress: React.FC = () => {
                 }}>{card.label}</div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── Empty state: no weight data yet ── */}
+        {!hasAnyWeightData && (
+          <div
+            onClick={() => { setNewWeight(user?.weight?.toString() || ''); setShowLogWeight(true); }}
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px dashed rgba(255,255,255,0.12)',
+              padding: '1.75rem 1.5rem',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', gap: '0.875rem',
+              textAlign: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{
+              width: 52, height: 52, borderRadius: 16,
+              backgroundColor: 'rgba(10,132,255,0.1)',
+              border: '1px solid rgba(10,132,255,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <BarChart2 size={24} color="var(--accent-blue)" />
+            </div>
+            <div>
+              <div style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '4px' }}>Start tracking your weight</div>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', fontWeight: 500, margin: 0, lineHeight: 1.5 }}>
+                Log your first entry below — your trend and progress chart will appear here.
+              </p>
+            </div>
+            <div style={{
+              padding: '0.55rem 1.5rem',
+              backgroundColor: 'var(--accent-blue)',
+              borderRadius: 'var(--radius-full)',
+              fontSize: '0.875rem', fontWeight: 700, color: '#000',
+            }}>
+              Log First Entry
+            </div>
           </div>
         )}
 
@@ -591,8 +651,13 @@ export const Progress: React.FC = () => {
             border: '1px solid var(--border-default)',
             overflow: 'hidden',
           }}>
-            <div style={{ padding: '1rem 1.125rem 0.25rem' }}>
+            <div style={{ padding: '1rem 1.125rem 0.25rem', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.875rem', fontWeight: 700, letterSpacing: '-0.01em' }}>This Week's Averages</span>
+              {loggedDaysInWeek < 7 && (
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
+                  (based on {loggedDaysInWeek} {loggedDaysInWeek === 1 ? 'day' : 'days'})
+                </span>
+              )}
             </div>
             <div style={{ padding: '0.5rem 0' }}>
               {[
@@ -658,31 +723,36 @@ export const Progress: React.FC = () => {
               Morning measurement recommended. Current: {user?.weight} kg
             </p>
           </div>
-          <div className="flex-row gap-3 align-center justify-center">
-            <input
-              type="number"
-              step="0.1"
-              min="20"
-              max="400"
-              value={newWeight}
-              onChange={e => setNewWeight(e.target.value)}
-              placeholder="e.g. 79.5"
-              autoFocus
-              style={{
-                width: '160px',
-                padding: '0.75rem',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--bg-input)',
-                fontSize: '2.5rem',
-                fontWeight: 800,
-                color: 'var(--text-primary)',
-                fontVariantNumeric: 'tabular-nums',
-                textAlign: 'center',
-                letterSpacing: '-0.03em',
-              }}
-            />
-            <span style={{ color: 'var(--text-tertiary)', fontWeight: 700, fontSize: '1.125rem' }}>kg</span>
+          <div className="flex-col align-center gap-2">
+            <div className="flex-row gap-3 align-center justify-center">
+              <input
+                type="number"
+                step="0.1"
+                min="20"
+                max="400"
+                value={newWeight}
+                onChange={e => { setNewWeight(e.target.value); setWeightInputError(''); }}
+                placeholder="e.g. 79.5"
+                autoFocus
+                style={{
+                  width: '160px',
+                  padding: '0.75rem',
+                  border: `1px solid ${weightInputError ? 'var(--accent-red)' : 'var(--border-default)'}`,
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--bg-input)',
+                  fontSize: '2.5rem',
+                  fontWeight: 800,
+                  color: 'var(--text-primary)',
+                  fontVariantNumeric: 'tabular-nums',
+                  textAlign: 'center',
+                  letterSpacing: '-0.03em',
+                }}
+              />
+              <span style={{ color: 'var(--text-tertiary)', fontWeight: 700, fontSize: '1.125rem' }}>kg</span>
+            </div>
+            {weightInputError && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--accent-red)', fontWeight: 600 }}>{weightInputError}</span>
+            )}
           </div>
           <div className="flex-row gap-2" style={{ flexWrap: 'wrap', justifyContent: 'center' }}>
             {[-1, -0.5, 0, 0.5, 1].map(delta => {
@@ -733,31 +803,48 @@ export const Progress: React.FC = () => {
           <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
             Current: {user?.weight} kg · Your target to reach
           </p>
-          <div className="flex-row gap-3 align-center justify-center">
-            <input
-              type="number"
-              step="0.1"
-              min="20"
-              max="400"
-              value={newGoalWeight}
-              onChange={e => setNewGoalWeight(e.target.value)}
-              placeholder="e.g. 72.0"
-              autoFocus
-              style={{
-                width: '160px',
-                padding: '0.75rem',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--bg-input)',
-                fontSize: '2.5rem',
-                fontWeight: 800,
-                color: 'var(--text-primary)',
-                fontVariantNumeric: 'tabular-nums',
-                textAlign: 'center',
-                letterSpacing: '-0.03em',
-              }}
-            />
-            <span style={{ color: 'var(--text-tertiary)', fontWeight: 700, fontSize: '1.125rem' }}>kg</span>
+          <div className="flex-col align-center gap-2">
+            <div className="flex-row gap-3 align-center justify-center">
+              <input
+                type="number"
+                step="0.1"
+                min="20"
+                max="400"
+                value={newGoalWeight}
+                onChange={e => { setNewGoalWeight(e.target.value); setGoalWeightError(''); }}
+                placeholder="e.g. 72.0"
+                autoFocus
+                style={{
+                  width: '160px',
+                  padding: '0.75rem',
+                  border: `1px solid ${goalWeightError ? 'var(--accent-red)' : 'var(--border-default)'}`,
+                  borderRadius: 'var(--radius-md)',
+                  backgroundColor: 'var(--bg-input)',
+                  fontSize: '2.5rem',
+                  fontWeight: 800,
+                  color: 'var(--text-primary)',
+                  fontVariantNumeric: 'tabular-nums',
+                  textAlign: 'center',
+                  letterSpacing: '-0.03em',
+                }}
+              />
+              <span style={{ color: 'var(--text-tertiary)', fontWeight: 700, fontSize: '1.125rem' }}>kg</span>
+            </div>
+            {goalWeightError && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--accent-red)', fontWeight: 600 }}>{goalWeightError}</span>
+            )}
+            {(() => {
+              const gv = parseFloat(newGoalWeight);
+              const cw = user?.weight;
+              if (!isNaN(gv) && cw != null && !isNaN(cw) && Math.abs(gv - cw) < 0.05) {
+                return (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--accent-orange)', fontWeight: 600 }}>
+                    That's your current weight — pick a target
+                  </span>
+                );
+              }
+              return null;
+            })()}
           </div>
           <button
             onClick={handleSaveGoal}

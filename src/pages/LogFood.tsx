@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { Search, ChevronRight, BookOpen, Pencil, Check, X, Copy } from 'lucide-react';
+import { Search, ChevronRight, BookOpen, Pencil, Check, X, Copy, Info } from 'lucide-react';
 import { MealType, FoodItem } from '../types';
 import { FoodSearch } from './FoodSearch';
 import { getLocalISOString } from '../utils/dateUtils';
@@ -54,6 +54,15 @@ const MacroRemainingPill: React.FC<{ remaining: number; label: string; color: st
   );
 };
 
+interface PendingDelete {
+  entryId: string;
+  mealType: MealType;
+  foodName: string;
+  food: FoodItem;
+  amount: number;
+  timeoutId: ReturnType<typeof setTimeout>;
+}
+
 export const LogFood: React.FC = () => {
   const { state, addFoodToLog, removeFoodEntry, editFoodEntry, logSavedMeal, saveMeal, showToast } = useApp();
 
@@ -65,10 +74,12 @@ export const LogFood: React.FC = () => {
   const [expandedMeals, setExpandedMeals] = useState<Partial<Record<MealType, boolean>>>({ [defaultMeal]: true });
   const [editingEntry, setEditingEntry] = useState<{ id: string; mealType: MealType; amount: string; error?: string } | null>(null);
   const [saveMealName, setSaveMealName] = useState('');
+  const [saveMealError, setSaveMealError] = useState('');
   const [savingMealType, setSavingMealType] = useState<MealType | null>(null);
   const [savedMealConfirm, setSavedMealConfirm] = useState<MealType | null>(null);
   const [showCopyYesterday, setShowCopyYesterday] = useState(false);
   const [copiedYesterday, setCopiedYesterday] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 
   const todayDate = getLocalISOString();
 
@@ -122,7 +133,7 @@ export const LogFood: React.FC = () => {
     if (!editingEntry) return;
     const newAmount = parseFloat(editingEntry.amount);
     if (!newAmount || newAmount <= 0) {
-      setEditingEntry(prev => prev ? { ...prev, error: 'Enter a value greater than 0' } : null);
+      setEditingEntry(prev => prev ? { ...prev, error: 'Amount must be greater than 0' } : null);
       return;
     }
     editFoodEntry(todayDate, editingEntry.mealType, editingEntry.id, newAmount);
@@ -132,7 +143,11 @@ export const LogFood: React.FC = () => {
 
   const handleSaveMeal = (mealType: MealType) => {
     const items = todayLog.meals[mealType] || [];
-    if (!saveMealName.trim() || items.length === 0) return;
+    if (saveMealName.trim().length < 3) {
+      setSaveMealError('Enter a name with at least 3 characters');
+      return;
+    }
+    if (items.length === 0) return;
     const entries = items.map(item => ({
       food: {
         id: item.foodId, name: item.foodName, calories: item.nutrition.calories,
@@ -144,9 +159,34 @@ export const LogFood: React.FC = () => {
     saveMeal(saveMealName.trim(), mealType, entries);
     showToast(`"${saveMealName.trim()}" saved`, 'success');
     setSaveMealName('');
+    setSaveMealError('');
     setSavingMealType(null);
     setSavedMealConfirm(mealType);
     setTimeout(() => setSavedMealConfirm(null), 2500);
+  };
+
+  const handleDeleteEntry = (mealType: MealType, entryId: string, foodName: string, food: FoodItem, amount: number) => {
+    // Cancel any existing pending delete first
+    if (pendingDelete) {
+      clearTimeout(pendingDelete.timeoutId);
+      // Commit the previous one before starting new
+      removeFoodEntry(todayDate, pendingDelete.mealType, pendingDelete.entryId);
+    }
+
+    const timeoutId = setTimeout(() => {
+      removeFoodEntry(todayDate, mealType, entryId);
+      setPendingDelete(null);
+    }, 4000);
+
+    setPendingDelete({ entryId, mealType, foodName, food, amount, timeoutId });
+  };
+
+  const handleUndoDelete = () => {
+    if (!pendingDelete) return;
+    clearTimeout(pendingDelete.timeoutId);
+    // Re-add the food back
+    addFoodToLog(todayDate, pendingDelete.mealType, pendingDelete.food, pendingDelete.amount);
+    setPendingDelete(null);
   };
 
   const handleCopyFromYesterday = () => {
@@ -176,6 +216,7 @@ export const LogFood: React.FC = () => {
 
   const renderMealCard = (mealType: MealType) => {
     const items = todayLog.meals[mealType] || [];
+    // Re-compute mealCals from current items to ensure up-to-date
     const mealCals = items.reduce((s, i) => s + i.nutrition.calories * i.amount, 0);
     const mealPro = items.reduce((s, i) => s + i.nutrition.protein * i.amount, 0);
     const mealCarbs = items.reduce((s, i) => s + i.nutrition.carbs * i.amount, 0);
@@ -260,12 +301,21 @@ export const LogFood: React.FC = () => {
                 {items.map(item => {
                   const isEditing = editingEntry?.id === item.id;
                   const hasError = editingEntry?.id === item.id && !!editingEntry?.error;
+                  const isPendingDelete = pendingDelete?.entryId === item.id;
+
+                  if (isPendingDelete) return null; // hide while pending undo
+
                   return (
                     <SwipeReveal
                       key={item.id}
                       onDelete={() => {
-                        removeFoodEntry(todayDate, mealType, item.id);
-                        showToast(`${item.foodName} removed`, 'info');
+                        const food: FoodItem = {
+                          id: item.foodId, name: item.foodName,
+                          calories: item.nutrition.calories, protein: item.nutrition.protein,
+                          carbs: item.nutrition.carbs, fats: item.nutrition.fats,
+                          servingSize: item.servingSize, servingUnit: item.servingUnit,
+                        };
+                        handleDeleteEntry(mealType, item.id, item.foodName, food, item.amount);
                       }}
                     >
                       {isEditing ? (
@@ -285,7 +335,11 @@ export const LogFood: React.FC = () => {
                               }}
                             />
                             <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)' }}>srv</span>
-                            <button onClick={handleEditConfirm} style={{ background: '#4ade80', border: 'none', borderRadius: '7px', padding: '0.35rem', display: 'flex', cursor: 'pointer' }}>
+                            <button
+                              onClick={handleEditConfirm}
+                              disabled={!editingEntry.amount || parseFloat(editingEntry.amount) <= 0}
+                              style={{ background: !editingEntry.amount || parseFloat(editingEntry.amount) <= 0 ? 'rgba(74,222,128,0.3)' : '#4ade80', border: 'none', borderRadius: '7px', padding: '0.35rem', display: 'flex', cursor: 'pointer' }}
+                            >
                               <Check size={14} color="#000" />
                             </button>
                             <button onClick={() => setEditingEntry(null)} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '7px', padding: '0.35rem', display: 'flex', cursor: 'pointer' }}>
@@ -361,31 +415,38 @@ export const LogFood: React.FC = () => {
                     <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#4ade80' }}>Meal saved!</span>
                   </div>
                 ) : savingMealType === mealType ? (
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      autoFocus type="text" placeholder="Name this meal…"
-                      value={saveMealName}
-                      onChange={e => setSaveMealName(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleSaveMeal(mealType); if (e.key === 'Escape') setSavingMealType(null); }}
-                      style={{ flex: 1, padding: '0.6rem 0.75rem', fontSize: '0.85rem', backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', color: '#fff', outline: 'none' }}
-                    />
-                    <button
-                      onClick={() => handleSaveMeal(mealType)}
-                      disabled={!saveMealName.trim()}
-                      style={{ padding: '0.6rem 0.9rem', background: '#4ade80', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', color: '#000', cursor: 'pointer', opacity: saveMealName.trim() ? 1 : 0.4 }}
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => { setSavingMealType(null); setSaveMealName(''); }}
-                      style={{ padding: '0.6rem 0.75rem', background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
-                    >
-                      <X size={13} />
-                    </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        autoFocus type="text" placeholder="Name this meal…"
+                        value={saveMealName}
+                        onChange={e => { setSaveMealName(e.target.value); setSaveMealError(''); }}
+                        onKeyDown={e => { if (e.key === 'Enter') handleSaveMeal(mealType); if (e.key === 'Escape') { setSavingMealType(null); setSaveMealError(''); } }}
+                        style={{ flex: 1, padding: '0.6rem 0.75rem', fontSize: '0.85rem', backgroundColor: 'rgba(255,255,255,0.07)', border: `1px solid ${saveMealError ? '#f87171' : 'rgba(255,255,255,0.15)'}`, borderRadius: '10px', color: '#fff', outline: 'none' }}
+                      />
+                      <button
+                        onClick={() => handleSaveMeal(mealType)}
+                        disabled={saveMealName.trim().length < 3}
+                        style={{ padding: '0.6rem 0.9rem', background: '#4ade80', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', color: '#000', cursor: 'pointer', opacity: saveMealName.trim().length >= 3 ? 1 : 0.4 }}
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => { setSavingMealType(null); setSaveMealName(''); setSaveMealError(''); }}
+                        style={{ padding: '0.6rem 0.75rem', background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                    {saveMealError && (
+                      <div style={{ fontSize: '0.68rem', color: '#f87171', fontWeight: 600, paddingLeft: '2px' }}>
+                        {saveMealError}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <button
-                    onClick={() => { setSavingMealType(mealType); setSaveMealName(''); }}
+                    onClick={() => { setSavingMealType(mealType); setSaveMealName(''); setSaveMealError(''); }}
                     style={{ width: '100%', padding: '0.5rem', background: 'transparent', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
                   >
                     + Save as meal template
@@ -431,7 +492,7 @@ export const LogFood: React.FC = () => {
       )}
 
       {/* ── Copy from Yesterday Banner ── */}
-      {showCopyYesterday && !copiedYesterday && (
+      {showCopyYesterday && !copiedYesterday ? (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0.75rem 1rem',
@@ -457,6 +518,40 @@ export const LogFood: React.FC = () => {
               <X size={13} color="rgba(255,255,255,0.4)" />
             </button>
           </div>
+        </div>
+      ) : !copiedYesterday && !yesterdayHasData && !showCopyYesterday && (
+        /* Gentle info state when there's nothing to copy from yesterday */
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '0.65rem 0.9rem',
+          backgroundColor: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: '12px',
+        }}>
+          <Info size={13} color="rgba(255,255,255,0.2)" />
+          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>Nothing logged yesterday to copy from</span>
+        </div>
+      )}
+
+      {/* ── Undo delete toast ── */}
+      {pendingDelete && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0.7rem 1rem',
+          backgroundColor: 'rgba(255,255,255,0.07)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '14px',
+          animation: 'slideIn 0.2s ease',
+        }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'rgba(255,255,255,0.75)' }}>
+            Removed {pendingDelete.foodName}
+          </span>
+          <button
+            onClick={handleUndoDelete}
+            style={{ padding: '0.35rem 0.85rem', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', color: '#fff', cursor: 'pointer' }}
+          >
+            Undo
+          </button>
         </div>
       )}
 

@@ -398,9 +398,10 @@ interface WeeklyChartCardProps {
   data: WeeklyChartDay[];
   weekAvg: number;
   target: number;
+  activeDays?: number;
 }
 
-export const WeeklyChartCard: React.FC<WeeklyChartCardProps> = ({ data, weekAvg, target }) => {
+export const WeeklyChartCard: React.FC<WeeklyChartCardProps> = ({ data, weekAvg, target, activeDays }) => {
   // Clamp chart data: never show negative values
   const safeData = data.map(d => ({
     ...d,
@@ -440,6 +441,11 @@ export const WeeklyChartCard: React.FC<WeeklyChartCardProps> = ({ data, weekAvg,
             <span style={{ fontSize: '0.5rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>
               avg kcal / day
             </span>
+            {activeDays !== undefined && activeDays < 7 && (
+              <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.2)', fontWeight: 600, letterSpacing: '0.04em' }}>
+                based on {activeDays} {activeDays === 1 ? 'day' : 'days'}
+              </span>
+            )}
           </div>
         </div>
 

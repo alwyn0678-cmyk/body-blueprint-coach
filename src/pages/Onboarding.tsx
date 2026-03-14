@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { calculateTargets } from '../utils/macroEngine';
+import { ftInToCm, lbsToKg } from '../utils/units';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 
@@ -28,14 +29,6 @@ interface FormData {
   stepsTarget: string;
   bodyFat: string;
 }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const ftInToCm = (ft: string, inch: string): number => {
-  const f = parseFloat(ft) || 0;
-  const i = parseFloat(inch) || 0;
-  return Math.round((f * 30.48) + (i * 2.54));
-};
-const lbsToKg = (lbs: string): number => Math.round(parseFloat(lbs) * 0.453592 * 10) / 10;
 
 // ── Shared sub-components ─────────────────────────────────────────────────────
 
@@ -126,7 +119,8 @@ const FloatingInput: React.FC<{
   suffix?: string;
   autoFocus?: boolean;
   onEnter?: () => void;
-}> = ({ label, value, onChange, type = 'text', placeholder, inputMode, suffix, autoFocus, onEnter }) => {
+  hasError?: boolean;
+}> = ({ label, value, onChange, type = 'text', placeholder, inputMode, suffix, autoFocus, onEnter, hasError }) => {
   const [focused, setFocused] = useState(false);
   const floated = focused || value.length > 0;
 
@@ -141,7 +135,7 @@ const FloatingInput: React.FC<{
         fontWeight: floated ? 700 : 400,
         letterSpacing: floated ? '0.06em' : 0,
         textTransform: floated ? 'uppercase' : 'none',
-        color: focused ? 'rgba(255,255,255,0.5)' : 'var(--text-tertiary)',
+        color: hasError ? '#f87171' : focused ? 'rgba(255,255,255,0.5)' : 'var(--text-tertiary)',
         pointerEvents: 'none',
         transition: 'all 0.18s cubic-bezier(0.16,1,0.3,1)',
         zIndex: 1,
@@ -164,7 +158,7 @@ const FloatingInput: React.FC<{
           paddingBottom: '0.5rem',
           paddingLeft: '1rem',
           paddingRight: suffix ? '3rem' : '1rem',
-          border: `1px solid ${focused ? 'var(--border-strong)' : 'var(--border-color)'}`,
+          border: `1px solid ${hasError ? '#f87171' : focused ? 'var(--border-strong)' : 'var(--border-color)'}`,
           borderRadius: 'var(--radius-md)',
           backgroundColor: 'var(--bg-input)',
           color: 'var(--text-primary)',
@@ -191,6 +185,13 @@ const FloatingInput: React.FC<{
     </div>
   );
 };
+
+const FieldError: React.FC<{ msg: string | null }> = ({ msg }) =>
+  msg ? (
+    <p style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 600, marginTop: '5px' }}>
+      {msg}
+    </p>
+  ) : null;
 
 const UnitToggle: React.FC<{
   options: string[];
@@ -236,7 +237,10 @@ export const Onboarding: React.FC = () => {
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [calcProgress, setCalcProgress] = useState(0);
   const [targets, setTargets] = useState<{ calories: number; protein: number; carbs: number; fats: number } | null>(null);
+  const [calcError, setCalcError] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  // Track whether user has attempted to proceed (to show errors)
+  const [attempted, setAttempted] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -261,42 +265,88 @@ export const Onboarding: React.FC = () => {
 
   // Resolve height/weight to metric for calculations
   const resolvedHeightCm = (): number => {
-    if (formData.heightUnit === 'ft') return ftInToCm(formData.heightFt, formData.heightIn);
+    if (formData.heightUnit === 'ft') return ftInToCm(parseFloat(formData.heightFt) || 0, parseFloat(formData.heightIn) || 0);
     return parseFloat(formData.height) || 0;
   };
   const resolvedWeightKg = (): number => {
-    if (formData.weightUnit === 'lbs') return lbsToKg(formData.weight);
+    if (formData.weightUnit === 'lbs') return lbsToKg(parseFloat(formData.weight) || 0);
     return parseFloat(formData.weight) || 0;
   };
   const resolvedGoalWeightKg = (): number => {
-    if (formData.weightUnit === 'lbs') return lbsToKg(formData.goalWeight);
+    if (formData.weightUnit === 'lbs') return lbsToKg(parseFloat(formData.goalWeight) || 0);
     return parseFloat(formData.goalWeight) || 0;
+  };
+
+  // ── Per-field validation messages ──────────────────────────────────────────
+  const getFieldErrors = () => {
+    const weightKg = resolvedWeightKg();
+    const heightCm = resolvedHeightCm();
+    const age = parseInt(formData.age);
+    const goalWeightKg = resolvedGoalWeightKg();
+    const currentWeightKg = resolvedWeightKg();
+
+    const weightErr = formData.weight && (isNaN(weightKg) || weightKg < 30 || weightKg > 300)
+      ? 'Enter a weight between 30–300 kg' : null;
+    const heightErr = formData.height && formData.heightUnit === 'cm' && (isNaN(heightCm) || heightCm < 100 || heightCm > 250)
+      ? 'Enter a height between 100–250 cm' : null;
+    const ageErr = formData.age && (isNaN(age) || age < 13 || age > 100)
+      ? 'Enter an age between 13–100' : null;
+    const goalWeightErr = formData.goalWeight && goalWeightKg === currentWeightKg && currentWeightKg > 0
+      ? 'Must be different from your current weight' : null;
+
+    return { weightErr, heightErr, ageErr, goalWeightErr };
   };
 
   // ── Validation per step ──────────────────────────────────────────────────────
   const canProceed = (): boolean => {
+    const { weightErr, heightErr, ageErr, goalWeightErr } = getFieldErrors();
     switch (step) {
-      case 1: return true; // welcome — always can proceed
+      case 1: return true;
       case 2: return !!formData.goalType;
       case 3: return !!formData.sex;
       case 4: {
         const hasName = formData.name.trim().length > 0;
-        const hasAge = parseInt(formData.age) > 0;
+        const hasAge = parseInt(formData.age) >= 13 && parseInt(formData.age) <= 100;
         const hasHeight = formData.heightUnit === 'ft'
           ? (parseFloat(formData.heightFt) > 0)
-          : (parseFloat(formData.height) > 0);
-        const hasWeight = parseFloat(formData.weight) > 0;
-        return hasName && hasAge && hasHeight && hasWeight;
+          : (parseFloat(formData.height) >= 100 && parseFloat(formData.height) <= 250);
+        const hasWeight = resolvedWeightKg() >= 30 && resolvedWeightKg() <= 300;
+        return hasName && hasAge && hasHeight && hasWeight && !weightErr && !heightErr && !ageErr;
       }
-      case 5: return parseFloat(formData.goalWeight) > 0;
+      case 5: {
+        const gw = parseFloat(formData.goalWeight);
+        return gw > 0 && !goalWeightErr;
+      }
       case 6: return !!formData.activityLevel;
       case 7: return !!formData.preferredDietSpeed;
       default: return true;
     }
   };
 
+  // What field name to show in the helper text
+  const getMissingFieldName = (): string | null => {
+    switch (step) {
+      case 2: return !formData.goalType ? 'goal' : null;
+      case 3: return !formData.sex ? 'biological sex' : null;
+      case 4: {
+        if (!formData.name.trim()) return 'name';
+        if (!formData.age) return 'age';
+        if (formData.heightUnit === 'cm' && !formData.height) return 'height';
+        if (formData.heightUnit === 'ft' && !formData.heightFt) return 'height';
+        if (!formData.weight) return 'weight';
+        return null;
+      }
+      case 5: return !formData.goalWeight ? 'goal weight' : null;
+      case 6: return !formData.activityLevel ? 'activity level' : null;
+      case 7: return !formData.preferredDietSpeed ? 'diet approach' : null;
+      default: return null;
+    }
+  };
+
   const goNext = () => {
+    setAttempted(true);
     if (!canProceed()) return;
+    setAttempted(false);
     setDirection('forward');
     if (step < FORM_STEPS) {
       setStep(s => s + 1);
@@ -306,6 +356,7 @@ export const Onboarding: React.FC = () => {
   };
 
   const goBack = () => {
+    setAttempted(false);
     if (step <= 1) return;
     setDirection('back');
     if (step === STEP_CALCULATING || step === STEP_PLAN) {
@@ -318,8 +369,8 @@ export const Onboarding: React.FC = () => {
   // ── Calculating screen: fill progress bar then advance ─────────────────────
   useEffect(() => {
     if (step !== STEP_CALCULATING) return;
+    setCalcError(false);
 
-    // Build profile and compute targets immediately
     const heightCm = resolvedHeightCm();
     const weightKg = resolvedWeightKg();
     const goalWeightKg = resolvedGoalWeightKg();
@@ -341,10 +392,17 @@ export const Onboarding: React.FC = () => {
       onboarded: true,
     };
 
-    const computed = calculateTargets(profile);
+    let computed;
+    try {
+      computed = calculateTargets(profile);
+    } catch (err) {
+      console.error('calculateTargets failed:', err);
+      // Use safe defaults
+      computed = { calories: 2000, protein: 150, carbs: 200, fats: 67 };
+      setCalcError(true);
+    }
     setTargets(computed);
 
-    // Animate progress bar over ~2s, then advance
     setCalcProgress(0);
     const startTime = Date.now();
     const duration = 2200;
@@ -353,7 +411,6 @@ export const Onboarding: React.FC = () => {
     const tick = () => {
       const elapsed = Date.now() - startTime;
       const pct = Math.min(elapsed / duration, 1);
-      // ease-out curve
       const eased = 1 - Math.pow(1 - pct, 3);
       setCalcProgress(eased);
 
@@ -414,6 +471,19 @@ export const Onboarding: React.FC = () => {
     return 'Maintain your current weight';
   };
 
+  // ── Goal weight timeline calculation ────────────────────────────────────────
+  const goalWeightTimeline = (): string | null => {
+    const current = resolvedWeightKg();
+    const goal = resolvedGoalWeightKg();
+    if (!current || !goal || goal === current) return null;
+    const speed = formData.preferredDietSpeed || 'moderate';
+    const weeklyRateKg = speed === 'aggressive' ? 0.75 : speed === 'moderate' ? 0.5 : 0.25;
+    const weightDelta = Math.abs(goal - current);
+    const weeks = Math.round(weightDelta / weeklyRateKg);
+    const speedLabel = speed === 'aggressive' ? 'Aggressive' : speed === 'moderate' ? 'Moderate' : 'Sustainable';
+    return `~${weeks} weeks at ${speedLabel} pace`;
+  };
+
   // ── Coaching summary copy ────────────────────────────────────────────────────
   const coachingCopy = (): string => {
     if (!targets) return '';
@@ -433,6 +503,9 @@ export const Onboarding: React.FC = () => {
   // ── Rendering ────────────────────────────────────────────────────────────────
   const showHeader = step >= 2 && step <= FORM_STEPS;
   const showFooter = step >= 1 && step <= FORM_STEPS;
+  const { weightErr, heightErr, ageErr, goalWeightErr } = getFieldErrors();
+  const missingField = getMissingFieldName();
+  const showHelperText = attempted && !canProceed() && missingField;
 
   const renderContent = () => {
     switch (step) {
@@ -443,7 +516,6 @@ export const Onboarding: React.FC = () => {
           className="animate-slide-up"
           style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '2rem 1.5rem', textAlign: 'center', gap: '2rem' }}
         >
-          {/* App icon */}
           <div style={{
             width: 88, height: 88,
             borderRadius: 24,
@@ -570,14 +642,18 @@ export const Onboarding: React.FC = () => {
               placeholder="e.g. Alex"
               autoFocus
             />
-            <FloatingInput
-              label="Age"
-              value={formData.age}
-              onChange={v => set('age', v)}
-              type="number"
-              inputMode="numeric"
-              placeholder="30"
-            />
+            <div>
+              <FloatingInput
+                label="Age"
+                value={formData.age}
+                onChange={v => set('age', v)}
+                type="number"
+                inputMode="numeric"
+                placeholder="30"
+                hasError={attempted && !!ageErr}
+              />
+              {attempted && <FieldError msg={ageErr} />}
+            </div>
 
             {/* Height */}
             <div>
@@ -590,7 +666,10 @@ export const Onboarding: React.FC = () => {
                 />
               </div>
               {formData.heightUnit === 'cm' ? (
-                <FloatingInput label="Height" value={formData.height} onChange={v => set('height', v)} type="number" inputMode="decimal" placeholder="175" suffix="cm" />
+                <>
+                  <FloatingInput label="Height" value={formData.height} onChange={v => set('height', v)} type="number" inputMode="decimal" placeholder="175" suffix="cm" hasError={attempted && !!heightErr} />
+                  {attempted && <FieldError msg={heightErr} />}
+                </>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
                   <FloatingInput label="Feet" value={formData.heightFt} onChange={v => set('heightFt', v)} type="number" inputMode="numeric" placeholder="5" suffix="ft" />
@@ -617,7 +696,9 @@ export const Onboarding: React.FC = () => {
                 inputMode="decimal"
                 placeholder={formData.weightUnit === 'kg' ? '75' : '165'}
                 suffix={formData.weightUnit}
+                hasError={attempted && !!weightErr}
               />
+              {attempted && <FieldError msg={weightErr} />}
             </div>
           </div>
         </div>
@@ -626,20 +707,25 @@ export const Onboarding: React.FC = () => {
       // ── Step 5: Goal Weight ──────────────────────────────────────────────────
       case 5: {
         const deltaLabel = weightDeltaLabel();
+        const timeline = goalWeightTimeline();
         return (
           <div key="step-5" className="animate-slide-up">
             <StepHeader title="Where do you want to be?" subtitle="Set your goal weight. This helps calculate realistic timelines." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <FloatingInput
-                label="Goal weight"
-                value={formData.goalWeight}
-                onChange={v => set('goalWeight', v)}
-                type="number"
-                inputMode="decimal"
-                placeholder={formData.weightUnit === 'kg' ? '70' : '154'}
-                suffix={formData.weightUnit}
-                autoFocus
-              />
+              <div>
+                <FloatingInput
+                  label="Goal weight"
+                  value={formData.goalWeight}
+                  onChange={v => set('goalWeight', v)}
+                  type="number"
+                  inputMode="decimal"
+                  placeholder={formData.weightUnit === 'kg' ? '70' : '154'}
+                  suffix={formData.weightUnit}
+                  autoFocus
+                  hasError={attempted && !!goalWeightErr}
+                />
+                {attempted && <FieldError msg={goalWeightErr} />}
+              </div>
               {deltaLabel && (
                 <div style={{
                   padding: '0.875rem 1rem',
@@ -653,6 +739,21 @@ export const Onboarding: React.FC = () => {
                   </span>
                   <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                     {deltaLabel}
+                  </span>
+                </div>
+              )}
+              {/* Timeline estimate */}
+              {timeline && (
+                <div style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'rgba(10,132,255,0.07)',
+                  border: '1px solid rgba(10,132,255,0.18)',
+                  display: 'flex', alignItems: 'center', gap: '0.625rem',
+                }}>
+                  <span style={{ fontSize: '1rem' }}>📅</span>
+                  <span style={{ fontSize: '0.825rem', color: 'rgba(10,132,255,0.9)', fontWeight: 600 }}>
+                    {timeline}
                   </span>
                 </div>
               )}
@@ -714,7 +815,6 @@ export const Onboarding: React.FC = () => {
           className="animate-fade-in"
           style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '2rem 1.5rem', textAlign: 'center' }}
         >
-          {/* Spinning orb */}
           <div style={{ position: 'relative', width: 80, height: 80 }}>
             <div style={{
               position: 'absolute', inset: 0,
@@ -749,7 +849,6 @@ export const Onboarding: React.FC = () => {
             </p>
           </div>
 
-          {/* Progress bar */}
           <div style={{ width: '100%', maxWidth: 280 }}>
             <div style={{
               height: 4,
@@ -783,6 +882,11 @@ export const Onboarding: React.FC = () => {
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.1, color: 'var(--text-primary)' }}>
               {formData.name ? `Ready, ${formData.name}.` : 'Your plan is ready.'}
             </h1>
+            {calcError && (
+              <p style={{ fontSize: '0.78rem', color: 'rgba(251,191,36,0.8)', fontWeight: 600, marginTop: '6px' }}>
+                Using estimated targets — update in Settings
+              </p>
+            )}
           </div>
 
           {/* Calorie hero */}
@@ -874,7 +978,7 @@ export const Onboarding: React.FC = () => {
         overflow: 'hidden',
       }}
     >
-      {/* Ambient background glow — subtle depth */}
+      {/* Ambient background glow */}
       <div style={{
         position: 'absolute',
         top: -120,
@@ -956,7 +1060,6 @@ export const Onboarding: React.FC = () => {
         }}>
           <button
             onClick={goNext}
-            disabled={!canProceed()}
             style={{
               width: '100%',
               display: 'flex',
@@ -983,6 +1086,18 @@ export const Onboarding: React.FC = () => {
             {step === 1 ? 'Get Started' : step === FORM_STEPS ? 'Calculate My Plan' : 'Continue'}
             <ArrowRight size={17} strokeWidth={2.5} />
           </button>
+          {/* Helper text when button is blocked */}
+          {showHelperText && (
+            <p style={{
+              textAlign: 'center',
+              fontSize: '0.78rem',
+              color: 'rgba(255,255,255,0.4)',
+              fontWeight: 600,
+              marginTop: '8px',
+            }}>
+              Fill in your {missingField} above to continue
+            </p>
+          )}
         </div>
       )}
 

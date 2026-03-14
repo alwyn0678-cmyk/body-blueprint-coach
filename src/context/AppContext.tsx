@@ -12,10 +12,11 @@ const APP_VERSION = '2.0.0';
 
 // ─── Toast queue types ────────────────────────────────────────────────────────
 
-interface ToastItem {
+export interface ToastItem {
   id: string;
   message: string;
   type: 'success' | 'error' | 'info';
+  duration?: number; // ms — defaults to 3000, errors use 5000
 }
 
 // ─── Workout draft type ───────────────────────────────────────────────────────
@@ -48,6 +49,7 @@ interface AppContextType {
   getNutritionTotals: (date: string) => NutritionTotals;
   getProgressionHistory: (exerciseId: string) => ProgressionRecord[];
   trackRecentFood: (food: FoodItem) => void;
+  clearRecentFoods: () => void;
   toggleFavoriteFood: (food: FoodItem) => void;
   setAssignedProgram: (programId: 'male_phase2' | 'female_phase1' | null) => void;
   resetApp: () => void;
@@ -191,11 +193,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Improvement #5: Input validation in addFoodToLog
   const addFoodToLog = (date: string, mealType: MealType, food: FoodItem, amount: number) => {
-    if (amount <= 0) {
+    if (!isFinite(amount) || amount <= 0) {
       showToast('Amount must be greater than 0', 'error');
       return;
     }
-    if (food.calories < 0 || food.protein < 0 || food.carbs < 0 || food.fats < 0) {
+    const hasInvalidMacro = [food.calories, food.protein, food.carbs, food.fats].some(
+      v => !isFinite(v) || v < 0
+    );
+    if (hasInvalidMacro) {
       showToast('Food has invalid nutrition values', 'error');
       return;
     }
@@ -437,13 +442,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       ...log.meals.snacks,
     ];
 
+    const safeN = (v: any) => (typeof v === 'number' && isFinite(v) ? v : 0);
     return allEntries.reduce(
       (acc, entry) => ({
-        calories: acc.calories + entry.nutrition.calories * entry.amount,
-        protein: acc.protein + entry.nutrition.protein * entry.amount,
-        carbs: acc.carbs + entry.nutrition.carbs * entry.amount,
-        fats: acc.fats + entry.nutrition.fats * entry.amount,
-        fiber: acc.fiber + (entry.nutrition.fiber ?? 0) * entry.amount,
+        calories: acc.calories + safeN(entry.nutrition.calories) * safeN(entry.amount),
+        protein: acc.protein + safeN(entry.nutrition.protein) * safeN(entry.amount),
+        carbs: acc.carbs + safeN(entry.nutrition.carbs) * safeN(entry.amount),
+        fats: acc.fats + safeN(entry.nutrition.fats) * safeN(entry.amount),
+        fiber: acc.fiber + safeN(entry.nutrition.fiber) * safeN(entry.amount),
       }),
       { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
     );
@@ -487,6 +493,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
+  const clearRecentFoods = () => {
+    setState(prev => ({ ...prev, recentFoods: [] }));
+  };
+
   const toggleFavoriteFood = (food: FoodItem) => {
     setState(prev => {
       const exists = prev.favoriteFoods.some(f => f.id === food.id);
@@ -503,20 +513,35 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setState(prev => ({ ...prev, assignedProgram: programId }));
   };
 
-  // Improvement #2: Toast queue (max 3, auto-remove after 3000ms)
+  // Improvement #2: Toast queue (max 4, errors persist 5s, others 3s)
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = `toast_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const duration = type === 'error' ? 5000 : 3000;
     setToasts(prev => {
-      const trimmed = prev.length >= 3 ? prev.slice(prev.length - 2) : prev;
-      return [...trimmed, { id, message, type }];
+      // Keep max 4; on overflow drop oldest non-error toast first
+      if (prev.length >= 4) {
+        const nonError = prev.findIndex(t => t.type !== 'error');
+        const trimmed = nonError !== -1
+          ? [...prev.slice(0, nonError), ...prev.slice(nonError + 1)]
+          : prev.slice(1);
+        return [...trimmed, { id, message, type, duration }];
+      }
+      return [...prev, { id, message, type, duration }];
     });
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3000);
+    }, duration);
   };
 
   const resetApp = () => {
-    localStorage.removeItem('bbc_state');
+    // Clear all BBC-owned localStorage keys
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('bbc_')) keysToRemove.push(key);
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    lastSavedRef.current = '';
     setState(defaultState);
     setToasts([]);
     setWorkoutDraftState(null);
@@ -554,7 +579,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addCustomFood, addWorkout, updateHealthMetrics, saveMeal, deleteSavedMeal,
       logSavedMeal, updateSettings, updateConnectionStatus, updateUnits,
       getNutritionTotals, getProgressionHistory,
-      trackRecentFood, toggleFavoriteFood,
+      trackRecentFood, clearRecentFoods, toggleFavoriteFood,
       setAssignedProgram, resetApp, showToast,
       updateWeight,
       saveWorkoutDraft, clearWorkoutDraft, getWorkoutDraft,
@@ -591,26 +616,39 @@ const ToastStack: React.FC<{ toasts: ToastItem[] }> = ({ toasts }) => {
 };
 
 const ToastItem: React.FC<{ toast: ToastItem }> = ({ toast }) => {
-  const bg =
-    toast.type === 'success' ? 'var(--accent-green)' :
-    toast.type === 'error' ? 'var(--accent-red)' :
-    '#333';
+  const styles: Record<string, { bg: string; border: string; icon: string }> = {
+    success: { bg: 'rgba(48,209,88,0.15)', border: 'var(--accent-green, #30D158)', icon: '✓' },
+    error:   { bg: 'rgba(255,69,58,0.15)',  border: 'var(--accent-red, #FF453A)',   icon: '!' },
+    info:    { bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.15)',       icon: 'ℹ' },
+  };
+  const s = styles[toast.type];
 
   return (
     <div className="animate-fade-in" style={{
-      backgroundColor: bg,
+      backgroundColor: s.bg,
+      border: `1px solid ${s.border}`,
+      backdropFilter: 'blur(12px)',
       color: 'white',
-      padding: '12px 20px',
-      borderRadius: 'var(--radius-md)',
-      boxShadow: 'var(--shadow-lg)',
+      padding: '12px 16px',
+      borderRadius: '14px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
       fontWeight: 600,
-      fontSize: '0.9rem',
+      fontSize: '0.875rem',
       width: '100%',
       maxWidth: '460px',
-      textAlign: 'center',
+      textAlign: 'left',
       pointerEvents: 'auto',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
     }}>
-      {toast.message}
+      <span style={{
+        width: 22, height: 22, borderRadius: '50%',
+        backgroundColor: s.border,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '0.7rem', fontWeight: 900, flexShrink: 0,
+      }}>{s.icon}</span>
+      <span style={{ flex: 1, lineHeight: 1.4 }}>{toast.message}</span>
     </div>
   );
 };

@@ -1,5 +1,14 @@
 import React from 'react';
 
+// ── Toast interface (shared — AppContext uses its own inline version) ──────────
+export interface ToastItem {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+  /** high = 5 s stay + stronger border; normal/low = 3 s */
+  priority?: 'low' | 'normal' | 'high';
+}
+
 // ── CSS keyframes injected once ───────────────────────────────────────────────
 const KEYFRAMES = `
 @keyframes shimmer {
@@ -265,7 +274,7 @@ export const MacroCircle: React.FC<{
   target: number;
   color: string;
 }> = ({ label, current, target, color }) => {
-  const pct = Math.min((current / target) * 100, 100);
+  const pct = target > 0 ? Math.min((current / target) * 100, 100) : 0;
   const size = 60;
   const stroke = 5;
   const radius = (size / 2) - (stroke / 2);
@@ -313,9 +322,24 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon, emoji, title, subt
     gap: '0.75rem',
     textAlign: 'center',
   }}>
-    {(emoji || icon) && (
+    {icon && (
+      <div style={{
+        width: '56px',
+        height: '56px',
+        borderRadius: '9999px',
+        backgroundColor: 'rgba(255,255,255,0.06)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '0.25rem',
+        color: 'rgba(255,255,255,0.4)',
+      }}>
+        {icon}
+      </div>
+    )}
+    {!icon && emoji && (
       <div style={{ fontSize: '2.5rem', lineHeight: 1, marginBottom: '0.25rem' }}>
-        {emoji ?? icon}
+        {emoji}
       </div>
     )}
     <span style={{
@@ -362,20 +386,71 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon, emoji, title, subt
 interface LoadingSkeletonProps {
   rows?: number;
   type?: 'list' | 'card' | 'chart';
+  variant?: 'text' | 'card' | 'food-row' | 'chart';
 }
 
-export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ rows = 3, type = 'list' }) => {
-  if (type === 'card') {
-    return <Skeleton width="100%" height="120px" borderRadius={T.radius.md} />;
+export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ rows = 3, type = 'list', variant }) => {
+  // variant takes priority over legacy type prop
+  const resolvedVariant = variant ?? (type === 'card' ? 'card' : type === 'chart' ? 'chart' : 'text');
+
+  if (resolvedVariant === 'card') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <Skeleton width="100%" height="120px" borderRadius={T.radius.md} />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Skeleton width="60%" height="14px" borderRadius={T.radius.xs} />
+          <Skeleton width="30%" height="14px" borderRadius={T.radius.xs} />
+        </div>
+      </div>
+    );
   }
-  if (type === 'chart') {
-    return <Skeleton width="100%" height="160px" borderRadius={T.radius.md} />;
+
+  if (resolvedVariant === 'chart') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '120px', gap: '6px' }}>
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton
+              key={i}
+              width="100%"
+              height={`${40 + Math.round(Math.random() * 60)}px`}
+              borderRadius={T.radius.xs}
+            />
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={i} width="100%" height="10px" borderRadius={T.radius.xs} />
+          ))}
+        </div>
+      </div>
+    );
   }
-  // list
+
+  if (resolvedVariant === 'food-row') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <Skeleton width="55%" height="14px" borderRadius={T.radius.xs} />
+              <Skeleton width="35%" height="11px" borderRadius={T.radius.xs} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+              <Skeleton width="36px" height="16px" borderRadius={T.radius.xs} />
+              <Skeleton width="28px" height="11px" borderRadius={T.radius.xs} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // text (default)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       {Array.from({ length: rows }).map((_, i) => (
-        <Skeleton key={i} width="100%" height="52px" borderRadius={T.radius.sm} />
+        <Skeleton key={i} width={i % 3 === 2 ? '70%' : '100%'} height="14px" borderRadius={T.radius.xs} />
       ))}
     </div>
   );
@@ -1013,7 +1088,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   const s = BTN_SIZE[size];
   return (
     <button
-      onClick={onClick}
+      onClick={loading ? undefined : onClick}
       disabled={disabled || loading}
       style={{
         display: 'inline-flex',
@@ -1035,22 +1110,9 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         letterSpacing: '-0.01em',
       }}
     >
-      {loading ? (
-        <span style={{
-          width: '16px',
-          height: '16px',
-          border: '2px solid rgba(0,0,0,0.2)',
-          borderTopColor: '#000',
-          borderRadius: T.radius.full,
-          animation: 'spin 0.7s linear infinite',
-          display: 'inline-block',
-        }} />
-      ) : (
-        <>
-          {icon && <span style={{ display: 'flex', fontSize: '16px' }}>{icon}</span>}
-          {label}
-        </>
-      )}
+      {loading && <span className="btn-spinner" />}
+      {!loading && icon && <span style={{ display: 'flex', fontSize: '16px' }}>{icon}</span>}
+      {!loading && label}
     </button>
   );
 };
@@ -1060,19 +1122,21 @@ interface SecondaryButtonProps {
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  loading?: boolean;
   icon?: React.ReactNode;
   color?: string;
   size?: 'sm' | 'md' | 'lg';
 }
 
 export const SecondaryButton: React.FC<SecondaryButtonProps> = ({
-  label, onClick, disabled, icon, color = T.accent, size = 'md',
+  label, onClick, disabled, loading, icon, color = T.accent, size = 'md',
 }) => {
   const s = BTN_SIZE[size];
+  const isDisabled = disabled || loading;
   return (
     <button
-      onClick={onClick}
-      disabled={disabled}
+      onClick={loading ? undefined : onClick}
+      disabled={isDisabled}
       style={{
         display: 'inline-flex',
         flexDirection: 'row',
@@ -1081,18 +1145,19 @@ export const SecondaryButton: React.FC<SecondaryButtonProps> = ({
         gap: '6px',
         padding: s.padding,
         height: s.height,
-        backgroundColor: disabled ? 'rgba(255,255,255,0.04)' : `${color}14`,
-        color: disabled ? T.muted : color,
-        border: `1px solid ${disabled ? T.border : `${color}50`}`,
+        backgroundColor: isDisabled ? 'rgba(255,255,255,0.04)' : `${color}14`,
+        color: isDisabled ? T.muted : color,
+        border: `1px solid ${isDisabled ? T.border : `${color}50`}`,
         borderRadius: T.radius.full,
         fontSize: s.fontSize,
         fontWeight: 600,
-        cursor: disabled ? 'not-allowed' : 'pointer',
+        cursor: isDisabled ? 'not-allowed' : 'pointer',
         transition: 'background-color 0.15s ease',
       }}
     >
-      {icon && <span style={{ display: 'flex', fontSize: '16px' }}>{icon}</span>}
-      {label}
+      {loading && <span className="btn-spinner" style={{ borderColor: `${color}40`, borderTopColor: color } as React.CSSProperties} />}
+      {!loading && icon && <span style={{ display: 'flex', fontSize: '16px' }}>{icon}</span>}
+      {!loading && label}
     </button>
   );
 };

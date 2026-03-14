@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { evaluateWeeklyCheckIn, calculateWeightTrend, calculateStreak, getMacrosFromLog } from '../utils/aiCoachingEngine';
 import { getLocalISOString, formatReadableDate } from '../utils/dateUtils';
+import { DailyLog } from '../types';
 import { BottomSheet } from '../components/MotionUI';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { useNavigate } from 'react-router-dom';
@@ -36,8 +37,14 @@ export const Dashboard: React.FC = () => {
   // Guard: user must exist before any derived computation
   if (!user) return null;
 
+  // Safe number helper
+  const safeNum = (v: number | undefined | null, fallback = 0): number => {
+    if (v === undefined || v === null || isNaN(v) || !isFinite(v)) return fallback;
+    return v;
+  };
+
   // ── Derived data ─────────────────────────────────────────────────────────────
-  const todayLog  = logs[selectedDate] || {
+  const todayLog: DailyLog = logs[selectedDate] || {
     id: selectedDate, date: selectedDate, steps: 0, waterGlasses: 0,
     meals: { breakfast: [], lunch: [], dinner: [], snacks: [] },
     workouts: [], health: {}, adherenceScore: 0,
@@ -52,13 +59,13 @@ export const Dashboard: React.FC = () => {
     setSelectedDate(next);
   };
 
-  const rawConsumed = getMacrosFromLog(todayLog as any);
-  // Guard all macro values against NaN
+  const rawConsumed = getMacrosFromLog(todayLog);
+  // Guard all macro values against NaN / Infinity using safeNum
   const consumed = {
-    calories: isNaN(rawConsumed.calories) ? 0 : Math.max(0, rawConsumed.calories),
-    protein:  isNaN(rawConsumed.protein)  ? 0 : Math.max(0, rawConsumed.protein),
-    carbs:    isNaN(rawConsumed.carbs)    ? 0 : Math.max(0, rawConsumed.carbs),
-    fats:     isNaN(rawConsumed.fats)     ? 0 : Math.max(0, rawConsumed.fats),
+    calories: safeNum(rawConsumed.calories),
+    protein:  safeNum(rawConsumed.protein),
+    carbs:    safeNum(rawConsumed.carbs),
+    fats:     safeNum(rawConsumed.fats),
   };
   const targets  = user.targets;
 
@@ -67,7 +74,7 @@ export const Dashboard: React.FC = () => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() - (6 - i));
     const dateStr = getLocalISOString(d);
-    const rawMacros = logs[dateStr] ? getMacrosFromLog(logs[dateStr] as any) : { calories: 0, protein: 0 };
+    const rawMacros = logs[dateStr] ? getMacrosFromLog(logs[dateStr]) : { calories: 0, protein: 0 };
     const isFuture = dateStr > todayDate;
     return {
       day: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()],
@@ -84,11 +91,21 @@ export const Dashboard: React.FC = () => {
   const weekAvgCal = activeDays.length > 0
     ? Math.round(activeDays.reduce((sum, d) => sum + d.calories, 0) / activeDays.length)
     : 0;
+  const activeDaysCount = activeDays.length;
 
-  // AI coaching
+  // AI coaching — wrapped in try/catch to prevent crash if evaluation throws
   const trendData  = calculateWeightTrend(logs, user.weight);
   const currentEma = trendData.length > 0 ? trendData[trendData.length - 1].trend : null;
-  const evaluation = evaluateWeeklyCheckIn(user, logs, currentEma, { plateauDetection: settings.plateauDetection });
+  let evaluation: ReturnType<typeof evaluateWeeklyCheckIn>;
+  try {
+    evaluation = evaluateWeeklyCheckIn(user, logs, currentEma, { plateauDetection: settings.plateauDetection });
+  } catch {
+    evaluation = {
+      recommendation: 'maintain',
+      reasoning: 'Keep logging consistently — coaching insights will appear here once there is enough data.',
+      urgency: 'low',
+    };
+  }
   const streak     = calculateStreak(logs);
 
   // Weight delta — guard against null/NaN
