@@ -677,13 +677,13 @@ const ActiveWorkoutScreen: React.FC<{
 
               {/* Column headers */}
               <div style={{ display: 'flex', padding: '0 16px', marginBottom: 6, alignItems: 'center' }}>
-                <div style={{ width: 30, flexShrink: 0 }} />
-                <span style={{ width: 48, flexShrink: 0, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.18)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>TYPE</span>
+                <div style={{ width: 24, flexShrink: 0 }} />
+                <span style={{ width: 36, flexShrink: 0, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.18)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>TYPE</span>
                 <span style={{ flex: 1, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.18)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>KG</span>
                 <span style={{ flex: 1, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.18)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>REPS</span>
-                <span style={{ width: 38, flexShrink: 0, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.18)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>RPE</span>
-                <div style={{ width: 50, flexShrink: 0 }} />
-                <div style={{ width: 22, flexShrink: 0 }} />
+                <span style={{ width: 32, flexShrink: 0, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.18)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>RPE</span>
+                <div style={{ width: 40, flexShrink: 0 }} />
+                <div style={{ width: 20, flexShrink: 0 }} />
               </div>
 
               {/* Sets */}
@@ -696,14 +696,14 @@ const ActiveWorkoutScreen: React.FC<{
                     <div
                       key={setIdx}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 5,
+                        display: 'flex', alignItems: 'center', gap: 4,
                         opacity: set.done ? 0.45 : 1,
                         transition: 'opacity 0.25s',
                       }}
                     >
                       {/* Set number */}
                       <div style={{
-                        width: 30, height: 46, borderRadius: 9, flexShrink: 0,
+                        width: 24, height: 42, borderRadius: 9, flexShrink: 0,
                         background: set.done ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
                         border: `1.5px solid ${set.done ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.07)'}`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -717,11 +717,11 @@ const ActiveWorkoutScreen: React.FC<{
                         disabled={set.done}
                         title="W = Warm-up  ·  N = Normal  ·  D = Drop set"
                         style={{
-                          width: 44, height: 46, borderRadius: 10, flexShrink: 0,
+                          width: 36, height: 42, borderRadius: 10, flexShrink: 0,
                           background: typeConf.bg,
                           border: `1.5px solid ${typeConf.color}40`,
                           color: typeConf.color,
-                          fontWeight: 900, fontSize: '0.78rem',
+                          fontWeight: 900, fontSize: '0.7rem',
                           cursor: set.done ? 'default' : 'pointer',
                           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                           gap: 1,
@@ -729,9 +729,6 @@ const ActiveWorkoutScreen: React.FC<{
                         }}
                       >
                         <span>{typeConf.label}</span>
-                        <span style={{ fontSize: '0.42rem', fontWeight: 700, opacity: 0.6 }}>
-                          {set.type === 'W' ? 'WARM' : set.type === 'D' ? 'DROP' : 'WORK'}
-                        </span>
                       </button>
 
                       {/* Weight */}
@@ -744,7 +741,7 @@ const ActiveWorkoutScreen: React.FC<{
                         onBlur={() => setActiveInput(null)}
                         disabled={set.done}
                         style={{
-                          flex: 1, height: 46, borderRadius: 11,
+                          width: 62, height: 42, borderRadius: 11, flexShrink: 0,
                           background: isActive ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)',
                           border: `1.5px solid ${isActive ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.07)'}`,
                           color: '#fff', textAlign: 'center',
@@ -765,7 +762,7 @@ const ActiveWorkoutScreen: React.FC<{
                         onBlur={() => setActiveInput(null)}
                         disabled={set.done}
                         style={{
-                          flex: 1, height: 46, borderRadius: 11,
+                          width: 52, height: 42, borderRadius: 11, flexShrink: 0,
                           background: isActive ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)',
                           border: `1.5px solid ${isActive ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.07)'}`,
                           color: '#fff', textAlign: 'center',
@@ -782,7 +779,7 @@ const ActiveWorkoutScreen: React.FC<{
                         disabled={set.done}
                         title="RPE (Rate of Perceived Exertion) — tap to set"
                         style={{
-                          width: 38, height: 46, borderRadius: 10, flexShrink: 0,
+                          width: 32, height: 42, borderRadius: 10, flexShrink: 0,
                           background: set.rpe > 0 ? `${rpeColor(set.rpe)}18` : 'rgba(255,255,255,0.04)',
                           border: `1.5px solid ${set.rpe > 0 ? `${rpeColor(set.rpe)}40` : 'rgba(255,255,255,0.07)'}`,
                           color: set.rpe > 0 ? rpeColor(set.rpe) : 'rgba(255,255,255,0.2)',
@@ -804,7 +801,7 @@ const ActiveWorkoutScreen: React.FC<{
                       <button
                         onClick={() => toggleSetDone(exIdx, setIdx)}
                         style={{
-                          width: 50, height: 46, borderRadius: 11, border: 'none', cursor: 'pointer',
+                          width: 40, height: 42, borderRadius: 11, border: 'none', cursor: 'pointer',
                           background: set.done
                             ? 'rgba(34,197,94,0.2)'
                             : (set.weight && set.reps ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.05)'),
@@ -820,7 +817,7 @@ const ActiveWorkoutScreen: React.FC<{
                       <button
                         onClick={() => removeSet(exIdx, setIdx)}
                         style={{
-                          width: 22, height: 22, borderRadius: 6, border: 'none', cursor: 'pointer',
+                          width: 20, height: 42, borderRadius: 6, border: 'none', cursor: 'pointer',
                           background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         }}
                       >

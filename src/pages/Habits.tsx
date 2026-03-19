@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check, Plus, Moon, Droplets, Footprints, Dumbbell, Apple, Smile,
-  Flame, ChevronRight, X, Activity,
+  Flame, ChevronRight, X, Activity, Sparkles, RefreshCw,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { HabitDefinition, HabitLog } from '../types';
@@ -221,6 +221,29 @@ export const Habits: React.FC = () => {
   const [newName, setNewName] = useState('');
   const [newCat, setNewCat] = useState<'nutrition' | 'training' | 'sleep' | 'wellness'>('wellness');
 
+  const AFFIRMATIONS = [
+    "I am stronger than yesterday and building the body I deserve.",
+    "Every rep, every meal, every choice is shaping the best version of me.",
+    "I show up consistently because I respect my goals.",
+    "My body is capable of incredible things when I fuel it right.",
+    "Progress over perfection — I celebrate every step forward.",
+    "I am disciplined, focused, and unstoppable.",
+    "My commitment to health is the greatest investment I make daily.",
+    "I trust the process and embrace the journey.",
+    "Every workout is a promise kept to myself.",
+    "I choose strength, I choose health, I choose me.",
+  ];
+
+  const todayAffirmationIdx = useMemo(() => {
+    const day = new Date().getDay();
+    return day % AFFIRMATIONS.length;
+  }, []);
+
+  const [affirmationIdx, setAffirmationIdx] = useState(todayAffirmationIdx);
+  const [affirmationDone, setAffirmationDone] = useState(() => {
+    return localStorage.getItem('evolved_affirmation_' + new Date().toISOString().split('T')[0]) === 'true';
+  });
+
   const handleToggle = (habit: HabitDefinition) => {
     const current = todayHabits[habit.id];
     logHabit(dateStr, habit.id, {
@@ -306,6 +329,58 @@ export const Habits: React.FC = () => {
               );
             })}
           </div>
+        </div>
+      </motion.div>
+
+      {/* Daily Affirmation */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+        <div style={{
+          margin: '0 0 20px 0',
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%)',
+          border: `1px solid ${affirmationDone ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.2)'}`,
+          borderRadius: 20, padding: '16px',
+          transition: 'all 0.3s',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Sparkles size={13} color={affirmationDone ? '#22C55E' : '#8B5CF6'} />
+              <span style={{ fontSize: '0.6rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: affirmationDone ? '#22C55E' : 'rgba(139,92,246,0.8)' }}>
+                Daily Affirmation
+              </span>
+            </div>
+            <button
+              onClick={() => setAffirmationIdx(i => (i + 1) % AFFIRMATIONS.length)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', opacity: 0.5 }}
+            >
+              <RefreshCw size={13} color="rgba(255,255,255,0.5)" />
+            </button>
+          </div>
+          <p style={{
+            fontSize: '0.95rem', fontWeight: 600, color: affirmationDone ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.9)',
+            lineHeight: 1.5, margin: '0 0 14px 0',
+            fontStyle: 'italic',
+            textDecoration: affirmationDone ? 'line-through' : 'none',
+            transition: 'all 0.3s',
+          }}>
+            "{AFFIRMATIONS[affirmationIdx]}"
+          </p>
+          <button
+            onClick={() => {
+              const newVal = !affirmationDone;
+              setAffirmationDone(newVal);
+              localStorage.setItem('evolved_affirmation_' + new Date().toISOString().split('T')[0], String(newVal));
+            }}
+            style={{
+              width: '100%', padding: '10px', borderRadius: 12, border: 'none', cursor: 'pointer',
+              background: affirmationDone ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
+              color: affirmationDone ? '#22C55E' : 'rgba(139,92,246,0.9)',
+              fontWeight: 800, fontSize: '0.82rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              transition: 'all 0.2s',
+            }}
+          >
+            {affirmationDone ? <><Check size={14} /> Affirmed today</> : <><Sparkles size={14} /> Mark as affirmed</>}
+          </button>
         </div>
       </motion.div>
 

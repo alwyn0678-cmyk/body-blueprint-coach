@@ -4,7 +4,7 @@ import {
   Brain, ChevronRight, TrendingUp, TrendingDown, Minus,
   CheckCircle2, AlertCircle, Info, ChevronDown, ChevronUp,
   Zap, Target, BarChart3, Dumbbell, Apple, Moon,
-  RefreshCw, Send, Lock, Sparkles, MessageCircle,
+  RefreshCw, Send, Lock, Sparkles, MessageCircle, Bot, ArrowUp,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { coachService } from '../services/aiCoach';
@@ -232,9 +232,58 @@ export const Coach: React.FC = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasGroqKey = !!localStorage.getItem('bbc_groq_api_key') || !!import.meta.env.VITE_GROQ_API_KEY;
 
+  // ── AI Chat Agent state (bottom section) ──────────────────────────────────
+  const [agentMessages, setAgentMessages] = useState<{role: 'user'|'assistant', text: string}[]>([]);
+  const [agentInput, setAgentInput] = useState('');
+  const [agentLoading, setAgentLoading] = useState(false);
+  const agentEndRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
+
+  useEffect(() => {
+    agentEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [agentMessages]);
+
+  const sendChat = async () => {
+    const msg = agentInput.trim();
+    if (!msg || agentLoading) return;
+    setAgentInput('');
+    const newMessages = [...agentMessages, {role: 'user' as const, text: msg}];
+    setAgentMessages(newMessages);
+    setAgentLoading(true);
+
+    try {
+      const key = localStorage.getItem('bbc_groq_api_key');
+      if (!key) {
+        setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: 'Add your Groq API key in Settings to enable AI chat.'}]);
+        setAgentLoading(false);
+        return;
+      }
+
+      const systemPrompt = `You are an elite fitness coach AI assistant for the Evolved app. You specialise in hypertrophy, Mark Carroll methodology, RPE-based training, and macro nutrition. Be concise, direct, and motivating. Answer in 2-4 sentences max unless more detail is requested.`;
+
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`},
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          max_tokens: 400,
+          messages: [
+            {role: 'system', content: systemPrompt},
+            ...newMessages.map(m => ({role: m.role, content: m.text})),
+          ],
+        }),
+      });
+      const data = await res.json();
+      const reply = data.choices?.[0]?.message?.content ?? 'Sorry, I had trouble responding. Try again.';
+      setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: reply}]);
+    } catch {
+      setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: 'Connection error. Check your internet and try again.'}]);
+    }
+    setAgentLoading(false);
+  };
 
   const handleChat = useCallback(async () => {
     const msg = chatInput.trim();
@@ -604,6 +653,75 @@ export const Coach: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* AI Chat Agent */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Bot size={14} color="#fff" />
+          </div>
+          <span style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)' }}>AI Coach Chat</span>
+        </div>
+
+        {/* Messages */}
+        <div style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 18, padding: '12px', marginBottom: 10, minHeight: 80, maxHeight: 260, overflowY: 'auto' }}>
+          {agentMessages.length === 0 ? (
+            <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.82rem', fontWeight: 500, textAlign: 'center', padding: '16px 0' }}>
+              Ask me anything about training, nutrition, or recovery...
+            </div>
+          ) : (
+            agentMessages.map((m, i) => (
+              <div key={i} style={{ marginBottom: 10, display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                <div style={{
+                  maxWidth: '82%', padding: '8px 12px', borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                  background: m.role === 'user' ? 'linear-gradient(135deg, #3B82F6, #6366F1)' : 'rgba(255,255,255,0.07)',
+                  fontSize: '0.82rem', fontWeight: 500, lineHeight: 1.5,
+                  color: m.role === 'user' ? '#fff' : 'rgba(255,255,255,0.85)',
+                }}>
+                  {m.text}
+                </div>
+              </div>
+            ))
+          )}
+          {agentLoading && (
+            <div style={{ display: 'flex', gap: 4, padding: '4px 8px' }}>
+              {[0,1,2].map(i => (
+                <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(99,102,241,0.6)', animation: `chatDot 1.2s ease-in-out ${i*0.2}s infinite` }} />
+              ))}
+            </div>
+          )}
+          <div ref={agentEndRef} />
+        </div>
+
+        {/* Input row */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            value={agentInput}
+            onChange={e => setAgentInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && sendChat()}
+            placeholder="Ask your AI coach..."
+            style={{
+              flex: 1, padding: '0.75rem 1rem', borderRadius: 14,
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+              color: '#fff', fontSize: '0.88rem', fontWeight: 500, outline: 'none',
+            }}
+          />
+          <button
+            onClick={sendChat}
+            disabled={!agentInput.trim() || agentLoading}
+            style={{
+              width: 44, height: 44, borderRadius: 14, border: 'none', cursor: 'pointer',
+              background: agentInput.trim() && !agentLoading ? 'linear-gradient(135deg, #3B82F6, #6366F1)' : 'rgba(255,255,255,0.07)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.2s',
+            }}
+          >
+            <ArrowUp size={18} color={agentInput.trim() && !agentLoading ? '#fff' : 'rgba(255,255,255,0.25)'} />
+          </button>
+        </div>
+      </div>
+
+      <style>{`@keyframes chatDot { 0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }`}</style>
     </div>
   );
 };
