@@ -687,7 +687,16 @@ export const Settings: React.FC = () => {
                 type="password"
                 placeholder="gsk_..."
                 value={groqKey}
-                onChange={e => { setGroqKey(e.target.value); setGroqKeySaved(false); }}
+                onChange={e => {
+                  const val = e.target.value;
+                  setGroqKey(val);
+                  setGroqKeySaved(false);
+                  if (val.trim()) {
+                    localStorage.setItem('bbc_groq_api_key', val.trim());
+                  } else {
+                    localStorage.removeItem('bbc_groq_api_key');
+                  }
+                }}
                 style={{
                   flex: 1, padding: '10px 14px', borderRadius: 12,
                   background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.border}`,

@@ -257,7 +257,7 @@ export const Coach: React.FC = () => {
     try {
       const key = localStorage.getItem('bbc_groq_api_key');
       if (!key) {
-        setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: 'Add your Groq API key in Settings to enable AI chat.'}]);
+        setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: 'No API key found. Go to Settings → AI Coach, paste your Groq key, and come back. Get a free key at console.groq.com'}]);
         setAgentLoading(false);
         return;
       }
@@ -276,11 +276,18 @@ export const Coach: React.FC = () => {
           ],
         }),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        const errMsg = errData?.error?.message ?? `HTTP ${res.status}`;
+        setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: `API error: ${errMsg}. Check your key in Settings is correct.`}]);
+        setAgentLoading(false);
+        return;
+      }
       const data = await res.json();
       const reply = data.choices?.[0]?.message?.content ?? 'Sorry, I had trouble responding. Try again.';
       setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: reply}]);
-    } catch {
-      setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: 'Connection error. Check your internet and try again.'}]);
+    } catch (e: any) {
+      setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: `Connection error: ${e?.message ?? 'unknown'}. Check your internet connection.`}]);
     }
     setAgentLoading(false);
   };
