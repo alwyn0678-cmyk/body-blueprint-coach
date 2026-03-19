@@ -6,7 +6,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "build:capacitor": "BUILD_TARGET=capacitor vite build",
+    "cap:sync": "npm run build:capacitor && npx cap sync android"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",

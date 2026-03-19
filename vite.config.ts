@@ -2,8 +2,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+const isCapacitor = process.env.BUILD_TARGET === 'capacitor';
+
 export default defineConfig({
-  base: '/body-blueprint-coach/',
+  base: isCapacitor ? './' : '/body-blueprint-coach/',
   plugins: [
     react(),
     VitePWA({
@@ -14,8 +16,8 @@ export default defineConfig({
         name: 'Evolved',
         short_name: 'Evolved',
         description: 'Your personal fitness and macro coaching app',
-        scope: '/body-blueprint-coach/',
-        start_url: '/body-blueprint-coach/',
+        scope: isCapacitor ? '/' : '/body-blueprint-coach/',
+        start_url: isCapacitor ? '/' : '/body-blueprint-coach/',
         theme_color: '#07070f',
         background_color: '#07070f',
         display: 'standalone',

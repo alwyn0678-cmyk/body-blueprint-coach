@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Body Blueprint Coach</string>
-    <string name="title_activity_main">Body Blueprint Coach</string>
-    <string name="package_name">com.bodyblueprint.coach</string>
-    <string name="custom_url_scheme">com.bodyblueprint.coach</string>
+    <string name="app_name">Evolved</string>
+    <string name="title_activity_main">Evolved</string>
+    <string name="package_name">com.cbs.evolved</string>
+    <string name="custom_url_scheme">com.cbs.evolved</string>
 </resources>
