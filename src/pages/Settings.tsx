@@ -185,6 +185,8 @@ export const Settings: React.FC = () => {
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [comingSoonApp, setComingSoonApp] = useState<{ name: string; id: string } | null>(null);
   const [notifyEnabled, setNotifyEnabled] = useState<Record<string, boolean>>({});
+  const [groqKey, setGroqKey] = useState(() => localStorage.getItem('bbc_groq_api_key') ?? '');
+  const [groqKeySaved, setGroqKeySaved] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
   if (!user) return (
@@ -218,7 +220,7 @@ export const Settings: React.FC = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `body-blueprint-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `evolved-${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(a); a.click();
         document.body.removeChild(a); URL.revokeObjectURL(url);
         showToast('Data exported as JSON', 'success');
@@ -261,7 +263,7 @@ export const Settings: React.FC = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `body-blueprint-history-${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `evolved-history-${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(a); a.click();
         document.body.removeChild(a); URL.revokeObjectURL(url);
         showToast('History exported as CSV', 'success');
@@ -671,7 +673,61 @@ export const Settings: React.FC = () => {
         </PageCard>
       </section>
 
-      {/* ══ 5. CONNECT APPS ════════════════════════════════════════════════ */}
+      {/* ══ 5. AI COACH ════════════════════════════════════════════════════ */}
+      <section>
+        <SecLabel text="AI Coach" />
+        <PageCard>
+          <div style={{ padding: '14px 16px' }}>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>Groq API Key</div>
+            <div style={{ fontSize: '0.72rem', color: C.textTertiary, fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
+              Optional — enables LLaMA 3 AI weekly reviews &amp; workout feedback. Free at console.groq.com
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="password"
+                placeholder="gsk_..."
+                value={groqKey}
+                onChange={e => { setGroqKey(e.target.value); setGroqKeySaved(false); }}
+                style={{
+                  flex: 1, padding: '10px 14px', borderRadius: 12,
+                  background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.border}`,
+                  color: C.textPrimary, fontSize: '0.9rem', fontWeight: 600, outline: 'none',
+                }}
+              />
+              <button
+                onClick={() => {
+                  if (groqKey.trim()) {
+                    localStorage.setItem('bbc_groq_api_key', groqKey.trim());
+                  } else {
+                    localStorage.removeItem('bbc_groq_api_key');
+                  }
+                  setGroqKeySaved(true);
+                  setTimeout(() => setGroqKeySaved(false), 2500);
+                }}
+                style={{
+                  padding: '10px 16px', borderRadius: 12,
+                  background: groqKeySaved ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
+                  border: `1px solid ${groqKeySaved ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.3)'}`,
+                  color: groqKeySaved ? '#22C55E' : '#6366F1',
+                  fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0,
+                }}
+              >
+                {groqKeySaved ? '✓ Saved' : 'Save'}
+              </button>
+            </div>
+            {groqKey && (
+              <button
+                onClick={() => { setGroqKey(''); localStorage.removeItem('bbc_groq_api_key'); }}
+                style={{ marginTop: 8, background: 'none', border: 'none', color: C.textTertiary, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+              >
+                Clear key
+              </button>
+            )}
+          </div>
+        </PageCard>
+      </section>
+
+      {/* ══ 6. CONNECT APPS ════════════════════════════════════════════════ */}
       <section>
         <SecLabel text="Connect Apps" />
         <PageCard>
@@ -921,7 +977,7 @@ export const Settings: React.FC = () => {
           marginTop: 12,
           textTransform: 'uppercase' as const,
         }}>
-          Body Blueprint Coach · Built with care
+          Evolved · Built with care
         </p>
       </section>
 

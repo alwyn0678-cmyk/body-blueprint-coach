@@ -1,0 +1,380 @@
+/**
+ * AI Coach Service
+ *
+ * FREE by default — uses a data-driven coaching engine with no API required.
+ * Optional upgrade: set a free Groq API key (https://console.groq.com — free tier)
+ * for LLaMA 3 powered natural language responses.
+ *
+ * VITE_GROQ_API_KEY=your-key-here (in .env)
+ */
+
+import { UserProfile, DailyLog, WeeklyStats, WorkoutSession, CoachInsight, GoalType } from '../types';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface CoachContext {
+  user: UserProfile;
+  todayLog?: DailyLog;
+  weeklyStats: WeeklyStats;
+  recentWorkouts: WorkoutSession[];
+  weightTrend?: 'gaining' | 'losing' | 'maintaining' | 'unknown';
+  weightDelta7d?: number; // kg change over 7 days
+  currentEma?: number;
+}
+
+// ─── Free Groq API (optional upgrade) ────────────────────────────────────────
+
+const GROQ_KEY_ENV = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
+const GROQ_MODEL = 'llama-3.3-70b-versatile'; // free on Groq
+
+/** Reads Groq key from env var first, then localStorage runtime override */
+const getGroqKey = (): string | null => {
+  if (GROQ_KEY_ENV) return GROQ_KEY_ENV;
+  const runtime = localStorage.getItem('bbc_groq_api_key');
+  return runtime && runtime.trim() ? runtime.trim() : null;
+};
+
+async function groqComplete(systemPrompt: string, userMessage: string): Promise<string | null> {
+  const key = getGroqKey();
+  if (!key) return null;
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        max_tokens: 350,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
+      }),
+    });
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const buildSystemPrompt = (user: UserProfile) => `
+You are a world-class evidence-based fitness coach combining Jeff Nippard's scientific approach with MacroFactor's adaptive nutrition methodology.
+
+User: ${user.name}, goal: ${user.goalType.replace('_', ' ')}, ${user.weight}kg → ${user.goalWeight ?? '?'}kg, targets: ${user.targets.calories} kcal / ${user.targets.protein}g protein.
+
+Communication rules:
+- Direct, confident, science-backed. Never vague or preachy.
+- Lead with the most actionable insight. Use real numbers.
+- 2–4 sentences max. No bullet points unless asked.
+- Forward-looking only — no shame, no moralizing.
+`.trim();
+
+// ─── Smart data-driven coaching engine (100% free, no API) ───────────────────
+
+function getDailyInsight(ctx: CoachContext): CoachInsight {
+  const { user, weeklyStats, weightTrend, weightDelta7d, todayLog } = ctx;
+  const todayKcal = todayLog
+    ? Object.values(todayLog.meals).flat().reduce(
+        (s, e) => s + e.nutrition.calories * e.amount, 0
+      )
+    : 0;
+  const todayProtein = todayLog
+    ? Object.values(todayLog.meals).flat().reduce(
+        (s, e) => s + e.nutrition.protein * e.amount, 0
+      )
+    : 0;
+  const calTarget = user.targets.calories;
+  const proTarget = user.targets.protein;
+  const calPct = calTarget > 0 ? (todayKcal / calTarget) * 100 : 0;
+  const proPct = proTarget > 0 ? (todayProtein / proTarget) * 100 : 0;
+  const now = new Date().toISOString();
+
+  // Priority: protein gap > calorie surplus > weight trend alerts > general
+  if (proPct < 50 && new Date().getHours() >= 14) {
+    return {
+      id: 'daily_protein', type: 'nutrition', priority: 'high',
+      generatedAt: now,
+      title: 'Protein deficit — act now',
+      message: `You've hit ${Math.round(todayProtein)}g of your ${proTarget}g protein target. With ${proTarget - Math.round(todayProtein)}g still to go, prioritise a high-protein meal or shake in the next 2 hours. Protein is the single most important lever for your ${user.goalType === 'muscle_gain' ? 'muscle gain' : user.goalType === 'fat_loss' ? 'muscle retention in a cut' : 'recomposition'} goal.`,
+      action: `Add ${Math.round(proTarget - todayProtein)}g protein now`,
+    };
+  }
+
+  if (calPct > 110 && user.goalType === 'fat_loss') {
+    return {
+      id: 'daily_cal_over', type: 'nutrition', priority: 'high',
+      generatedAt: now,
+      title: 'Over target today',
+      message: `At ${Math.round(todayKcal)} kcal you're ${Math.round(todayKcal - calTarget)} kcal above target. One over-target day won't break your cut — but make the rest of the day zero-calorie-dense (leafy veg, water) and protect protein. Weekly average is what drives results.`,
+    };
+  }
+
+  if (weightTrend === 'gaining' && user.goalType === 'fat_loss' && weeklyStats.daysLogged >= 5) {
+    return {
+      id: 'daily_trend_alert', type: 'nutrition', priority: 'high',
+      generatedAt: now,
+      title: `Trend moving wrong direction`,
+      message: `Your 7-day EMA shows +${(weightDelta7d ?? 0).toFixed(2)}kg. The adaptive engine will flag this in your weekly check-in — in the meantime, review your calorie logging accuracy (oils, sauces, and drinks are the most common hidden sources).`,
+      action: 'Audit your food logging accuracy',
+    };
+  }
+
+  if (weeklyStats.workoutsCompleted === 0 && weeklyStats.daysLogged >= 3) {
+    return {
+      id: 'daily_no_training', type: 'training', priority: 'medium',
+      generatedAt: now,
+      title: 'Training drives the adaptation',
+      message: `No workouts logged this week yet. Regardless of your nutrition, resistance training is the stimulus for the adaptation you're chasing. Even 30 minutes of focused, progressive work beats perfect nutrition with zero training.`,
+      action: 'Schedule today\'s session',
+    };
+  }
+
+  if (weeklyStats.proteinAdherence < 60 && weeklyStats.daysLogged >= 3) {
+    return {
+      id: 'daily_protein_week', type: 'nutrition', priority: 'medium',
+      generatedAt: now,
+      title: `${weeklyStats.proteinAdherence}% protein adherence this week`,
+      message: `Avg ${weeklyStats.avgProtein}g vs ${proTarget}g target — you're leaving ${proTarget - weeklyStats.avgProtein}g/day on the table. The research is consistent: suboptimal protein is the most common limiting factor for body composition change. Build a protein-first meal plan and stop letting it be the afterthought.`,
+    };
+  }
+
+  // Positive reinforcement
+  if (weeklyStats.calorieAdherence >= 85 && weeklyStats.proteinAdherence >= 80) {
+    return {
+      id: 'daily_positive', type: 'nutrition', priority: 'low',
+      generatedAt: now,
+      title: `Executing at ${weeklyStats.calorieAdherence}% — elite consistency`,
+      message: `${weeklyStats.daysLogged} days logged, ${weeklyStats.calorieAdherence}% calorie adherence, ${weeklyStats.avgProtein}g protein average. At this standard, the results are a mathematical certainty — the body adapts to consistent stimuli. Keep the standard.`,
+    };
+  }
+
+  // Default: goal-specific daily tip
+  const tips: Record<GoalType, CoachInsight> = {
+    fat_loss: {
+      id: 'daily_tip_fl', type: 'nutrition', priority: 'low', generatedAt: now,
+      title: 'Volume eating protects adherence',
+      message: 'High-volume, low-calorie foods (leafy greens, cucumber, bone broth, sparkling water) dramatically increase satiety without touching your calorie budget. This is the biggest quality-of-life upgrade for fat loss adherence.',
+    },
+    muscle_gain: {
+      id: 'daily_tip_mg', type: 'training', priority: 'low', generatedAt: now,
+      title: 'Volume load is your north star',
+      message: `Track total volume load per muscle group each week (sets × reps × kg). If it's not trending up across a mesocycle, you're not progressively overloading — and growth will stall. Beat last week's numbers by any amount.`,
+    },
+    maintenance: {
+      id: 'daily_tip_ma', type: 'nutrition', priority: 'low', generatedAt: now,
+      title: 'Your TDEE updates weekly',
+      message: 'The adaptive engine compares your calorie intake vs. weight change each week to calculate your real TDEE. Daily weight fluctuations are noise — the EMA trend over 14+ days is the signal. Stay consistent with weigh-ins.',
+    },
+    recomposition: {
+      id: 'daily_tip_rc', type: 'training', priority: 'low', generatedAt: now,
+      title: 'Recomp demands training quality',
+      message: 'Recomposition is driven by progressive overload with adequate protein — not by the calorie deficit alone. Prioritise lifting performance above all else. Fat loss will follow naturally from the training stimulus and protein intake.',
+    },
+  };
+
+  return tips[user.goalType] ?? tips.maintenance;
+}
+
+function getGoalInsights(user: UserProfile, stats: WeeklyStats): CoachInsight[] {
+  const now = new Date().toISOString();
+
+  const shared: CoachInsight[] = [
+    {
+      id: 'insight_sleep', type: 'recovery', priority: 'medium', generatedAt: now,
+      title: 'Sleep is a performance drug',
+      message: 'Restricting sleep to <7h increases ghrelin (+15%), reduces leptin, impairs glucose metabolism, and reduces testosterone. It directly undermines fat loss and muscle gain. 7–9h is training-critical infrastructure.',
+    },
+    {
+      id: 'insight_steps', type: 'recovery', priority: 'low', generatedAt: now,
+      title: 'NEAT is your largest calorie variable',
+      message: `Non-exercise activity (steps, fidgeting, posture) can vary by 800–2000 kcal/day between individuals. Hitting ${(user.stepsTarget ?? 8000).toLocaleString()} steps/day is the highest-leverage low-effort tool to keep TDEE elevated during a diet.`,
+    },
+  ];
+
+  const byGoal: Record<GoalType, CoachInsight[]> = {
+    fat_loss: [
+      {
+        id: 'fl_a', type: 'nutrition', priority: 'high', generatedAt: now,
+        title: 'Protein retention shield',
+        message: `At ${user.targets.protein}g protein (${(user.targets.protein / user.weight).toFixed(1)}g/kg), you're in the range shown to maximally attenuate muscle loss in a deficit. Miss protein and you're dieting off muscle, not just fat.`,
+      },
+      {
+        id: 'fl_b', type: 'training', priority: 'high', generatedAt: now,
+        title: 'Train heavy in a cut',
+        message: 'The signal to retain muscle is mechanical tension from heavy resistance training. In a deficit, reduce training volume by 20–30% but keep intensity (load) identical. Never reduce the weight on the bar — reduce sets instead.',
+        action: 'Keep weights the same, reduce sets if fatigued',
+      },
+      {
+        id: 'fl_c', type: 'nutrition', priority: 'medium', generatedAt: now,
+        title: 'Refeed strategy',
+        message: 'A weekly high-carb refeed day (calories at maintenance, carbs at 150–200% normal) restores muscle glycogen, temporarily boosts leptin, and dramatically improves gym performance. It doesn\'t affect the weekly calorie deficit if executed correctly.',
+      },
+      {
+        id: 'fl_d', type: 'recovery', priority: 'medium', generatedAt: now,
+        title: 'Rate of loss matters',
+        message: `Your target of ${user.preferredDietSpeed === 'aggressive' ? '0.75–1%' : user.preferredDietSpeed === 'moderate' ? '0.5–0.75%' : '0.25–0.5%'} body weight per week is the ${user.preferredDietSpeed} approach. Faster than 1% BW/week and muscle loss accelerates significantly. The adaptive engine will flag if you're losing too fast.`,
+      },
+    ],
+    muscle_gain: [
+      {
+        id: 'mg_a', type: 'training', priority: 'high', generatedAt: now,
+        title: 'Progressive overload is mandatory',
+        message: 'Hypertrophy requires increasing mechanical tension over time. Track volume load (sets × reps × kg) per muscle group weekly — it must trend upward across a mesocycle. If it\'s flat, you\'re maintaining, not growing.',
+        action: 'Beat last week\'s volume on your top exercises',
+      },
+      {
+        id: 'mg_b', type: 'nutrition', priority: 'high', generatedAt: now,
+        title: 'Lean bulk precision',
+        message: 'A 200–300 kcal surplus maximises muscle gain while minimising fat accumulation. Larger surpluses don\'t build more muscle — research shows MPS saturates well below aggressive surpluses. The adaptive TDEE engine tracks your real surplus.',
+      },
+      {
+        id: 'mg_c', type: 'training', priority: 'medium', generatedAt: now,
+        title: 'MEV → MAV → deload',
+        message: 'Start mesocycles near your Minimum Effective Volume per muscle group, add sets each week toward Maximum Adaptive Volume, then deload. This periodisation structure drives the accumulation → adaptation cycle that research consistently supports.',
+      },
+      {
+        id: 'mg_d', type: 'nutrition', priority: 'medium', generatedAt: now,
+        title: 'Peri-workout nutrition',
+        message: '0.5g/kg carbs + 0.3g/kg protein pre-workout optimises training performance and MPS. Post-workout within 2h maintains an elevated anabolic state. The window is more flexible than bro-science suggests, but for muscle gain it\'s worth executing consistently.',
+      },
+    ],
+    maintenance: [
+      {
+        id: 'ma_a', type: 'nutrition', priority: 'medium', generatedAt: now,
+        title: 'Your TDEE is dynamic',
+        message: 'TDEE changes with body weight, body composition, activity, and metabolic adaptation. The adaptive engine estimates it weekly from your real weight data. This is more accurate than any formula — but it requires consistent daily weigh-ins.',
+      },
+    ],
+    recomposition: [
+      {
+        id: 'rc_a', type: 'training', priority: 'high', generatedAt: now,
+        title: 'Training drives recomp',
+        message: 'Body recomposition (simultaneous fat loss + muscle gain) is achievable but slower than dedicated cutting or bulking phases. The research confirms it works best with: high protein (2.5g/kg), slight deficit (200 kcal), and progressive resistance training.',
+      },
+      {
+        id: 'rc_b', type: 'nutrition', priority: 'high', generatedAt: now,
+        title: 'Protein distribution is critical',
+        message: 'Distribute protein across 4–6 meals (25–40g per meal) to maximise MPS across the day. This matters more during recomp than any other goal because you\'re simultaneously trying to synthesise muscle and oxidise fat.',
+      },
+    ],
+  };
+
+  return [...(byGoal[user.goalType] ?? []), ...shared];
+}
+
+function getWeeklyReview(ctx: CoachContext): string {
+  const { user, weeklyStats, weightTrend, weightDelta7d } = ctx;
+  const calOk = weeklyStats.calorieAdherence >= 80;
+  const proOk = weeklyStats.proteinAdherence >= 80;
+  const weightStr = weightDelta7d !== undefined
+    ? `${weightDelta7d > 0 ? '+' : ''}${weightDelta7d.toFixed(2)}kg`
+    : 'tracking...';
+
+  if (calOk && proOk && weeklyStats.workoutsCompleted >= user.trainingFrequency * 0.75) {
+    return `Excellent week. ${weeklyStats.calorieAdherence}% calorie adherence, ${weeklyStats.avgProtein}g avg protein, ${weeklyStats.workoutsCompleted} sessions. Weight trend: ${weightStr}. You're executing at a high level — no adjustments needed. Maintain this standard.`;
+  }
+  if (!proOk) {
+    return `Protein at ${weeklyStats.proteinAdherence}% adherence (avg ${weeklyStats.avgProtein}g vs ${user.targets.protein}g target) — this is the priority fix for next week. Plan protein sources first in every meal. Everything else is secondary.`;
+  }
+  if (!calOk && user.goalType === 'fat_loss') {
+    return `Calorie adherence at ${weeklyStats.calorieAdherence}%. The deficit creates the environment, but consistency creates the result. Identify the 1-2 meals or situations that caused the drift and create a specific plan for them next week.`;
+  }
+  if (weeklyStats.workoutsCompleted < user.trainingFrequency * 0.5) {
+    return `Only ${weeklyStats.workoutsCompleted} workouts logged vs ${user.trainingFrequency} target. Training is the stimulus — nutrition is the fuel. Both must be in place. Identify what blocked training this week and remove that obstacle.`;
+  }
+  return `Week ${weeklyStats.daysLogged}/7 days logged, ${weeklyStats.workoutsCompleted} workouts, weight: ${weightStr}. Avg: ${weeklyStats.avgCalories} kcal / ${weeklyStats.avgProtein}g protein. Focus on consistency — every logged day compounds.`;
+}
+
+function getWorkoutFeedback(workout: WorkoutSession): string {
+  const sets = workout.exercises.reduce((s, e) => s + e.sets.length, 0);
+  const avgRPE = workout.sessionRPE;
+  const rpeNote = avgRPE
+    ? avgRPE >= 9 ? 'High intensity — excellent effort. Monitor recovery this week.'
+      : avgRPE <= 6 ? 'Session RPE was low — consider pushing closer to technical failure next time (RPE 7–9 for hypertrophy).'
+      : 'Good intensity range for hypertrophy adaptations.'
+    : '';
+  return `${workout.name}: ${sets} total sets, ${workout.durationMinutes}min. ${rpeNote} Focus on beating today's performance in the next similar session.`.trim();
+}
+
+// ─── AI Coach Service ─────────────────────────────────────────────────────────
+
+export class AICoachService {
+  /** Get today's priority coaching insight (data-driven, free) */
+  getDailyInsight(ctx: CoachContext): CoachInsight {
+    return getDailyInsight(ctx);
+  }
+
+  /** Get the full library of goal-specific insights (free) */
+  getInsights(user: UserProfile, stats: WeeklyStats): CoachInsight[] {
+    return getGoalInsights(user, stats);
+  }
+
+  /** Generate weekly review text — uses Groq LLaMA3 if API key set, otherwise free engine */
+  async getWeeklyReview(ctx: CoachContext): Promise<string> {
+    if (getGroqKey()) {
+      const aiResponse = await groqComplete(
+        buildSystemPrompt(ctx.user),
+        `Weekly data: calories ${ctx.weeklyStats.avgCalories}/${ctx.user.targets.calories} kcal (${ctx.weeklyStats.calorieAdherence}%), protein ${ctx.weeklyStats.avgProtein}/${ctx.user.targets.protein}g (${ctx.weeklyStats.proteinAdherence}%), ${ctx.weeklyStats.workoutsCompleted} workouts, weight change ${ctx.weightDelta7d !== undefined ? (ctx.weightDelta7d > 0 ? '+' : '') + ctx.weightDelta7d.toFixed(2) + 'kg' : 'insufficient data'}. Goal: ${ctx.user.goalType.replace('_', ' ')}. Give a 3-sentence weekly review: what went well, the #1 priority for next week, and any calorie/macro adjustment with specific numbers.`
+      );
+      if (aiResponse) return aiResponse;
+    }
+    return getWeeklyReview(ctx);
+  }
+
+  /** Workout feedback — uses Groq if available, otherwise free engine */
+  async getWorkoutFeedback(user: UserProfile, workout: WorkoutSession): Promise<string> {
+    if (getGroqKey()) {
+      const exerciseSummary = workout.exercises.map(ex =>
+        `${ex.name}: ${ex.sets.map(s => `${s.weight}kg×${s.reps}${s.rpe ? ` @RPE${s.rpe}` : ''}`).join(', ')}`
+      ).join('\n');
+      const aiResponse = await groqComplete(
+        buildSystemPrompt(user),
+        `Workout: ${workout.name}, ${workout.durationMinutes}min, session RPE: ${workout.sessionRPE ?? 'not set'}\n${exerciseSummary}\n\nGive 2 sentences of specific technical coaching feedback. Mention performance vs expected, highlight any PRs, and give one focus for the next session.`
+      );
+      if (aiResponse) return aiResponse;
+    }
+    return getWorkoutFeedback(workout);
+  }
+
+  /** Free-form AI chat with the coach — uses Groq if key set, otherwise returns null */
+  async chat(ctx: CoachContext, userMessage: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<string | null> {
+    const key = getGroqKey();
+    if (!key) return null;
+
+    const { user, weeklyStats, weightDelta7d, currentEma } = ctx;
+    const systemPrompt = `${buildSystemPrompt(user)}
+
+Current stats:
+- Calories this week: avg ${weeklyStats.avgCalories} kcal / target ${user.targets.calories} kcal (${weeklyStats.calorieAdherence}% adherence)
+- Protein this week: avg ${weeklyStats.avgProtein}g / target ${user.targets.protein}g (${weeklyStats.proteinAdherence}% adherence)
+- Workouts: ${weeklyStats.workoutsCompleted} / ${user.trainingFrequency} planned
+- Weight: ${currentEma ? currentEma.toFixed(1) + 'kg (EMA trend)' : user.weight + 'kg'}${weightDelta7d !== undefined ? `, 7d change: ${weightDelta7d > 0 ? '+' : ''}${weightDelta7d.toFixed(2)}kg` : ''}
+- Days logged: ${weeklyStats.daysLogged}/7
+
+Respond in 2-3 sentences. Be specific, scientific, and direct. Use the user's actual data.`;
+
+    try {
+      const messages = [
+        { role: 'system' as const, content: systemPrompt },
+        ...history.slice(-8).map(m => ({ role: m.role, content: m.content })),
+        { role: 'user' as const, content: userMessage },
+      ];
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model: GROQ_MODEL, max_tokens: 400, messages }),
+      });
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content ?? null;
+    } catch {
+      return null;
+    }
+  }
+}
+
+// ─── Singleton ────────────────────────────────────────────────────────────────
+
+export const coachService = new AICoachService();

@@ -1,9 +1,17 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.bodyblueprint.coach',
-  appName: 'Body Blueprint Coach',
-  webDir: 'dist'
+  appId: 'com.cbs.evolved',
+  appName: 'Evolved',
+  webDir: 'dist',
+  ios: {
+    contentInset: 'automatic',
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 0,
+    },
+  },
 };
 
 export default config;

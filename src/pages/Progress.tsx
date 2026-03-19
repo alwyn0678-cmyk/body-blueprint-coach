@@ -1,860 +1,437 @@
 import React, { useState, useMemo } from 'react';
-import { useApp } from '../context/AppContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine,
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
-import { TrendingDown, TrendingUp, Scale, Plus, Target, CheckCircle2, Flame, ChevronRight, Award, BarChart2 } from 'lucide-react';
-import { calculateWeightTrend, getMacrosFromLog, computeWeeklyStats } from '../utils/aiCoachingEngine';
-import { getLocalISOString } from '../utils/dateUtils';
-import { BottomSheet } from '../components/MotionUI';
+import {
+  TrendingDown, TrendingUp, Minus, Plus, Camera, Ruler, Scale, ChevronRight,
+  CheckCircle2, BarChart2, Trash2,
+} from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { calculateWeightTrend, computeWeeklyStats } from '../utils/aiCoachingEngine';
+import { BodyMeasurement } from '../types';
 
-type Timeframe = '7D' | '14D' | '30D' | '90D';
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const safeNum = (v: number | undefined | null, fallback = 0): number => {
-  if (v === undefined || v === null || isNaN(v) || !isFinite(v)) return fallback;
-  return v;
+type Timeframe = '2W' | '1M' | '3M' | 'All';
+
+const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-AU', { month: 'short', day: 'numeric' });
+const todayStr = () => new Date().toISOString().split('T')[0];
+
+const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '8px 12px' }}>
+      <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-tertiary)', marginBottom: 4 }}>{label}</div>
+      {payload.map((p: any) => (
+        <div key={p.name} style={{ fontSize: '0.78rem', fontWeight: 800, color: p.color }}>
+          {p.name}: {typeof p.value === 'number' ? p.value.toFixed(1) : p.value}
+        </div>
+      ))}
+    </div>
+  );
 };
 
-const countLoggedDaysInWeek = (logs: Record<string, any>): number => {
-  let count = 0;
-  const d = new Date();
-  for (let i = 0; i < 7; i++) {
-    const dateStr = d.toISOString().split('T')[0];
-    if (logs[dateStr]) count++;
-    d.setDate(d.getDate() - 1);
-  }
-  return count;
-};
+// ─── Measurement form ─────────────────────────────────────────────────────────
 
-// ── Section label ──
-const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p style={{
-    fontSize: '0.62rem',
-    fontWeight: 800,
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em',
-    color: 'rgba(255,255,255,0.28)',
-    marginBottom: '10px',
-    margin: '0 0 10px',
-  }}>
-    {children}
-  </p>
-);
+const MEASUREMENT_FIELDS = [
+  { key: 'weight', label: 'Weight', suffix: 'kg' },
+  { key: 'bodyFat', label: 'Body fat', suffix: '%' },
+  { key: 'chest', label: 'Chest', suffix: 'cm' },
+  { key: 'waist', label: 'Waist', suffix: 'cm' },
+  { key: 'hips', label: 'Hips', suffix: 'cm' },
+  { key: 'neck', label: 'Neck', suffix: 'cm' },
+  { key: 'leftArm', label: 'L Arm', suffix: 'cm' },
+  { key: 'rightArm', label: 'R Arm', suffix: 'cm' },
+  { key: 'leftThigh', label: 'L Thigh', suffix: 'cm' },
+  { key: 'rightThigh', label: 'R Thigh', suffix: 'cm' },
+] as const;
 
-// ── Card wrapper ──
-const MetricCard: React.FC<{ children: React.ReactNode; accentColor?: string; style?: React.CSSProperties }> = ({ children, accentColor, style }) => (
-  <div style={{
-    backgroundColor: 'var(--bg-card)',
-    borderRadius: '20px',
-    border: '1px solid rgba(255,255,255,0.06)',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-    overflow: 'hidden',
-    ...style,
-  }}>
-    {accentColor && (
-      <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }} />
-    )}
-    {children}
-  </div>
-);
+const MeasurementSheet: React.FC<{ onClose: () => void; onSave: (m: BodyMeasurement) => void }> = ({ onClose, onSave }) => {
+  const [form, setForm] = useState<Record<string, string>>({});
 
-export const Progress: React.FC = () => {
-  const { state, updateDailyLog, updateUser, showToast } = useApp();
-  const { user, logs } = state;
-  const [timeframe, setTimeframe] = useState<Timeframe>('7D');
-  const [showLogWeight, setShowLogWeight] = useState(false);
-  const [showGoalEdit, setShowGoalEdit] = useState(false);
-  const [newWeight, setNewWeight] = useState(user?.weight?.toString() || '');
-  const [newGoalWeight, setNewGoalWeight] = useState(user?.goalWeight?.toString() || '');
-  const [weightInputError, setWeightInputError] = useState('');
-  const [goalWeightError, setGoalWeightError] = useState('');
-
-  const todayDate = getLocalISOString();
-
-  const allTrendData = user ? calculateWeightTrend(logs, safeNum(user.weight)) : [];
-
-  const chartData = useMemo(() => {
-    const days = timeframe === '7D' ? 7 : timeframe === '14D' ? 14 : timeframe === '30D' ? 30 : 90;
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
-    const cutoffStr = cutoff.toISOString().split('T')[0];
-
-    const sortedDates = Object.keys(logs).sort();
-    if (sortedDates.length === 0) return [];
-
-    const trendByDate = new Map(allTrendData.map((t, i) => [sortedDates[i], t]));
-    const filtered = sortedDates
-      .filter(d => d >= cutoffStr)
-      .map(d => {
-        const log = logs[d];
-        const trendEntry = trendByDate.get(d);
-        const rawWeight = log?.weight ?? null;
-        const rawTrend = trendEntry?.trend ?? null;
-        return {
-          date: d.slice(5),
-          weight: (rawWeight != null && !isNaN(rawWeight)) ? rawWeight : null,
-          trend: (rawTrend != null && !isNaN(rawTrend)) ? rawTrend : null,
-        };
-      });
-
-    if (filtered.length === 0) return allTrendData.slice(-days) || [];
-    return filtered;
-  }, [logs, timeframe, allTrendData]);
-
-  const macroAdherenceData = useMemo(() => {
-    if (!user) return null;
-    const days = timeframe === '7D' ? 7 : timeframe === '14D' ? 14 : timeframe === '30D' ? 30 : 90;
-    let totalCal = 0, totalPro = 0, totalCarbs = 0, totalFats = 0;
-    let daysWithData = 0;
-    const d = new Date();
-    for (let i = 0; i < days; i++) {
-      const target = new Date(d);
-      target.setDate(d.getDate() - i);
-      const dateStr = target.toISOString().split('T')[0];
-      const log = logs[dateStr];
-      if (log) {
-        const macros = getMacrosFromLog(log as any);
-        totalCal += isNaN(macros.calories) ? 0 : macros.calories;
-        totalPro += isNaN(macros.protein) ? 0 : macros.protein;
-        const logAny = log as any;
-        const carbs = logAny.meals
-          ? Object.values(logAny.meals).flat().reduce((a: number, e: any) => a + safeNum(e?.nutrition?.carbs), 0)
-          : 0;
-        const fats = logAny.meals
-          ? Object.values(logAny.meals).flat().reduce((a: number, e: any) => a + safeNum(e?.nutrition?.fats), 0)
-          : 0;
-        totalCarbs += carbs;
-        totalFats += fats;
-        daysWithData++;
-      }
-    }
-    if (daysWithData === 0) return null;
-    return {
-      avgCal: Math.round(totalCal / daysWithData),
-      avgPro: Math.round(totalPro / daysWithData),
-      avgCarbs: Math.round(totalCarbs / daysWithData),
-      avgFats: Math.round(totalFats / daysWithData),
+  const handleSave = () => {
+    const m: BodyMeasurement = {
+      id: `m_${Date.now()}`,
+      date: todayStr(),
     };
-  }, [logs, timeframe, user]);
-
-  const weeklyStats = user ? computeWeeklyStats(logs, user.targets) : null;
-  const loggedDaysInWeek = countLoggedDaysInWeek(logs);
-
-  const hasAnyWeightData = Object.values(logs).some(l => l.weight != null && !isNaN(l.weight as number));
-
-  const lastTrend = allTrendData.filter(t => t.trend != null && !isNaN(t.trend as number));
-  const trendDelta = lastTrend.length >= 7
-    ? (() => {
-        const delta = (lastTrend[lastTrend.length - 1].trend! - lastTrend[lastTrend.length - 7].trend!);
-        return isNaN(delta) || !isFinite(delta) ? null : delta.toFixed(2);
-      })()
-    : null;
-  const trendPositive = trendDelta !== null && parseFloat(trendDelta) > 0;
-
-  const weightToGoal = (user?.goalWeight != null && !isNaN(user.goalWeight))
-    ? Math.abs(safeNum(user.weight) - user.goalWeight)
-    : null;
-
-  const currentWeight = user?.weight;
-  const latestLoggedWeight = Object.entries(logs)
-    .sort((a, b) => b[0].localeCompare(a[0]))
-    .find(([, log]) => log.weight != null)?.[1]?.weight;
-
-  // EMA 7d avg from trend data
-  const ema7 = lastTrend.length > 0
-    ? lastTrend[lastTrend.length - 1].trend
-    : null;
-
-  // Estimated weeks to goal
-  const weeksToGoal = useMemo(() => {
-    if (!user?.goalWeight || trendDelta === null) return null;
-    const weeklyRate = Math.abs(parseFloat(trendDelta));
-    if (weeklyRate < 0.05) return null;
-    const remaining = Math.abs(safeNum(user.weight) - user.goalWeight);
-    return Math.ceil(remaining / weeklyRate);
-  }, [user, trendDelta]);
-
-  const handleLogWeight = () => {
-    const val = parseFloat(newWeight);
-    if (isNaN(val) || !isFinite(val) || val < 20 || val > 400) {
-      setWeightInputError('Weight must be between 20 and 400 kg');
-      return;
-    }
-    setWeightInputError('');
-    updateDailyLog(todayDate, { weight: val });
-    updateUser({ weight: val });
-    showToast('Weight logged', 'success');
-    setShowLogWeight(false);
+    MEASUREMENT_FIELDS.forEach(f => {
+      const v = parseFloat(form[f.key]);
+      if (isFinite(v) && v > 0) (m as any)[f.key] = v;
+    });
+    onSave(m);
   };
-
-  const handleSaveGoal = () => {
-    const val = parseFloat(newGoalWeight);
-    if (isNaN(val) || !isFinite(val) || val < 20 || val > 400) {
-      setGoalWeightError('Goal weight must be between 20 and 400 kg');
-      return;
-    }
-    setGoalWeightError('');
-    updateUser({ goalWeight: val });
-    showToast('Goal weight updated', 'success');
-    setShowGoalEdit(false);
-  };
-
-  // Delta badge color logic based on goal
-  const deltaIsGood = trendDelta !== null
-    ? user?.goalType === 'muscle_gain' ? trendPositive : !trendPositive
-    : null;
-
-  const deltaBadgeColor = deltaIsGood === null
-    ? 'rgba(255,255,255,0.2)'
-    : deltaIsGood ? 'var(--accent-green)' : 'var(--accent-red)';
-  const deltaBadgeBg = deltaIsGood === null
-    ? 'rgba(255,255,255,0.06)'
-    : deltaIsGood ? 'rgba(50,215,75,0.1)' : 'rgba(255,69,58,0.1)';
-
-  const TIMEFRAMES: Timeframe[] = ['7D', '14D', '30D', '90D'];
 
   return (
-    <div style={{
-      paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))',
-      backgroundColor: 'var(--bg-primary)',
-      minHeight: '100dvh',
-    }} className="animate-fade-in">
+    <div style={{ position: 'fixed', inset: 0, zIndex: 900, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }} />
+      <motion.div
+        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 26, stiffness: 300 }}
+        style={{ position: 'relative', background: 'var(--bg-sheet)', borderRadius: '24px 24px 0 0', padding: '20px 20px', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))', maxHeight: '85dvh', overflowY: 'auto' }}
+      >
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)', margin: '0 auto 18px' }} />
+        <div style={{ fontSize: '1rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 16 }}>Log measurements</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+          {MEASUREMENT_FIELDS.map(f => (
+            <div key={f.key} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 72, fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{f.label}</div>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="number" inputMode="decimal"
+                  value={form[f.key] ?? ''}
+                  onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                  className="input-field"
+                  placeholder="—"
+                  style={{ flex: 1, fontSize: '0.95rem', fontWeight: 700, padding: '8px 12px', textAlign: 'right' }}
+                />
+                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)', width: 26 }}>{f.suffix}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn-secondary" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSave}>Save</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
-      {/* ── Page Header ── */}
-      <div style={{
-        padding: '1.25rem 1.25rem 1rem',
-        borderBottom: '1px solid rgba(255,255,255,0.04)',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.025em', margin: 0 }}>Progress</h1>
-          {/* Time filter pills */}
-          <div style={{ display: 'flex', gap: '4px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '50px', padding: '3px' }}>
-            {TIMEFRAMES.map(tf => (
-              <button
-                key={tf}
-                onClick={() => setTimeframe(tf)}
-                style={{
-                  padding: '0.3rem 0.65rem',
-                  borderRadius: '50px',
-                  border: 'none',
-                  fontWeight: 800,
-                  fontSize: '0.72rem',
-                  backgroundColor: timeframe === tf ? '#fff' : 'transparent',
-                  color: timeframe === tf ? '#000' : 'rgba(255,255,255,0.4)',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer',
-                }}
-              >
-                {tf}
-              </button>
-            ))}
+// ─── Measurement history card ─────────────────────────────────────────────────
+
+const MeasurementCard: React.FC<{
+  measurement: BodyMeasurement;
+  prev?: BodyMeasurement;
+  onDelete: () => void;
+}> = ({ measurement, prev, onDelete }) => {
+  const [expanded, setExpanded] = useState(false);
+  const delta = (key: keyof BodyMeasurement): string => {
+    const curr = (measurement as any)[key];
+    const p = prev ? (prev as any)[key] : undefined;
+    if (!curr || !p) return '';
+    const d = curr - p;
+    return `${d > 0 ? '+' : ''}${d.toFixed(1)}`;
+  };
+  const deltaColor = (key: keyof BodyMeasurement): string => {
+    const curr = (measurement as any)[key];
+    const p = prev ? (prev as any)[key] : undefined;
+    if (!curr || !p) return 'var(--text-tertiary)';
+    const d = curr - p;
+    // For weight/fat: down is good (fat_loss); for measurements like arm: up might be good
+    return d < 0 ? '#22C55E' : d > 0 ? '#F59E0B' : 'var(--text-tertiary)';
+  };
+
+  return (
+    <div style={{ borderRadius: 16, background: 'var(--bg-card)', border: '1px solid var(--border-color)', padding: '14px 16px', marginBottom: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: expanded ? 12 : 0 }}>
+        <div>
+          <div style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)' }}>
+            {fmtDate(measurement.date)}
           </div>
+          {measurement.weight && (
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 900, letterSpacing: '-0.03em', marginTop: 2 }}>
+              {measurement.weight}kg
+              {prev?.weight && (
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, marginLeft: 8, color: deltaColor('weight') }}>
+                  {delta('weight')}kg
+                </span>
+              )}
+            </div>
+          )}
+          {measurement.bodyFat && (
+            <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>
+              {measurement.bodyFat}% BF
+              {prev?.bodyFat && <span style={{ marginLeft: 6, color: deltaColor('bodyFat') }}>{delta('bodyFat')}%</span>}
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button onClick={() => setExpanded(e => !e)}
+            style={{ background: 'none', border: 'none', padding: '4px 8px', borderRadius: 8, fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+            {expanded ? 'Less' : 'More'}
+          </button>
+          <button onClick={onDelete}
+            style={{ background: 'rgba(239,68,68,0.1)', border: 'none', padding: 6, borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+            <Trash2 size={13} color="#EF4444" />
+          </button>
         </div>
       </div>
+      {expanded && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          {MEASUREMENT_FIELDS.filter(f => f.key !== 'weight' && f.key !== 'bodyFat').map(f => {
+            const val = (measurement as any)[f.key];
+            if (!val) return null;
+            return (
+              <div key={f.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{f.label}</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>{val}{f.suffix}</span>
+                  {prev && delta(f.key as any) && (
+                    <span style={{ fontSize: '0.62rem', fontWeight: 700, color: deltaColor(f.key as any) }}>{delta(f.key as any)}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '1.25rem' }}>
+// ─── Progress page ────────────────────────────────────────────────────────────
 
-        {/* ── Empty state: no weight data ── */}
-        {!hasAnyWeightData && (
-          <div
-            onClick={() => { setNewWeight(user?.weight?.toString() || ''); setShowLogWeight(true); }}
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              borderRadius: '20px',
-              border: '1px dashed rgba(255,255,255,0.1)',
-              padding: '2rem 1.5rem',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '12px',
-              textAlign: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{
-              width: 56,
-              height: 56,
-              borderRadius: 18,
-              backgroundColor: 'rgba(10,132,255,0.08)',
-              border: '1px solid rgba(10,132,255,0.18)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <BarChart2 size={24} color="var(--accent-blue)" />
-            </div>
-            <div>
-              <div style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '4px' }}>Start tracking your weight</div>
-              <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', fontWeight: 500, margin: 0, lineHeight: 1.5 }}>
-                Log your first entry — your trend chart will appear here.
-              </p>
-            </div>
-            <div style={{
-              padding: '0.55rem 1.5rem',
-              backgroundColor: 'var(--accent-blue)',
-              borderRadius: '50px',
-              fontSize: '0.875rem',
-              fontWeight: 800,
-              color: '#fff',
-            }}>
-              Log First Entry
+export const Progress: React.FC = () => {
+  const { state, addMeasurement, deleteMeasurement, showToast } = useApp();
+  const user = state.user!;
+
+  const [activeTab, setActiveTab] = useState<'weight' | 'nutrition' | 'body'>('weight');
+  const [timeframe, setTimeframe] = useState<Timeframe>('1M');
+  const [showMeasure, setShowMeasure] = useState(false);
+
+  // Weight trend data
+  const allTrendData = useMemo(() => {
+    const data = calculateWeightTrend(state.logs, user.weight);
+    return data.filter(d => d.weight !== null || d.trend !== null);
+  }, [state.logs, user.weight]);
+
+  const tfDays: Record<Timeframe, number> = { '2W': 14, '1M': 30, '3M': 90, 'All': 365 };
+  const trendData = allTrendData.slice(-tfDays[timeframe]);
+
+  // Weight stats
+  const firstWeight = trendData.find(d => d.trend !== null)?.trend;
+  const lastWeight = [...trendData].reverse().find(d => d.trend !== null)?.trend;
+  const weightChange = firstWeight && lastWeight ? lastWeight - firstWeight : null;
+  const weeklyRate = weightChange !== null && trendData.length > 0 ? (weightChange / trendData.length) * 7 : null;
+
+  // Weekly nutrition chart
+  const weeklyStats = useMemo(() => computeWeeklyStats(state.logs, user.targets), [state.logs, user.targets]);
+  const nutritionChartData = useMemo(() => {
+    const days: { date: string; calories: number; protein: number }[] = [];
+    const d = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const dd = new Date(d); dd.setDate(d.getDate() - i);
+      const ds = dd.toISOString().split('T')[0];
+      const log = state.logs[ds];
+      let cal = 0, pro = 0;
+      if (log) {
+        Object.values(log.meals).flat().forEach(e => {
+          cal += e.nutrition.calories * e.amount;
+          pro += e.nutrition.protein * e.amount;
+        });
+      }
+      days.push({ date: dd.toLocaleDateString('en-AU', { weekday: 'short' }), calories: Math.round(cal), protein: Math.round(pro) });
+    }
+    return days;
+  }, [state.logs]);
+
+  // Measurements sorted newest first
+  const sortedMeasurements = useMemo(() =>
+    [...state.measurements].sort((a, b) => b.date.localeCompare(a.date))
+  , [state.measurements]);
+
+  return (
+    <div className="page page-top-pad safe-bottom" style={{ gap: 14 }}>
+
+      {/* ── Header ── */}
+      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="page-header" style={{ paddingBottom: 6 }}>
+          <div>
+            <div className="page-title">Progress</div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)', marginTop: 2 }}>
+              Track every metric that matters
             </div>
           </div>
-        )}
+          <button onClick={() => setShowMeasure(true)} className="btn-icon" style={{ width: 36, height: 36 }}>
+            <Plus size={16} />
+          </button>
+        </div>
+      </motion.div>
 
-        {/* ── 1. WEIGHT TREND CARD ── */}
-        <div>
-          <SectionLabel>WEIGHT TREND</SectionLabel>
-          <MetricCard accentColor="rgba(10,132,255,0.6)">
-            <div style={{ padding: '1.1rem 1.25rem 1rem' }}>
-              {/* Header row */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                    <span style={{ fontSize: '1.9rem', fontWeight: 900, letterSpacing: '-0.035em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-                      {(currentWeight != null && !isNaN(currentWeight)) ? currentWeight : '—'}
-                    </span>
-                    <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>kg</span>
-                  </div>
-                  <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: '3px', margin: '3px 0 0' }}>current weight</p>
-                </div>
-                {trendDelta !== null && (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    padding: '5px 10px',
-                    borderRadius: '50px',
-                    backgroundColor: deltaBadgeBg,
-                    border: `1px solid ${deltaBadgeColor}30`,
-                  }}>
-                    {trendPositive
-                      ? <TrendingUp size={12} color={deltaBadgeColor} />
-                      : <TrendingDown size={12} color={deltaBadgeColor} />
-                    }
-                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: deltaBadgeColor }}>
-                      {trendPositive ? '+' : ''}{trendDelta} kg
-                    </span>
-                    <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>wk</span>
-                  </div>
-                )}
+      {/* ── Key stats ── */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}
+        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+        {[
+          { label: 'Current', value: lastWeight ? `${lastWeight.toFixed(1)}` : `${user.weight}`, unit: 'kg', color: '#6366F1' },
+          { label: `${timeframe} change`, value: weightChange !== null ? `${weightChange > 0 ? '+' : ''}${weightChange.toFixed(2)}` : '—', unit: 'kg', color: weightChange !== null ? (weightChange < 0 && user.goalType === 'fat_loss' ? '#22C55E' : weightChange > 0 && user.goalType === 'muscle_gain' ? '#22C55E' : '#F59E0B') : 'var(--text-tertiary)' },
+          { label: 'Weekly rate', value: weeklyRate !== null ? `${weeklyRate > 0 ? '+' : ''}${weeklyRate.toFixed(2)}` : '—', unit: 'kg/wk', color: '#3B82F6' },
+        ].map(({ label, value, unit, color }) => (
+          <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '12px 12px' }}>
+            <div style={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)', marginBottom: 3 }}>{label}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 900, letterSpacing: '-0.03em', color }}>{value}</div>
+            <div style={{ fontSize: '0.58rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{unit}</div>
+          </div>
+        ))}
+      </motion.div>
+
+      {/* ── Tabs ── */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <div className="pill-tabs">
+          {(['weight', 'nutrition', 'body'] as const).map(tab => (
+            <button key={tab} className={`pill-tab${activeTab === tab ? ' active' : ''}`} onClick={() => setActiveTab(tab)}>
+              {tab === 'weight' ? 'Weight' : tab === 'nutrition' ? 'Nutrition' : 'Body'}
+            </button>
+          ))}
+        </div>
+      </motion.div>
+
+      <AnimatePresence mode="wait">
+
+        {/* ── WEIGHT TAB ── */}
+        {activeTab === 'weight' && (
+          <motion.div key="weight" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            {/* Timeframe selector */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+              {(['2W', '1M', '3M', 'All'] as Timeframe[]).map(tf => (
+                <button key={tf} onClick={() => setTimeframe(tf)}
+                  style={{ flex: 1, padding: '6px', borderRadius: 8, border: 'none', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', background: timeframe === tf ? '#6366F1' : 'rgba(255,255,255,0.06)', color: timeframe === tf ? 'white' : 'var(--text-tertiary)', transition: 'all 0.15s' }}>
+                  {tf}
+                </button>
+              ))}
+            </div>
+
+            {/* Weight chart */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 18, padding: '16px 12px' }}>
+              <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: 12, paddingLeft: 4 }}>
+                Weight EMA (smoothed trend)
               </div>
-
-              {/* Area chart */}
-              {chartData.length > 0 ? (
-                <div style={{ height: 140, marginLeft: -8, marginRight: -8 }}>
+              {trendData.length > 2 ? (
+                <div style={{ height: 180 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 5, right: 8, left: 8, bottom: 0 }}>
+                    <AreaChart data={trendData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                       <defs>
-                        <linearGradient id="weightAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#0A84FF" stopOpacity={0.25} />
-                          <stop offset="100%" stopColor="#0A84FF" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="trendAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#0A84FF" stopOpacity={0.12} />
-                          <stop offset="100%" stopColor="#0A84FF" stopOpacity={0} />
+                        <linearGradient id="weightG" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#6366F1" stopOpacity={0.25} />
+                          <stop offset="100%" stopColor="#6366F1" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <XAxis
-                        dataKey="date"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.25)', fontWeight: 600 }}
-                        dy={8}
-                        interval={timeframe === '90D' ? 8 : timeframe === '30D' ? 3 : 0}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          borderRadius: 14,
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          backgroundColor: '#111',
-                          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                          padding: '10px 14px',
-                        }}
-                        labelStyle={{ fontWeight: 700, color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}
-                        itemStyle={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.85rem' }}
-                        cursor={{ stroke: 'rgba(255,255,255,0.07)', strokeWidth: 1 }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="weight"
-                        stroke="rgba(255,255,255,0.35)"
-                        strokeWidth={1.5}
-                        strokeDasharray="3 4"
-                        fill="url(#weightAreaGrad)"
-                        dot={false}
-                        activeDot={{ r: 4, fill: '#fff', strokeWidth: 0 }}
-                        name="Scale Weight"
-                        connectNulls={false}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="trend"
-                        stroke="var(--accent-blue)"
-                        strokeWidth={2.5}
-                        fill="url(#trendAreaGrad)"
-                        dot={false}
-                        activeDot={{ r: 5, fill: 'var(--bg-primary)', stroke: 'var(--accent-blue)', strokeWidth: 2 }}
-                        name="7d Trend"
-                        connectNulls
-                      />
+                      <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.35)', fontWeight: 600 }} tickLine={false} axisLine={false} interval={Math.max(1, Math.floor(trendData.length / 5))} />
+                      <YAxis tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.35)', fontWeight: 600 }} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+                      <Tooltip content={<CustomTooltip />} />
+                      {user.goalWeight && (
+                        <ReferenceLine y={user.goalWeight} stroke="#22C55E" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: 'Goal', fill: '#22C55E', fontSize: 9 }} />
+                      )}
+                      <Area type="monotone" dataKey="weight" stroke="transparent" fill="none" dot={{ r: 2, fill: 'rgba(99,102,241,0.5)', strokeWidth: 0 }} name="Logged" />
+                      <Area type="monotone" dataKey="trend" stroke="#6366F1" strokeWidth={2} fill="url(#weightG)" dot={false} name="EMA" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.2)', fontWeight: 600 }}>No weight data yet</span>
+                <div className="empty-state" style={{ padding: '20px 0' }}>
+                  <div className="empty-state-icon">⚖️</div>
+                  <div className="empty-state-title">Not enough data yet</div>
+                  <div className="empty-state-body">Log your weight daily for the EMA trend to appear here.</div>
                 </div>
               )}
+            </div>
+          </motion.div>
+        )}
 
-              {/* Stat pills row */}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                {[
-                  { label: 'current', value: currentWeight != null ? `${currentWeight}kg` : '—' },
-                  { label: 'goal', value: user?.goalWeight != null ? `${user.goalWeight}kg` : '—' },
-                  { label: '7d avg', value: ema7 != null ? `${ema7.toFixed(1)}kg` : '—' },
-                ].map(pill => (
-                  <div key={pill.label} style={{
-                    flex: 1,
-                    backgroundColor: 'rgba(255,255,255,0.04)',
-                    borderRadius: '12px',
-                    padding: '0.65rem 0.5rem',
-                    textAlign: 'center',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                  }}>
-                    <div style={{ fontSize: '1rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', color: '#fff' }}>{pill.value}</div>
-                    <div style={{ fontSize: '0.58rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginTop: '2px' }}>{pill.label}</div>
-                  </div>
+        {/* ── NUTRITION TAB ── */}
+        {activeTab === 'nutrition' && (
+          <motion.div key="nutrition" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* Weekly adherence */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 18, padding: '16px 14px' }}>
+              <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: 12 }}>Calories — last 7 days</div>
+              <div style={{ height: 140 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={nutritionChartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} barCategoryGap="30%">
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.35)', fontWeight: 600 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.35)', fontWeight: 600 }} tickLine={false} axisLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <ReferenceLine y={user.targets.calories} stroke="rgba(239,68,68,0.4)" strokeDasharray="3 3" strokeWidth={1.5} />
+                    <Bar dataKey="calories" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Calories" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 18, padding: '16px 14px' }}>
+              <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: 12 }}>Protein — last 7 days</div>
+              <div style={{ height: 120 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={nutritionChartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} barCategoryGap="30%">
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.35)', fontWeight: 600 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.35)', fontWeight: 600 }} tickLine={false} axisLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <ReferenceLine y={user.targets.protein} stroke="rgba(245,158,11,0.4)" strokeDasharray="3 3" strokeWidth={1.5} />
+                    <Bar dataKey="protein" fill="#F59E0B" radius={[4, 4, 0, 0]} name="Protein" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Weekly summary */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {[
+                { label: 'Cal adherence', value: `${weeklyStats.calorieAdherence}%`, color: weeklyStats.calorieAdherence >= 80 ? '#22C55E' : '#F59E0B' },
+                { label: 'Protein adherence', value: `${weeklyStats.proteinAdherence}%`, color: weeklyStats.proteinAdherence >= 80 ? '#22C55E' : '#F59E0B' },
+                { label: 'Avg calories', value: `${weeklyStats.avgCalories}`, color: '#3B82F6' },
+                { label: 'Days logged', value: `${weeklyStats.daysLogged}/7`, color: 'var(--text-primary)' },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '12px 14px' }}>
+                  <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', fontWeight: 900, letterSpacing: '-0.03em', color }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── BODY TAB ── */}
+        {activeTab === 'body' && (
+          <motion.div key="body" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+
+            {/* Add measurement CTA */}
+            <button onClick={() => setShowMeasure(true)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 16, background: 'rgba(99,102,241,0.08)', border: '1px dashed rgba(99,102,241,0.3)', cursor: 'pointer', marginBottom: 12 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Ruler size={16} color="#6366F1" />
+              </div>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#A5B4FC' }}>Log measurements</div>
+                <div style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>Weight, BF%, circumferences</div>
+              </div>
+              <Plus size={16} color="#6366F1" />
+            </button>
+
+            {/* Measurements history */}
+            {sortedMeasurements.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">📏</div>
+                <div className="empty-state-title">No measurements yet</div>
+                <div className="empty-state-body">Log body measurements to track your physique changes over time.</div>
+              </div>
+            ) : (
+              <div>
+                <div className="section-label" style={{ marginBottom: 8 }}>Measurement history</div>
+                {sortedMeasurements.map((m, i) => (
+                  <MeasurementCard
+                    key={m.id}
+                    measurement={m}
+                    prev={sortedMeasurements[i + 1]}
+                    onDelete={() => { deleteMeasurement(m.id); showToast('Measurement deleted', 'info'); }}
+                  />
                 ))}
               </div>
-            </div>
-          </MetricCard>
-        </div>
-
-        {/* ── 2. MACRO ADHERENCE CARD ── */}
-        {weeklyStats && (
-          <div>
-            <SectionLabel>MACRO ADHERENCE</SectionLabel>
-            <MetricCard accentColor="rgba(255,159,10,0.5)">
-              <div style={{ padding: '1.1rem 1.25rem' }}>
-                {[
-                  {
-                    key: 'Cal',
-                    avg: isNaN(weeklyStats.avgCalories) ? 0 : weeklyStats.avgCalories,
-                    target: safeNum(user?.targets.calories),
-                    unit: 'kcal',
-                    color: 'var(--accent-orange)',
-                  },
-                  {
-                    key: 'Pro',
-                    avg: isNaN(weeklyStats.avgProtein) ? 0 : weeklyStats.avgProtein,
-                    target: safeNum(user?.targets.protein),
-                    unit: 'g',
-                    color: 'var(--accent-blue)',
-                  },
-                  {
-                    key: 'Carb',
-                    avg: isNaN(weeklyStats.avgCarbs) ? 0 : weeklyStats.avgCarbs,
-                    target: safeNum(user?.targets.carbs),
-                    unit: 'g',
-                    color: 'var(--accent-green)',
-                  },
-                  {
-                    key: 'Fat',
-                    avg: isNaN(weeklyStats.avgFats) ? 0 : weeklyStats.avgFats,
-                    target: safeNum(user?.targets.fats),
-                    unit: 'g',
-                    color: '#a78bfa',
-                  },
-                ].map((row, i, arr) => {
-                  const safeTarget = Math.max(1, row.target);
-                  const pct = Math.min(100, Math.max(0, (row.avg / safeTarget) * 100));
-                  const safePct = isNaN(pct) ? 0 : pct;
-                  const over = row.avg > row.target && row.target > 0;
-                  return (
-                    <div key={row.key} style={{
-                      paddingBottom: i < arr.length - 1 ? '14px' : 0,
-                      marginBottom: i < arr.length - 1 ? '14px' : 0,
-                      borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)', minWidth: 36 }}>{row.key}</span>
-                        <div style={{ flex: 1, margin: '0 12px' }}>
-                          <div style={{ height: 6, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                            <div style={{
-                              height: '100%',
-                              width: `${safePct}%`,
-                              borderRadius: 99,
-                              backgroundColor: over ? 'var(--accent-red)' : row.color,
-                              transition: 'width 0.6s ease',
-                              opacity: 0.85,
-                            }} />
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-                            <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>avg {row.avg}{row.unit}</span>
-                            <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.18)', fontWeight: 600 }}>target {row.target}{row.unit}</span>
-                          </div>
-                        </div>
-                        <span style={{
-                          fontSize: '0.82rem',
-                          fontWeight: 800,
-                          color: over ? 'var(--accent-red)' : (safePct >= 90 ? 'var(--accent-green)' : 'rgba(255,255,255,0.5)'),
-                          minWidth: 40,
-                          textAlign: 'right',
-                          fontVariantNumeric: 'tabular-nums',
-                        }}>
-                          {Math.round(safePct)}%
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </MetricCard>
-          </div>
-        )}
-
-        {/* ── 3. GOAL PROGRESS CARD ── */}
-        {user?.goalWeight ? (
-          <div>
-            <SectionLabel>GOAL PROGRESS</SectionLabel>
-            <MetricCard accentColor="linear-gradient(90deg, rgba(10,132,255,0.5), rgba(50,215,75,0.5))">
-              <div style={{ padding: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                  <div>
-                    <div style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
-                      {weightToGoal != null && !isNaN(weightToGoal) ? `${weightToGoal.toFixed(1)} kg` : '—'}
-                    </div>
-                    <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: '4px', margin: '4px 0 0' }}>to goal</p>
-                  </div>
-                  <button
-                    onClick={() => { setNewGoalWeight(user.goalWeight?.toString() || ''); setShowGoalEdit(true); }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      padding: '0.35rem 0.875rem',
-                      backgroundColor: 'rgba(10,132,255,0.1)',
-                      border: '1px solid rgba(10,132,255,0.22)',
-                      borderRadius: '50px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Scale size={11} color="var(--accent-blue)" />
-                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--accent-blue)' }}>{user.goalWeight} kg</span>
-                  </button>
-                </div>
-
-                {/* Progress bar */}
-                <div style={{ marginBottom: '1rem' }}>
-                  <div style={{ height: 8, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%',
-                      width: weightToGoal != null && weightToGoal < 0.1 ? '100%' : '10%',
-                      borderRadius: 99,
-                      background: 'linear-gradient(90deg, var(--accent-blue), var(--accent-green))',
-                      transition: 'width 0.6s ease',
-                    }} />
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
-                    <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
-                      {currentWeight != null ? `${currentWeight} kg` : '—'} now
-                    </span>
-                    <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
-                      {user.goalWeight} kg goal
-                    </span>
-                  </div>
-                </div>
-
-                {/* Stats row */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  {trendDelta !== null && (
-                    <div style={{
-                      backgroundColor: 'rgba(255,255,255,0.04)',
-                      borderRadius: '12px',
-                      padding: '0.65rem 0.75rem',
-                      border: '1px solid rgba(255,255,255,0.05)',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '3px' }}>
-                        {trendPositive ? <TrendingUp size={11} color={deltaBadgeColor} /> : <TrendingDown size={11} color={deltaBadgeColor} />}
-                        <span style={{ fontSize: '0.95rem', fontWeight: 800, color: deltaBadgeColor, fontVariantNumeric: 'tabular-nums' }}>
-                          {trendPositive ? '+' : ''}{trendDelta} kg
-                        </span>
-                      </div>
-                      <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>7-day rate</span>
-                    </div>
-                  )}
-                  {weeksToGoal !== null && (
-                    <div style={{
-                      backgroundColor: 'rgba(255,255,255,0.04)',
-                      borderRadius: '12px',
-                      padding: '0.65rem 0.75rem',
-                      border: '1px solid rgba(255,255,255,0.05)',
-                    }}>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'rgba(255,255,255,0.8)', fontVariantNumeric: 'tabular-nums', marginBottom: '3px' }}>
-                        ~{weeksToGoal}w
-                      </div>
-                      <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>est. weeks</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </MetricCard>
-          </div>
-        ) : (
-          <div
-            onClick={() => { setNewGoalWeight(''); setShowGoalEdit(true); }}
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              borderRadius: '20px',
-              border: '1px dashed rgba(255,255,255,0.08)',
-              padding: '1.1rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              cursor: 'pointer',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-            }}
-          >
-            <div style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Target size={16} color="rgba(255,255,255,0.25)" />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'rgba(255,255,255,0.45)' }}>Set a goal weight</div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.22)', fontWeight: 500, marginTop: '2px' }}>Track your progress toward a target</div>
-            </div>
-            <ChevronRight size={15} color="rgba(255,255,255,0.18)" style={{ marginLeft: 'auto' }} />
-          </div>
-        )}
-
-        {/* ── 4. LOG WEIGHT BUTTON ── */}
-        <button
-          onClick={() => { setNewWeight(user?.weight?.toString() || ''); setShowLogWeight(true); }}
-          style={{
-            width: '100%',
-            padding: '1rem',
-            backgroundColor: 'var(--bg-card)',
-            color: '#fff',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '18px',
-            fontWeight: 800,
-            fontSize: '1rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
-            letterSpacing: '0.01em',
-          }}
-        >
-          <Scale size={18} color="var(--accent-blue)" />
-          Log Today's Weight
-          <span style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 22,
-            height: 22,
-            borderRadius: '50%',
-            backgroundColor: 'var(--accent-blue)',
-            color: '#fff',
-            fontSize: '0.75rem',
-            fontWeight: 900,
-          }}>+</span>
-        </button>
-
-        {/* ── Weekly Averages ── (kept from original) */}
-        {weeklyStats && (
-          <div>
-            <SectionLabel>WEEKLY AVERAGES</SectionLabel>
-            <MetricCard>
-              <div style={{ padding: '0.5rem 0' }}>
-                {[
-                  { label: 'Calories', value: isNaN(weeklyStats.avgCalories) ? 0 : weeklyStats.avgCalories, target: safeNum(user?.targets.calories), unit: 'kcal', color: 'var(--color-calories)' },
-                  { label: 'Protein',  value: isNaN(weeklyStats.avgProtein)  ? 0 : weeklyStats.avgProtein,  target: safeNum(user?.targets.protein),  unit: 'g',    color: 'var(--color-protein)'   },
-                  { label: 'Carbs',    value: isNaN(weeklyStats.avgCarbs)    ? 0 : weeklyStats.avgCarbs,    target: safeNum(user?.targets.carbs),    unit: 'g',    color: 'var(--color-carbs)'     },
-                  { label: 'Fats',     value: isNaN(weeklyStats.avgFats)     ? 0 : weeklyStats.avgFats,     target: safeNum(user?.targets.fats),     unit: 'g',    color: 'var(--color-fats)'      },
-                ].map((row, i, arr) => {
-                  const safeTarget = Math.max(1, row.target);
-                  const pct = Math.min(100, Math.max(0, (row.value / safeTarget) * 100));
-                  const safePct = isNaN(pct) ? 0 : pct;
-                  const over = row.value > row.target;
-                  return (
-                    <div key={row.label} style={{
-                      padding: '0.75rem 1.25rem',
-                      borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{row.label}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.25)' }}>target {row.target}{row.unit}</span>
-                          <span style={{ fontSize: '0.875rem', fontWeight: 700, color: over ? 'var(--accent-red)' : row.color, fontVariantNumeric: 'tabular-nums' }}>
-                            {row.value}{row.unit}
-                          </span>
-                        </div>
-                      </div>
-                      <div style={{ height: 3, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${safePct}%`, borderRadius: 99, backgroundColor: over ? 'var(--accent-red)' : row.color, transition: 'width 0.5s ease', opacity: 0.75 }} />
-                      </div>
-                    </div>
-                  );
-                })}
-                <div style={{ padding: '0.75rem 1.25rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Workouts</span>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--accent-blue)' }}>{weeklyStats.workoutsCompleted} sessions</span>
-                  </div>
-                </div>
-              </div>
-            </MetricCard>
-          </div>
-        )}
-
-      </div>
-
-      {/* ── Weight Log Sheet ── */}
-      <BottomSheet isOpen={showLogWeight} onClose={() => setShowLogWeight(false)}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '16px' }}>
-          <div>
-            <h2 style={{ fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Log Weight</h2>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', marginTop: '4px', fontWeight: 500 }}>
-              Morning measurement recommended. Current: {user?.weight} kg
-            </p>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'center' }}>
-              <input
-                type="number"
-                step="0.1"
-                min="20"
-                max="400"
-                value={newWeight}
-                onChange={e => { setNewWeight(e.target.value); setWeightInputError(''); }}
-                placeholder="e.g. 79.5"
-                autoFocus
-                style={{
-                  width: '160px',
-                  padding: '0.75rem',
-                  border: `1px solid ${weightInputError ? 'var(--accent-red)' : 'var(--border-default)'}`,
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--bg-input)',
-                  fontSize: '2.5rem',
-                  fontWeight: 800,
-                  color: 'var(--text-primary)',
-                  fontVariantNumeric: 'tabular-nums',
-                  textAlign: 'center',
-                  letterSpacing: '-0.03em',
-                }}
-              />
-              <span style={{ color: 'var(--text-tertiary)', fontWeight: 700, fontSize: '1.125rem' }}>kg</span>
-            </div>
-            {weightInputError && (
-              <span style={{ fontSize: '0.75rem', color: 'var(--accent-red)', fontWeight: 600 }}>{weightInputError}</span>
             )}
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
-            {[-1, -0.5, 0, 0.5, 1].map(delta => {
-              const base = safeNum(user?.weight);
-              const val = (base + delta).toFixed(1);
-              return (
-                <button
-                  key={delta}
-                  onClick={() => setNewWeight(val)}
-                  style={{
-                    padding: '0.4rem 0.875rem',
-                    borderRadius: '50px',
-                    border: `1px solid ${newWeight === val ? 'var(--accent-blue)' : 'var(--border-default)'}`,
-                    backgroundColor: newWeight === val ? 'rgba(10,132,255,0.12)' : 'transparent',
-                    color: newWeight === val ? 'var(--accent-blue)' : 'var(--text-secondary)',
-                    fontWeight: 700,
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {delta > 0 ? '+' : ''}{delta !== 0 ? delta.toFixed(1) : 'Same'} → {val}
-                </button>
-              );
-            })}
-          </div>
-          <button
-            onClick={handleLogWeight}
-            style={{
-              padding: '0.9rem',
-              backgroundColor: 'var(--accent-primary)',
-              color: '#000',
-              border: 'none',
-              borderRadius: '50px',
-              fontWeight: 800,
-              fontSize: '0.9375rem',
-              cursor: 'pointer',
-              width: '100%',
-            }}
-          >
-            Save Entry
-          </button>
-        </div>
-      </BottomSheet>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* ── Goal Edit Sheet ── */}
-      <BottomSheet isOpen={showGoalEdit} onClose={() => setShowGoalEdit(false)} title="Goal Weight">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '16px' }}>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
-            Current: {user?.weight} kg · Your target to reach
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'center' }}>
-              <input
-                type="number"
-                step="0.1"
-                min="20"
-                max="400"
-                value={newGoalWeight}
-                onChange={e => { setNewGoalWeight(e.target.value); setGoalWeightError(''); }}
-                placeholder="e.g. 72.0"
-                autoFocus
-                style={{
-                  width: '160px',
-                  padding: '0.75rem',
-                  border: `1px solid ${goalWeightError ? 'var(--accent-red)' : 'var(--border-default)'}`,
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--bg-input)',
-                  fontSize: '2.5rem',
-                  fontWeight: 800,
-                  color: 'var(--text-primary)',
-                  fontVariantNumeric: 'tabular-nums',
-                  textAlign: 'center',
-                  letterSpacing: '-0.03em',
-                }}
-              />
-              <span style={{ color: 'var(--text-tertiary)', fontWeight: 700, fontSize: '1.125rem' }}>kg</span>
-            </div>
-            {goalWeightError && (
-              <span style={{ fontSize: '0.75rem', color: 'var(--accent-red)', fontWeight: 600 }}>{goalWeightError}</span>
-            )}
-            {(() => {
-              const gv = parseFloat(newGoalWeight);
-              const cw = user?.weight;
-              if (!isNaN(gv) && cw != null && !isNaN(cw) && Math.abs(gv - cw) < 0.05) {
-                return (
-                  <span style={{ fontSize: '0.75rem', color: 'var(--accent-orange)', fontWeight: 600 }}>
-                    That's your current weight — pick a target
-                  </span>
-                );
-              }
-              return null;
-            })()}
-          </div>
-          <button
-            onClick={handleSaveGoal}
-            className="btn-primary w-full"
-            style={{ padding: '0.9rem' }}
-          >
-            Set Goal Weight
-          </button>
-        </div>
-      </BottomSheet>
-
+      {/* ── Measurement sheet ── */}
+      <AnimatePresence>
+        {showMeasure && (
+          <MeasurementSheet
+            onClose={() => setShowMeasure(false)}
+            onSave={m => { addMeasurement(m); setShowMeasure(false); showToast('Measurements logged!', 'success'); }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

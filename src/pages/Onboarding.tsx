@@ -522,51 +522,55 @@ export const Onboarding: React.FC = () => {
           className="animate-slide-up"
           style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '2rem 1.5rem', textAlign: 'center', gap: '2rem' }}
         >
-          {/* App icon: 72px circle, blue-to-purple gradient */}
-          <div style={{
-            width: 72,
-            height: 72,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #0A84FF 0%, #BF5AF2 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.8rem',
-            boxShadow: '0 12px 40px rgba(10,132,255,0.35), 0 0 0 1px rgba(255,255,255,0.08)',
-          }}>
-            💪
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-            <h1 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '2rem',
-              fontWeight: 900,
-              letterSpacing: '-0.03em',
-              lineHeight: 1.0,
-              color: C.textPrimary,
-              margin: 0,
+          {/* Premium CB logo */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+            <div style={{
+              width: 96, height: 96, borderRadius: '28px',
+              background: 'linear-gradient(145deg, #07070f 0%, #12122a 100%)',
+              border: '1.5px solid rgba(99,102,241,0.4)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative', overflow: 'hidden',
+              boxShadow: '0 0 40px rgba(99,102,241,0.3), 0 0 80px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.08)',
             }}>
-              Body Blueprint
-            </h1>
-            <p style={{ fontSize: '1rem', color: C.textSecondary, fontWeight: 400, lineHeight: 1.5, margin: 0 }}>
-              Your intelligent fitness coach
-            </p>
+              {/* Background glow rings */}
+              <div style={{ position: 'absolute', inset: 0, borderRadius: '28px', background: 'radial-gradient(circle at 50% 40%, rgba(99,102,241,0.25) 0%, transparent 70%)', pointerEvents: 'none' }} />
+              {/* Ring decoration */}
+              <div style={{ position: 'absolute', width: 110, height: 110, borderRadius: '50%', border: '1px solid rgba(99,102,241,0.15)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }} />
+              {/* CB Text */}
+              <span style={{
+                fontFamily: 'var(--font-display)', fontSize: '2.2rem', fontWeight: 900,
+                letterSpacing: '-0.06em', lineHeight: 1,
+                background: 'linear-gradient(135deg, #ffffff 0%, rgba(165,180,252,0.9) 50%, rgba(168,85,247,0.8) 100%)',
+                WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                position: 'relative', zIndex: 1,
+                filter: 'drop-shadow(0 0 12px rgba(99,102,241,0.8))',
+              }}>
+                CB
+              </span>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                fontFamily: 'var(--font-display)', fontSize: '2.4rem', fontWeight: 900,
+                letterSpacing: '-0.04em', lineHeight: 0.95,
+                background: 'linear-gradient(135deg, #fff 0%, rgba(165,180,252,0.85) 100%)',
+                WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              }}>
+                Evolved
+              </div>
+              <div style={{ fontSize: '0.82rem', color: C.textTertiary, fontWeight: 600, marginTop: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                Intelligent fitness coaching
+              </div>
+            </div>
           </div>
 
           {/* Feature badge pills */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' as const, justifyContent: 'center' }}>
-            {['Science-backed', 'Personalized', 'Built for results'].map(badge => (
+            {['Science-backed', 'AI-powered', 'Adaptive'].map(badge => (
               <span key={badge} style={{
-                padding: '0.3rem 0.75rem',
-                borderRadius: 9999,
-                background: 'rgba(255,255,255,0.07)',
-                border: `1px solid ${C.border}`,
-                fontSize: '0.68rem',
-                fontWeight: 700,
-                color: C.textSecondary,
-                letterSpacing: '0.02em',
-                whiteSpace: 'nowrap' as const,
+                padding: '0.35rem 0.9rem', borderRadius: 9999,
+                background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)',
+                fontSize: '0.68rem', fontWeight: 700, color: '#A5B4FC',
+                letterSpacing: '0.04em', whiteSpace: 'nowrap' as const,
               }}>
                 {badge}
               </span>
@@ -851,7 +855,7 @@ export const Onboarding: React.FC = () => {
               color: C.textPrimary,
               margin: 0,
             }}>
-              Calculating your blueprint...
+              Calculating your plan...
             </h2>
             <p style={{ fontSize: '0.875rem', color: C.textSecondary, margin: 0 }}>
               Running metabolic calculations

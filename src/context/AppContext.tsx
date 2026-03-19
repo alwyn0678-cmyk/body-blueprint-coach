@@ -3,36 +3,54 @@ import {
   AppState, AppSettings, UserProfile, DailyLog, FoodItem, MealType,
   MealEntry, WorkoutSession, HealthMetrics, SavedMeal, NutritionData,
   NutritionTotals, ProgressionRecord, ConnectionStatus,
+  BodyMeasurement, ProgressPhoto, HabitDefinition, HabitLog,
+  CoachInsight, WeeklyCheckIn, Mesocycle, Recipe,
 } from '../types';
 import { additionalExercises } from '../data/workoutPrograms';
 import { safeLoadState } from '../utils/persistence';
+import { syncStateToCloud, loadStateFromCloud, isSupabaseConfigured } from '../lib/supabase';
 
-const SCHEMA_VERSION = 4;
-const APP_VERSION = '2.0.0';
+const SCHEMA_VERSION = 5;
+const APP_VERSION = '3.0.0';
 
-// ─── Toast queue types ────────────────────────────────────────────────────────
+// ─── Toast ────────────────────────────────────────────────────────────────────
 
 export interface ToastItem {
   id: string;
   message: string;
   type: 'success' | 'error' | 'info';
-  duration?: number; // ms — defaults to 3000, errors use 5000
+  duration?: number;
 }
 
-// ─── Workout draft type ───────────────────────────────────────────────────────
+// ─── Workout draft ────────────────────────────────────────────────────────────
 
 interface WorkoutDraft {
   sessionName: string;
-  exercises: any[]; // ActiveExercise type from workout flow
+  exercises: any[];
   startedAt: string;
 }
+
+// ─── Default habit definitions ────────────────────────────────────────────────
+
+const DEFAULT_HABITS: HabitDefinition[] = [
+  { id: 'h_protein',  name: 'Hit protein target',   icon: '🥩', color: '#FF9F0A', category: 'nutrition' },
+  { id: 'h_calories', name: 'Log all meals',         icon: '📱', color: '#0A84FF', category: 'nutrition' },
+  { id: 'h_water',    name: 'Drink 2L+ water',       icon: '💧', color: '#5AC8FA', category: 'nutrition' },
+  { id: 'h_steps',    name: '8,000+ steps',          icon: '👟', color: '#32D74B', category: 'wellness' },
+  { id: 'h_sleep',    name: '7–9h sleep',            icon: '🌙', color: '#BF5AF2', category: 'sleep' },
+  { id: 'h_train',    name: 'Train today',           icon: '🏋️', color: '#FF375F', category: 'training' },
+  { id: 'h_stretch',  name: 'Stretch / mobility',    icon: '🧘', color: '#5E5CE6', category: 'wellness' },
+];
 
 // ─── Context interface ────────────────────────────────────────────────────────
 
 interface AppContextType {
   state: AppState;
   toasts: ToastItem[];
+  isCloudSynced: boolean;
+  // User
   updateUser: (user: Partial<UserProfile>) => void;
+  // Logs
   updateDailyLog: (date: string, logUpdate: Partial<DailyLog>) => void;
   addFoodToLog: (date: string, mealType: MealType, food: FoodItem, amount: number) => void;
   removeFoodEntry: (date: string, mealType: MealType, entryId: string) => void;
@@ -40,31 +58,56 @@ interface AppContextType {
   addCustomFood: (food: FoodItem) => void;
   addWorkout: (date: string, workout: WorkoutSession) => void;
   updateHealthMetrics: (date: string, metrics: HealthMetrics) => void;
+  // Meals / recipes
   saveMeal: (name: string, mealType: MealType, entries: Array<{ food: FoodItem; amount: number }>) => void;
   deleteSavedMeal: (id: string) => void;
   logSavedMeal: (date: string, mealType: MealType, savedMealId: string) => void;
+  addRecipe: (recipe: Recipe) => void;
+  deleteRecipe: (id: string) => void;
+  // Settings
   updateSettings: (updates: Partial<AppSettings>) => void;
   updateConnectionStatus: (app: string, status: ConnectionStatus) => void;
   updateUnits: (units: 'metric' | 'imperial') => void;
+  // Stats
   getNutritionTotals: (date: string) => NutritionTotals;
   getProgressionHistory: (exerciseId: string) => ProgressionRecord[];
+  // Food preferences
   trackRecentFood: (food: FoodItem) => void;
   clearRecentFoods: () => void;
   toggleFavoriteFood: (food: FoodItem) => void;
+  // Program
   setAssignedProgram: (programId: 'male_phase2' | 'female_phase1' | null) => void;
-  resetApp: () => void;
-  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  // Mesocycle
+  setActiveMesocycle: (meso: Mesocycle | undefined) => void;
   // Weight
   updateWeight: (weight: number, date: string) => void;
   // Workout draft
   saveWorkoutDraft: (draft: WorkoutDraft) => void;
   clearWorkoutDraft: () => void;
   getWorkoutDraft: () => WorkoutDraft | null;
+  // Measurements
+  addMeasurement: (m: BodyMeasurement) => void;
+  deleteMeasurement: (id: string) => void;
+  // Progress photos
+  addProgressPhoto: (photo: ProgressPhoto) => void;
+  deleteProgressPhoto: (id: string) => void;
+  // Habits
+  logHabit: (date: string, habitId: string, log: HabitLog) => void;
+  addHabitDefinition: (habit: HabitDefinition) => void;
+  removeHabitDefinition: (id: string) => void;
+  // Coach
+  addCoachInsight: (insight: CoachInsight) => void;
+  dismissCoachInsight: (id: string) => void;
+  saveWeeklyCheckIn: (checkIn: WeeklyCheckIn) => void;
+  // Toast
+  showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  // Reset
+  resetApp: () => void;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// ─── Defaults ─────────────────────────────────────────────────────────────────
+// ─── Default Settings ─────────────────────────────────────────────────────────
 
 const DEFAULT_SETTINGS: AppSettings = {
   adaptiveCoaching: true,
@@ -80,43 +123,76 @@ const DEFAULT_SETTINGS: AppSettings = {
   },
 };
 
+// ─── Exercise library ─────────────────────────────────────────────────────────
+
 const baseWorkoutLibrary = [
-  { id: '1', name: 'Barbell Bench Press', targetMuscles: ['Chest', 'Triceps'] },
-  { id: '2', name: 'Squat (High Bar)', targetMuscles: ['Legs', 'Glutes'] },
-  { id: '3', name: 'Deadlift', targetMuscles: ['Back', 'Hamstrings'] },
-  { id: '4', name: 'Pull Ups', targetMuscles: ['Back', 'Arms'] },
-  { id: '5', name: 'Overhead Press', targetMuscles: ['Delts', 'Triceps'] },
-  { id: '6', name: 'Barbell Row', targetMuscles: ['Back', 'Arms'] },
-  { id: '7', name: 'Incline Dumbbell Press', targetMuscles: ['Chest', 'Delts'] },
-  { id: '8', name: 'Romanian Deadlift', targetMuscles: ['Hamstrings', 'Glutes'] },
-  { id: '9', name: 'Leg Press', targetMuscles: ['Legs'] },
-  { id: '10', name: 'Cable Row', targetMuscles: ['Back', 'Arms'] },
-  { id: '11', name: 'Dumbbell Curl', targetMuscles: ['Arms'] },
-  { id: '12', name: 'Tricep Pushdown', targetMuscles: ['Triceps'] },
-  { id: '13', name: 'Lateral Raise', targetMuscles: ['Delts'] },
-  { id: '14', name: 'Leg Curl', targetMuscles: ['Hamstrings'] },
-  { id: '15', name: 'Leg Extension', targetMuscles: ['Legs'] },
+  { id: '1',  name: 'Barbell Bench Press',        targetMuscles: ['Chest', 'Triceps'] },
+  { id: '2',  name: 'Squat (High Bar)',            targetMuscles: ['Quads', 'Glutes'] },
+  { id: '3',  name: 'Deadlift',                   targetMuscles: ['Back', 'Hamstrings'] },
+  { id: '4',  name: 'Pull Ups',                   targetMuscles: ['Back', 'Biceps'] },
+  { id: '5',  name: 'Overhead Press',             targetMuscles: ['Shoulders', 'Triceps'] },
+  { id: '6',  name: 'Barbell Row',                targetMuscles: ['Back', 'Biceps'] },
+  { id: '7',  name: 'Incline Dumbbell Press',     targetMuscles: ['Chest', 'Shoulders'] },
+  { id: '8',  name: 'Romanian Deadlift',          targetMuscles: ['Hamstrings', 'Glutes'] },
+  { id: '9',  name: 'Leg Press',                  targetMuscles: ['Quads', 'Glutes'] },
+  { id: '10', name: 'Cable Row',                  targetMuscles: ['Back', 'Biceps'] },
+  { id: '11', name: 'Dumbbell Curl',              targetMuscles: ['Biceps'] },
+  { id: '12', name: 'Tricep Pushdown',            targetMuscles: ['Triceps'] },
+  { id: '13', name: 'Lateral Raise',              targetMuscles: ['Shoulders'] },
+  { id: '14', name: 'Leg Curl',                   targetMuscles: ['Hamstrings'] },
+  { id: '15', name: 'Leg Extension',              targetMuscles: ['Quads'] },
+  { id: '16', name: 'Hip Thrust',                 targetMuscles: ['Glutes', 'Hamstrings'] },
+  { id: '17', name: 'Bulgarian Split Squat',      targetMuscles: ['Quads', 'Glutes'] },
+  { id: '18', name: 'Lat Pulldown',               targetMuscles: ['Back', 'Biceps'] },
+  { id: '19', name: 'Face Pull',                  targetMuscles: ['Rear Delts', 'Traps'] },
+  { id: '20', name: 'Cable Fly',                  targetMuscles: ['Chest'] },
+  { id: '21', name: 'Skull Crusher',              targetMuscles: ['Triceps'] },
+  { id: '22', name: 'Preacher Curl',              targetMuscles: ['Biceps'] },
+  { id: '23', name: 'Calf Raise',                 targetMuscles: ['Calves'] },
+  { id: '24', name: 'Cable Crunch',               targetMuscles: ['Core'] },
+  { id: '25', name: 'Hanging Leg Raise',          targetMuscles: ['Core'] },
+  { id: '26', name: 'Dumbbell Shoulder Press',    targetMuscles: ['Shoulders', 'Triceps'] },
+  { id: '27', name: 'Close Grip Bench Press',     targetMuscles: ['Triceps', 'Chest'] },
+  { id: '28', name: 'Hammer Curl',                targetMuscles: ['Biceps'] },
+  { id: '29', name: 'Squat (Low Bar)',             targetMuscles: ['Quads', 'Glutes', 'Hamstrings'] },
+  { id: '30', name: 'Cable Lateral Raise',        targetMuscles: ['Shoulders'] },
   ...additionalExercises,
 ];
+
+// ─── Default state ────────────────────────────────────────────────────────────
 
 const defaultState: AppState = {
   user: null,
   logs: {},
   customFoods: [],
   savedMeals: [],
+  recipes: [],
   workoutLibrary: baseWorkoutLibrary,
   settings: DEFAULT_SETTINGS,
   recentFoods: [],
   favoriteFoods: [],
   assignedProgram: null,
+  measurements: [],
+  progressPhotos: [],
+  habitDefinitions: DEFAULT_HABITS,
+  coachInsights: [],
+  weeklyCheckIns: [],
 };
-
-// ─── Load initial state via persistence.ts (improvement #6) ──────────────────
 
 function loadInitialState(): AppState {
   const loaded = safeLoadState('bbc_state', defaultState);
-  // Always use the full in-memory library so newly added exercises are available
-  return { ...loaded, workoutLibrary: baseWorkoutLibrary };
+  return {
+    ...loaded,
+    workoutLibrary: baseWorkoutLibrary,
+    habitDefinitions: loaded.habitDefinitions?.length
+      ? loaded.habitDefinitions
+      : DEFAULT_HABITS,
+    measurements: loaded.measurements ?? [],
+    progressPhotos: loaded.progressPhotos ?? [],
+    coachInsights: loaded.coachInsights ?? [],
+    weeklyCheckIns: loaded.weeklyCheckIns ?? [],
+    recipes: loaded.recipes ?? [],
+  };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -136,27 +212,25 @@ const computeNutritionTotal = (entries: Array<{ food: FoodItem; amount: number }
 const emptyLog = (date: string): DailyLog => ({
   id: date, date, steps: 0, waterGlasses: 0,
   meals: { breakfast: [], lunch: [], dinner: [], snacks: [] },
-  workouts: [], health: {}, adherenceScore: 0
+  workouts: [], health: {}, adherenceScore: 0, habits: {},
 });
 
-// ─── Provider ────────────────────────────────────────────────────────────────
+// ─── Provider ─────────────────────────────────────────────────────────────────
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AppState>(loadInitialState);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [workoutDraft, setWorkoutDraftState] = useState<WorkoutDraft | null>(null);
-
-  // Improvement #1: Debounced localStorage save with change detection
+  const [isCloudSynced, setIsCloudSynced] = useState(false);
   const lastSavedRef = useRef<string>('');
+  const cloudSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Local persistence ──────────────────────────────────────────────────────
   useEffect(() => {
     const timer = setTimeout(() => {
       const serialized = JSON.stringify({
         ...state,
-        _meta: {
-          schemaVersion: SCHEMA_VERSION,
-          lastSaved: new Date().toISOString(),
-          appVersion: APP_VERSION,
-        },
+        _meta: { schemaVersion: SCHEMA_VERSION, lastSaved: new Date().toISOString(), appVersion: APP_VERSION },
       });
       if (serialized !== lastSavedRef.current) {
         try {
@@ -172,54 +246,46 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return () => clearTimeout(timer);
   }, [state]);
 
-  // ─── Actions ──────────────────────────────────────────────────────────────
+  // ── Cloud sync (debounced 5s) ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!isSupabaseConfigured || !state.user?.id) return;
+    if (cloudSyncTimer.current) clearTimeout(cloudSyncTimer.current);
+    cloudSyncTimer.current = setTimeout(async () => {
+      await syncStateToCloud(state.user!.id, state);
+      setIsCloudSynced(true);
+    }, 5000);
+    return () => { if (cloudSyncTimer.current) clearTimeout(cloudSyncTimer.current); };
+  }, [state]);
+
+  // ── Actions ────────────────────────────────────────────────────────────────
 
   const updateUser = (updates: Partial<UserProfile>) => {
     setState(prev => ({
       ...prev,
-      user: prev.user ? { ...prev.user, ...updates } : updates as UserProfile
+      user: prev.user ? { ...prev.user, ...updates } : updates as UserProfile,
     }));
   };
 
   const updateDailyLog = (date: string, logUpdate: Partial<DailyLog>) => {
     setState(prev => {
       const existing = prev.logs[date] || emptyLog(date);
-      return {
-        ...prev,
-        logs: { ...prev.logs, [date]: { ...existing, ...logUpdate } }
-      };
+      return { ...prev, logs: { ...prev.logs, [date]: { ...existing, ...logUpdate } } };
     });
   };
 
-  // Improvement #5: Input validation in addFoodToLog
   const addFoodToLog = (date: string, mealType: MealType, food: FoodItem, amount: number) => {
-    if (!isFinite(amount) || amount <= 0) {
-      showToast('Amount must be greater than 0', 'error');
-      return;
-    }
-    const hasInvalidMacro = [food.calories, food.protein, food.carbs, food.fats].some(
-      v => !isFinite(v) || v < 0
-    );
-    if (hasInvalidMacro) {
-      showToast('Food has invalid nutrition values', 'error');
-      return;
-    }
+    if (!isFinite(amount) || amount <= 0) { showToast('Amount must be greater than 0', 'error'); return; }
+    const hasInvalidMacro = [food.calories, food.protein, food.carbs, food.fats].some(v => !isFinite(v) || v < 0);
+    if (hasInvalidMacro) { showToast('Food has invalid nutrition values', 'error'); return; }
 
     const newEntry: MealEntry = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      foodId: food.id,
-      foodName: food.name,
-      amount,
-      servingSize: food.servingSize,
-      servingUnit: food.servingUnit,
+      foodId: food.id, foodName: food.name, amount,
+      servingSize: food.servingSize, servingUnit: food.servingUnit,
       nutrition: {
-        calories: food.calories,
-        protein: food.protein,
-        carbs: food.carbs,
-        fats: food.fats,
-        fiber: food.fiber,
-        sugar: food.sugar,
-        sodium: food.sodium,
+        calories: food.calories, protein: food.protein,
+        carbs: food.carbs, fats: food.fats,
+        fiber: food.fiber, sugar: food.sugar, sodium: food.sodium,
       },
       timestamp: new Date().toISOString(),
     };
@@ -232,11 +298,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         recentFoods: [food, ...filtered].slice(0, 20),
         logs: {
           ...prev.logs,
-          [date]: {
-            ...log,
-            meals: { ...log.meals, [mealType]: [...log.meals[mealType], newEntry] }
-          }
-        }
+          [date]: { ...log, meals: { ...log.meals, [mealType]: [...log.meals[mealType], newEntry] } },
+        },
       };
     });
   };
@@ -251,12 +314,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           ...prev.logs,
           [date]: {
             ...log,
-            meals: {
-              ...log.meals,
-              [mealType]: log.meals[mealType].filter((item: MealEntry) => item.id !== entryId)
-            }
-          }
-        }
+            meals: { ...log.meals, [mealType]: log.meals[mealType].filter((i: MealEntry) => i.id !== entryId) },
+          },
+        },
       };
     });
   };
@@ -273,29 +333,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             ...log,
             meals: {
               ...log.meals,
-              [mealType]: log.meals[mealType].map((item: MealEntry) =>
-                item.id === entryId ? { ...item, amount: newAmount } : item
-              )
-            }
-          }
-        }
+              [mealType]: log.meals[mealType].map((i: MealEntry) =>
+                i.id === entryId ? { ...i, amount: newAmount } : i
+              ),
+            },
+          },
+        },
       };
     });
   };
 
-  // Improvement #8: Clamp caloriesBurned in addWorkout
   const addWorkout = (date: string, workout: WorkoutSession) => {
     const clampedCalories = Math.max(0, Math.min(2000, workout.caloriesBurned || 0));
-    const safeWorkout: WorkoutSession = { ...workout, caloriesBurned: clampedCalories };
-
     setState(prev => {
       const log = prev.logs[date] || emptyLog(date);
       return {
         ...prev,
         logs: {
           ...prev.logs,
-          [date]: { ...log, workouts: [...log.workouts, safeWorkout] }
-        }
+          [date]: { ...log, workouts: [...log.workouts, { ...workout, caloriesBurned: clampedCalories }] },
+        },
       };
     });
   };
@@ -303,42 +360,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const updateHealthMetrics = (date: string, metrics: HealthMetrics) => {
     setState(prev => {
       const log = prev.logs[date] || emptyLog(date);
-      return {
-        ...prev,
-        logs: {
-          ...prev.logs,
-          [date]: { ...log, health: { ...log.health, ...metrics } }
-        }
-      };
+      return { ...prev, logs: { ...prev.logs, [date]: { ...log, health: { ...log.health, ...metrics } } } };
     });
   };
 
-  // Improvement #7: Validate addCustomFood
   const addCustomFood = (food: FoodItem) => {
-    if (!food.name || food.name.trim() === '') {
-      showToast('Food name cannot be empty', 'error');
-      return;
+    if (!food.name?.trim()) { showToast('Food name cannot be empty', 'error'); return; }
+    if ([food.calories, food.protein, food.carbs, food.fats].some(v => v < 0)) {
+      showToast('Nutrition values cannot be negative', 'error'); return;
     }
-    if (food.calories < 0 || food.protein < 0 || food.carbs < 0 || food.fats < 0) {
-      showToast('Nutrition values cannot be negative', 'error');
-      return;
-    }
-    if (food.servingSize <= 0) {
-      showToast('Serving size must be greater than 0', 'error');
-      return;
-    }
+    if (food.servingSize <= 0) { showToast('Serving size must be > 0', 'error'); return; }
     setState(prev => ({ ...prev, customFoods: [...prev.customFoods, { ...food, source: 'custom' }] }));
   };
 
   const saveMeal = (name: string, mealType: MealType, entries: Array<{ food: FoodItem; amount: number }>) => {
     const savedMeal: SavedMeal = {
-      id: `sm_${Date.now()}`,
-      name,
-      mealType,
-      entries,
+      id: `sm_${Date.now()}`, name, mealType, entries,
       totalNutrition: computeNutritionTotal(entries),
-      createdAt: new Date().toISOString(),
-      timesUsed: 0,
+      createdAt: new Date().toISOString(), timesUsed: 0,
     };
     setState(prev => ({ ...prev, savedMeals: [...prev.savedMeals, savedMeal] }));
   };
@@ -351,82 +390,58 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setState(prev => {
       const meal = prev.savedMeals.find(m => m.id === savedMealId);
       if (!meal) return prev;
-
       const newEntries: MealEntry[] = meal.entries.map(({ food, amount }) => ({
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        foodId: food.id,
-        foodName: food.name,
-        amount,
-        servingSize: food.servingSize,
-        servingUnit: food.servingUnit,
+        foodId: food.id, foodName: food.name, amount,
+        servingSize: food.servingSize, servingUnit: food.servingUnit,
         nutrition: { calories: food.calories, protein: food.protein, carbs: food.carbs, fats: food.fats },
         timestamp: new Date().toISOString(),
       }));
-
       const log = prev.logs[date] || emptyLog(date);
-      const updatedSavedMeals = prev.savedMeals.map(m =>
-        m.id === savedMealId ? { ...m, timesUsed: m.timesUsed + 1 } : m
-      );
-
       return {
         ...prev,
-        savedMeals: updatedSavedMeals,
+        savedMeals: prev.savedMeals.map(m => m.id === savedMealId ? { ...m, timesUsed: m.timesUsed + 1 } : m),
         logs: {
           ...prev.logs,
-          [date]: {
-            ...log,
-            meals: { ...log.meals, [mealType]: [...log.meals[mealType], ...newEntries] }
-          }
-        }
+          [date]: { ...log, meals: { ...log.meals, [mealType]: [...log.meals[mealType], ...newEntries] } },
+        },
       };
     });
+  };
+
+  const addRecipe = (recipe: Recipe) => {
+    setState(prev => ({ ...prev, recipes: [...prev.recipes.filter(r => r.id !== recipe.id), recipe] }));
+  };
+
+  const deleteRecipe = (id: string) => {
+    setState(prev => ({ ...prev, recipes: prev.recipes.filter(r => r.id !== id) }));
   };
 
   const updateSettings = (updates: Partial<AppSettings>) => {
     setState(prev => ({
       ...prev,
-      settings: {
-        ...prev.settings,
-        ...updates,
-        connectedApps: {
-          ...prev.settings.connectedApps,
-          ...(updates.connectedApps || {}),
-        },
-      },
+      settings: { ...prev.settings, ...updates, connectedApps: { ...prev.settings.connectedApps, ...(updates.connectedApps || {}) } },
     }));
   };
 
   const updateConnectionStatus = (app: string, status: ConnectionStatus) => {
     setState(prev => ({
       ...prev,
-      settings: {
-        ...prev.settings,
-        connectedApps: {
-          ...prev.settings.connectedApps,
-          [app]: status,
-        },
-      },
+      settings: { ...prev.settings, connectedApps: { ...prev.settings.connectedApps, [app]: status } },
     }));
   };
 
   const updateUnits = (units: 'metric' | 'imperial') => {
-    setState(prev => ({
-      ...prev,
-      settings: { ...prev.settings, units },
-    }));
+    setState(prev => ({ ...prev, settings: { ...prev.settings, units } }));
   };
 
-  // Improvement #4: Atomic weight update — single setState call
   const updateWeight = (weight: number, date: string) => {
     setState(prev => {
       const log = prev.logs[date] || emptyLog(date);
       return {
         ...prev,
         user: prev.user ? { ...prev.user, weight } : prev.user,
-        logs: {
-          ...prev.logs,
-          [date]: { ...log, weight },
-        },
+        logs: { ...prev.logs, [date]: { ...log, weight } },
       };
     });
   };
@@ -434,22 +449,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const getNutritionTotals = (date: string): NutritionTotals => {
     const log = state.logs[date];
     if (!log) return { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
-
-    const allEntries: MealEntry[] = [
-      ...log.meals.breakfast,
-      ...log.meals.lunch,
-      ...log.meals.dinner,
-      ...log.meals.snacks,
-    ];
-
+    const allEntries: MealEntry[] = [...log.meals.breakfast, ...log.meals.lunch, ...log.meals.dinner, ...log.meals.snacks];
     const safeN = (v: any) => (typeof v === 'number' && isFinite(v) ? v : 0);
     return allEntries.reduce(
       (acc, entry) => ({
         calories: acc.calories + safeN(entry.nutrition.calories) * safeN(entry.amount),
-        protein: acc.protein + safeN(entry.nutrition.protein) * safeN(entry.amount),
-        carbs: acc.carbs + safeN(entry.nutrition.carbs) * safeN(entry.amount),
-        fats: acc.fats + safeN(entry.nutrition.fats) * safeN(entry.amount),
-        fiber: acc.fiber + safeN(entry.nutrition.fiber) * safeN(entry.amount),
+        protein:  acc.protein  + safeN(entry.nutrition.protein)  * safeN(entry.amount),
+        carbs:    acc.carbs    + safeN(entry.nutrition.carbs)    * safeN(entry.amount),
+        fats:     acc.fats     + safeN(entry.nutrition.fats)     * safeN(entry.amount),
+        fiber:    acc.fiber    + safeN(entry.nutrition.fiber)    * safeN(entry.amount),
       }),
       { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
     );
@@ -457,32 +465,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const getProgressionHistory = (exerciseId: string): ProgressionRecord[] => {
     const records: ProgressionRecord[] = [];
-
     for (const [date, log] of Object.entries(state.logs)) {
       for (const workout of log.workouts) {
         for (const exercise of workout.exercises) {
-          if (exercise.exerciseId !== exerciseId) continue;
-          if (exercise.sets.length === 0) continue;
-
-          let maxWeight = 0;
-          let totalVolume = 0;
+          if (exercise.exerciseId !== exerciseId || exercise.sets.length === 0) continue;
+          let maxWeight = 0, totalVolume = 0;
           let bestSet = { weight: 0, reps: 0 };
-
           for (const set of exercise.sets) {
             totalVolume += set.weight * set.reps;
-            if (set.weight > maxWeight) {
-              maxWeight = set.weight;
-            }
-            if (set.weight * set.reps > bestSet.weight * bestSet.reps) {
-              bestSet = { weight: set.weight, reps: set.reps };
-            }
+            if (set.weight > maxWeight) maxWeight = set.weight;
+            if (set.weight * set.reps > bestSet.weight * bestSet.reps) bestSet = { weight: set.weight, reps: set.reps };
           }
-
           records.push({ date, exerciseId, maxWeight, totalVolume, bestSet });
         }
       }
     }
-
     return records.sort((a, b) => a.date.localeCompare(b.date));
   };
 
@@ -493,18 +490,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
-  const clearRecentFoods = () => {
-    setState(prev => ({ ...prev, recentFoods: [] }));
-  };
+  const clearRecentFoods = () => setState(prev => ({ ...prev, recentFoods: [] }));
 
   const toggleFavoriteFood = (food: FoodItem) => {
     setState(prev => {
       const exists = prev.favoriteFoods.some(f => f.id === food.id);
       return {
         ...prev,
-        favoriteFoods: exists
-          ? prev.favoriteFoods.filter(f => f.id !== food.id)
-          : [food, ...prev.favoriteFoods],
+        favoriteFoods: exists ? prev.favoriteFoods.filter(f => f.id !== food.id) : [food, ...prev.favoriteFoods],
       };
     });
   };
@@ -513,48 +506,90 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setState(prev => ({ ...prev, assignedProgram: programId }));
   };
 
-  // Improvement #2: Toast queue (max 4, errors persist 5s, others 3s)
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    const id = `toast_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const duration = type === 'error' ? 5000 : 3000;
-    setToasts(prev => {
-      // Keep max 4; on overflow drop oldest non-error toast first
-      if (prev.length >= 4) {
-        const nonError = prev.findIndex(t => t.type !== 'error');
-        const trimmed = nonError !== -1
-          ? [...prev.slice(0, nonError), ...prev.slice(nonError + 1)]
-          : prev.slice(1);
-        return [...trimmed, { id, message, type, duration }];
-      }
-      return [...prev, { id, message, type, duration }];
+  const setActiveMesocycle = (meso: Mesocycle | undefined) => {
+    setState(prev => ({ ...prev, activeMesocycle: meso }));
+  };
+
+  // ── Measurements ────────────────────────────────────────────────────────────
+
+  const addMeasurement = (m: BodyMeasurement) => {
+    setState(prev => ({
+      ...prev,
+      measurements: [m, ...prev.measurements.filter(x => x.id !== m.id)],
+    }));
+  };
+
+  const deleteMeasurement = (id: string) => {
+    setState(prev => ({ ...prev, measurements: prev.measurements.filter(m => m.id !== id) }));
+  };
+
+  // ── Progress Photos ──────────────────────────────────────────────────────────
+
+  const addProgressPhoto = (photo: ProgressPhoto) => {
+    setState(prev => ({
+      ...prev,
+      progressPhotos: [photo, ...prev.progressPhotos.filter(p => p.id !== photo.id)],
+    }));
+  };
+
+  const deleteProgressPhoto = (id: string) => {
+    setState(prev => ({ ...prev, progressPhotos: prev.progressPhotos.filter(p => p.id !== id) }));
+  };
+
+  // ── Habits ──────────────────────────────────────────────────────────────────
+
+  const logHabit = (date: string, habitId: string, log: HabitLog) => {
+    setState(prev => {
+      const dayLog = prev.logs[date] || emptyLog(date);
+      return {
+        ...prev,
+        logs: {
+          ...prev.logs,
+          [date]: { ...dayLog, habits: { ...(dayLog.habits ?? {}), [habitId]: log } },
+        },
+      };
     });
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, duration);
   };
 
-  const resetApp = () => {
-    // Clear all BBC-owned localStorage keys
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('bbc_')) keysToRemove.push(key);
-    }
-    keysToRemove.forEach(k => localStorage.removeItem(k));
-    lastSavedRef.current = '';
-    setState(defaultState);
-    setToasts([]);
-    setWorkoutDraftState(null);
+  const addHabitDefinition = (habit: HabitDefinition) => {
+    setState(prev => ({
+      ...prev,
+      habitDefinitions: [...prev.habitDefinitions.filter(h => h.id !== habit.id), habit],
+    }));
   };
 
-  // Improvement #3: Workout draft actions
+  const removeHabitDefinition = (id: string) => {
+    setState(prev => ({ ...prev, habitDefinitions: prev.habitDefinitions.filter(h => h.id !== id) }));
+  };
+
+  // ── Coach ────────────────────────────────────────────────────────────────────
+
+  const addCoachInsight = (insight: CoachInsight) => {
+    setState(prev => ({
+      ...prev,
+      coachInsights: [insight, ...prev.coachInsights.filter(i => i.id !== insight.id)].slice(0, 50),
+    }));
+  };
+
+  const dismissCoachInsight = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      coachInsights: prev.coachInsights.map(i => i.id === id ? { ...i, dismissed: true } : i),
+    }));
+  };
+
+  const saveWeeklyCheckIn = (checkIn: WeeklyCheckIn) => {
+    setState(prev => ({
+      ...prev,
+      weeklyCheckIns: [checkIn, ...prev.weeklyCheckIns.filter(c => c.id !== checkIn.id)],
+    }));
+  };
+
+  // ── Workout draft ────────────────────────────────────────────────────────────
+
   const saveWorkoutDraft = (draft: WorkoutDraft) => {
     setWorkoutDraftState(draft);
-    try {
-      localStorage.setItem('bbc_workout_draft', JSON.stringify(draft));
-    } catch (e) {
-      console.warn('[BBC] Failed to save workout draft to localStorage', e);
-    }
+    try { localStorage.setItem('bbc_workout_draft', JSON.stringify(draft)); } catch {}
   };
 
   const clearWorkoutDraft = () => {
@@ -566,23 +601,58 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (workoutDraft) return workoutDraft;
     try {
       const raw = localStorage.getItem('bbc_workout_draft');
-      if (!raw) return null;
-      return JSON.parse(raw) as WorkoutDraft;
-    } catch {
-      return null;
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+
+  // ── Toast ────────────────────────────────────────────────────────────────────
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    const id = `toast_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const duration = type === 'error' ? 5000 : 3000;
+    setToasts(prev => {
+      if (prev.length >= 4) {
+        const nonError = prev.findIndex(t => t.type !== 'error');
+        const trimmed = nonError !== -1 ? [...prev.slice(0, nonError), ...prev.slice(nonError + 1)] : prev.slice(1);
+        return [...trimmed, { id, message, type, duration }];
+      }
+      return [...prev, { id, message, type, duration }];
+    });
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration);
+  };
+
+  // ── Reset ────────────────────────────────────────────────────────────────────
+
+  const resetApp = () => {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith('bbc_')) keys.push(k);
     }
+    keys.forEach(k => localStorage.removeItem(k));
+    lastSavedRef.current = '';
+    setState(defaultState);
+    setToasts([]);
+    setWorkoutDraftState(null);
   };
 
   return (
     <AppContext.Provider value={{
-      state, toasts, updateUser, updateDailyLog, addFoodToLog, removeFoodEntry, editFoodEntry,
-      addCustomFood, addWorkout, updateHealthMetrics, saveMeal, deleteSavedMeal,
-      logSavedMeal, updateSettings, updateConnectionStatus, updateUnits,
+      state, toasts, isCloudSynced,
+      updateUser, updateDailyLog, addFoodToLog, removeFoodEntry, editFoodEntry,
+      addCustomFood, addWorkout, updateHealthMetrics,
+      saveMeal, deleteSavedMeal, logSavedMeal, addRecipe, deleteRecipe,
+      updateSettings, updateConnectionStatus, updateUnits,
       getNutritionTotals, getProgressionHistory,
       trackRecentFood, clearRecentFoods, toggleFavoriteFood,
-      setAssignedProgram, resetApp, showToast,
+      setAssignedProgram, setActiveMesocycle,
       updateWeight,
       saveWorkoutDraft, clearWorkoutDraft, getWorkoutDraft,
+      addMeasurement, deleteMeasurement,
+      addProgressPhoto, deleteProgressPhoto,
+      logHabit, addHabitDefinition, removeHabitDefinition,
+      addCoachInsight, dismissCoachInsight, saveWeeklyCheckIn,
+      showToast, resetApp,
     }}>
       {children}
       <ToastStack toasts={toasts} />
@@ -590,63 +660,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   );
 };
 
-// ─── Toast stack renderer (improvement #2) ───────────────────────────────────
+// ─── Toast renderer ───────────────────────────────────────────────────────────
 
 const ToastStack: React.FC<{ toasts: ToastItem[] }> = ({ toasts }) => {
-  if (toasts.length === 0) return null;
-
+  if (!toasts.length) return null;
   return (
     <div style={{
-      position: 'fixed',
-      bottom: '100px',
-      left: '20px',
-      right: '20px',
-      zIndex: 9000,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '8px',
-      alignItems: 'center',
-      pointerEvents: 'none',
+      position: 'fixed', bottom: '100px', left: '20px', right: '20px',
+      zIndex: 9000, display: 'flex', flexDirection: 'column', gap: '8px',
+      alignItems: 'center', pointerEvents: 'none', maxWidth: '480px', margin: '0 auto',
     }}>
-      {toasts.map(toast => (
-        <ToastItem key={toast.id} toast={toast} />
-      ))}
+      {toasts.map(t => <ToastBubble key={t.id} toast={t} />)}
     </div>
   );
 };
 
-const ToastItem: React.FC<{ toast: ToastItem }> = ({ toast }) => {
-  const styles: Record<string, { bg: string; border: string; icon: string }> = {
-    success: { bg: 'rgba(48,209,88,0.15)', border: 'var(--accent-green, #30D158)', icon: '✓' },
-    error:   { bg: 'rgba(255,69,58,0.15)',  border: 'var(--accent-red, #FF453A)',   icon: '!' },
-    info:    { bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.15)',       icon: 'ℹ' },
-  };
-  const s = styles[toast.type];
+const TOAST_STYLES = {
+  success: { bg: 'rgba(50,215,75,0.12)',  border: '#32D74B', icon: '✓' },
+  error:   { bg: 'rgba(255,69,58,0.12)',  border: '#FF453A', icon: '!' },
+  info:    { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.15)', icon: 'i' },
+};
 
+const ToastBubble: React.FC<{ toast: ToastItem }> = ({ toast }) => {
+  const s = TOAST_STYLES[toast.type];
   return (
-    <div className="animate-fade-in" style={{
-      backgroundColor: s.bg,
-      border: `1px solid ${s.border}`,
-      backdropFilter: 'blur(12px)',
-      color: 'white',
-      padding: '12px 16px',
-      borderRadius: '14px',
+    <div className="animate-slide-up" style={{
+      background: s.bg, border: `1px solid ${s.border}`,
+      backdropFilter: 'blur(16px)', color: 'white',
+      padding: '12px 16px', borderRadius: '14px',
       boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-      fontWeight: 600,
-      fontSize: '0.875rem',
-      width: '100%',
-      maxWidth: '460px',
-      textAlign: 'left',
+      fontWeight: 600, fontSize: '0.875rem',
+      width: '100%', maxWidth: '460px',
+      display: 'flex', alignItems: 'center', gap: '10px',
       pointerEvents: 'auto',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
     }}>
       <span style={{
         width: 22, height: 22, borderRadius: '50%',
-        backgroundColor: s.border,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '0.7rem', fontWeight: 900, flexShrink: 0,
+        background: s.border, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', fontSize: '0.65rem', fontWeight: 900, flexShrink: 0,
       }}>{s.icon}</span>
       <span style={{ flex: 1, lineHeight: 1.4 }}>{toast.message}</span>
     </div>
@@ -656,7 +707,7 @@ const ToastItem: React.FC<{ toast: ToastItem }> = ({ toast }) => {
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export const useApp = () => {
-  const context = useContext(AppContext);
-  if (context === undefined) throw new Error('useApp must be used within AppProvider');
-  return context;
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be used within AppProvider');
+  return ctx;
 };

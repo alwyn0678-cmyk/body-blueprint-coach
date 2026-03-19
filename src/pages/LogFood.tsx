@@ -31,10 +31,31 @@ interface PendingDelete {
   timeoutId: ReturnType<typeof setTimeout>;
 }
 
+// ─── date helpers ────────────────────────────────────────────────────────────
+
+const offsetDate = (base: string, delta: number): string => {
+  const d = new Date(base + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  return d.toISOString().split('T')[0];
+};
+
+const formatDateLabel = (dateStr: string, todayDate: string): string => {
+  const yesterday = offsetDate(todayDate, -1);
+  if (dateStr === todayDate) return 'Today';
+  if (dateStr === yesterday) return 'Yesterday';
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-AU', { weekday: 'long', month: 'short', day: 'numeric' });
+};
+
 export const LogFood: React.FC = () => {
   const { state, addFoodToLog, removeFoodEntry, editFoodEntry, logSavedMeal, saveMeal, showToast } = useApp();
 
   const defaultMeal = getDefaultMeal();
+  const todayDate = getLocalISOString();
+
+  // ── Date navigation ──────────────────────────────────────────────────────
+  const [selectedDate, setSelectedDate] = useState(todayDate);
+  const isToday = selectedDate === todayDate;
+  const canGoForward = selectedDate < todayDate;
 
   const [activeMeal, setActiveMeal] = useState<MealType>(defaultMeal);
   const [showSearch, setShowSearch] = useState(false);
@@ -49,24 +70,18 @@ export const LogFood: React.FC = () => {
   const [copiedYesterday, setCopiedYesterday] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 
-  const todayDate = getLocalISOString();
-
-  const yesterday = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().split('T')[0];
-  })();
-  const yesterdayLog = state.logs[yesterday];
-  const yesterdayHasData = yesterdayLog && (
-    Object.values(yesterdayLog.meals).some(entries => entries.length > 0)
+  const prevDate = offsetDate(selectedDate, -1);
+  const prevDateLog = state.logs[prevDate];
+  const prevDateHasData = isToday && prevDateLog && (
+    Object.values(prevDateLog.meals).some(entries => entries.length > 0)
   );
 
   useEffect(() => {
-    if (yesterdayHasData) setShowCopyYesterday(true);
-  }, [yesterdayHasData]);
+    if (prevDateHasData) setShowCopyYesterday(true);
+  }, [prevDateHasData]);
 
-  const todayLog = state.logs[todayDate] || {
-    id: todayDate, date: todayDate, steps: 0, waterGlasses: 0,
+  const todayLog = state.logs[selectedDate] || {
+    id: selectedDate, date: selectedDate, steps: 0, waterGlasses: 0,
     meals: { breakfast: [], lunch: [], dinner: [], snacks: [] },
     workouts: [], health: {}, adherenceScore: 0,
   };
@@ -91,7 +106,7 @@ export const LogFood: React.FC = () => {
       showToast('Amount must be greater than 0', 'error');
       return;
     }
-    addFoodToLog(todayDate, activeMeal, food, amount);
+    addFoodToLog(selectedDate, activeMeal, food, amount);
     showToast(`${food.name} added`, 'success');
     setShowSearch(false);
   };
@@ -103,7 +118,7 @@ export const LogFood: React.FC = () => {
       setEditingEntry(prev => prev ? { ...prev, error: 'Amount must be greater than 0' } : null);
       return;
     }
-    editFoodEntry(todayDate, editingEntry.mealType, editingEntry.id, newAmount);
+    editFoodEntry(selectedDate, editingEntry.mealType, editingEntry.id, newAmount);
     showToast('Serving updated', 'success');
     setEditingEntry(null);
   };
@@ -135,10 +150,10 @@ export const LogFood: React.FC = () => {
   const handleDeleteEntry = (mealType: MealType, entryId: string, foodName: string, food: FoodItem, amount: number) => {
     if (pendingDelete) {
       clearTimeout(pendingDelete.timeoutId);
-      removeFoodEntry(todayDate, pendingDelete.mealType, pendingDelete.entryId);
+      removeFoodEntry(selectedDate, pendingDelete.mealType, pendingDelete.entryId);
     }
     const timeoutId = setTimeout(() => {
-      removeFoodEntry(todayDate, mealType, entryId);
+      removeFoodEntry(selectedDate, mealType, entryId);
       setPendingDelete(null);
     }, 4000);
     setPendingDelete({ entryId, mealType, foodName, food, amount, timeoutId });
@@ -152,11 +167,11 @@ export const LogFood: React.FC = () => {
   };
 
   const handleCopyFromYesterday = () => {
-    if (!yesterdayLog) return;
+    if (!prevDateLog) return;
     const meals: MealType[] = ['breakfast', 'lunch', 'dinner', 'snacks'];
     let count = 0;
     meals.forEach(mealType => {
-      const entries = yesterdayLog.meals[mealType] || [];
+      const entries = prevDateLog.meals[mealType] || [];
       entries.forEach(item => {
         const food: FoodItem = {
           id: item.foodId, name: item.foodName,
@@ -164,7 +179,7 @@ export const LogFood: React.FC = () => {
           carbs: item.nutrition.carbs, fats: item.nutrition.fats,
           servingSize: item.servingSize, servingUnit: item.servingUnit,
         };
-        addFoodToLog(todayDate, mealType, food, item.amount);
+        addFoodToLog(selectedDate, mealType, food, item.amount);
         count++;
       });
     });
@@ -173,8 +188,7 @@ export const LogFood: React.FC = () => {
     showToast(`Copied ${count} items from yesterday`, 'success');
   };
 
-  const today = new Date();
-  const dateLabel = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const dateLabel = formatDateLabel(selectedDate, todayDate);
 
   const sectionLabel: React.CSSProperties = {
     fontSize: '0.65rem',
@@ -539,21 +553,41 @@ export const LogFood: React.FC = () => {
 
       {/* ── DAILY SUMMARY HEADER ── */}
       <div style={{
-        background: 'linear-gradient(180deg, rgba(10,132,255,0.07) 0%, transparent 100%)',
+        background: 'linear-gradient(180deg, rgba(10,132,255,0.09) 0%, transparent 100%)',
         padding: '14px 16px 16px',
-        borderBottom: '1px solid rgba(255,255,255,0.04)',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
       }}>
-        {/* Top row: date label */}
+        {/* Date navigation row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em' }}>
-            {dateLabel}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={() => { setSelectedDate(d => offsetDate(d, -1)); setCopiedYesterday(false); }}
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(255,255,255,0.6)' }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <div style={{ textAlign: 'center', minWidth: 100 }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>{dateLabel}</div>
+              {!isToday && (
+                <button onClick={() => setSelectedDate(todayDate)}
+                  style={{ background: 'none', border: 'none', fontSize: '0.62rem', fontWeight: 700, color: 'var(--accent-blue)', cursor: 'pointer', padding: '2px 0' }}>
+                  Back to today
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => { if (canGoForward) setSelectedDate(d => offsetDate(d, 1)); }}
+              disabled={!canGoForward}
+              style={{ background: canGoForward ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${canGoForward ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)'}`, borderRadius: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: canGoForward ? 'pointer' : 'default', color: canGoForward ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)' }}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
           <span style={{
             fontSize: '0.65rem', fontWeight: 800,
             color: isOver ? 'var(--accent-red)' : calPct >= 90 ? '#fbbf24' : 'var(--accent-blue)',
             textTransform: 'uppercase', letterSpacing: '0.06em',
-            padding: '3px 9px',
-            borderRadius: '50px',
+            padding: '3px 9px', borderRadius: '50px',
             backgroundColor: isOver ? 'rgba(255,69,58,0.1)' : calPct >= 90 ? 'rgba(251,191,36,0.1)' : 'rgba(10,132,255,0.1)',
             border: `1px solid ${isOver ? 'rgba(255,69,58,0.2)' : calPct >= 90 ? 'rgba(251,191,36,0.2)' : 'rgba(10,132,255,0.2)'}`,
           }}>
@@ -730,7 +764,7 @@ export const LogFood: React.FC = () => {
             borderRadius: '14px',
           }}>
             <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.75)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              📋 Copy yesterday's meals
+              📋 Copy meals from {formatDateLabel(prevDate, todayDate).toLowerCase()}
             </span>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               <button
@@ -795,7 +829,7 @@ export const LogFood: React.FC = () => {
                     </div>
                   </div>
                   <button
-                    onClick={() => { logSavedMeal(todayDate, activeMeal, meal.id); showToast(`${meal.name} added`, 'success'); setShowSavedMeals(false); }}
+                    onClick={() => { logSavedMeal(selectedDate, activeMeal, meal.id); showToast(`${meal.name} added`, 'success'); setShowSavedMeals(false); }}
                     style={{
                       padding: '0.55rem 1.1rem',
                       backgroundColor: 'var(--accent-blue)',

@@ -85,11 +85,11 @@ export const additionalExercises = [
   { id: '26', name: 'Skull Crusher', targetMuscles: ['Triceps'] },
 ];
 
-// ── Male Phase 2 — Push / Pull / Lower / Upper ────────────────────────────────
+// ── Male Phase 3 — Push / Pull / Lower / Upper (Mark Carroll methodology) ─────
 export const maleProgramPhase2: WorkoutProgram = {
   id: 'male_phase2',
-  name: 'Male Phase 2',
-  description: '4-day Push/Pull/Lower/Upper. Strength-hypertrophy with supersets, drop sets, and progressive overload.',
+  name: 'Phase 3 — Strength & Size',
+  description: '4-day Push/Pull/Lower/Upper. High-frequency hypertrophy block: RPE 7–9, progressive overload each session. Supersets, 1.25 rep techniques, and drop sets for maximum muscle stimulus.',
   sex: 'male',
   phase: 2,
   weeklyFrequency: 4,
@@ -284,11 +284,11 @@ export const maleProgramPhase2: WorkoutProgram = {
   ],
 };
 
-// ── Female Phase 1 — Lower / Upper / Lower / Upper ────────────────────────────
+// ── Female Phase 3 — Lower / Upper (Mark Carroll methodology) ─────────────────
 export const femaleProgramPhase1: WorkoutProgram = {
   id: 'female_phase1',
-  name: 'Female Phase 1',
-  description: '4-day Lower/Upper split. Glute and posterior chain emphasis with supersets, drop sets, and wave loading.',
+  name: 'Phase 3 — Glute Focus',
+  description: '4-day Lower/Upper split. Posterior chain priority block: glute-hamstring supersets, hip thrust progressions, 1.25 rep techniques. RPE 7–9 targeting for lean muscle development.',
   sex: 'female',
   phase: 1,
   weeklyFrequency: 4,

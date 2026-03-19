@@ -9,11 +9,12 @@ import { Onboarding } from './pages/Onboarding';
 import { Settings } from './pages/Settings';
 import { Training } from './pages/Training';
 import { Health } from './pages/Health';
+import { Coach } from './pages/Coach';
+import { Habits } from './pages/Habits';
 
 const AppRoutes: React.FC = () => {
   const { state } = useApp();
 
-  // Route guarding based on onboarding status
   if (!state.user?.onboarded) {
     return (
       <Routes>
@@ -24,9 +25,8 @@ const AppRoutes: React.FC = () => {
   }
 
   return (
-    <div className="container" style={{ padding: 0 }}>
-      {/* Scrollable Content Area */}
-      <main style={{ flex: 1, overflowY: 'auto', backgroundColor: 'var(--bg-primary)' }}>
+    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
+      <main style={{ flex: 1, backgroundColor: 'var(--bg-primary)' }}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/log" element={<LogFood />} />
@@ -34,7 +34,8 @@ const AppRoutes: React.FC = () => {
           <Route path="/training" element={<Training />} />
           <Route path="/health" element={<Health />} />
           <Route path="/settings" element={<Settings />} />
-          {/* Catch all back to dashboard if onboarded */}
+          <Route path="/coach" element={<Coach />} />
+          <Route path="/habits" element={<Habits />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
