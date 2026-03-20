@@ -314,10 +314,10 @@ export const Coach: React.FC = () => {
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [hasClaudeKey, setHasClaudeKey] = useState(
-    () => !!localStorage.getItem('bbc_claude_api_key') || !!import.meta.env.VITE_CLAUDE_API_KEY
+    () => !!localStorage.getItem('bbc_claude_api_key')
   );
   useEffect(() => {
-    const check = () => setHasClaudeKey(!!localStorage.getItem('bbc_claude_api_key') || !!import.meta.env.VITE_CLAUDE_API_KEY);
+    const check = () => setHasClaudeKey(!!localStorage.getItem('bbc_claude_api_key'));
     window.addEventListener('storage', check);
     const interval = setInterval(check, 2000);
     return () => { window.removeEventListener('storage', check); clearInterval(interval); };

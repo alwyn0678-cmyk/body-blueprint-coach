@@ -40,11 +40,9 @@ export interface CoachContext {
 
 // ─── Claude API ───────────────────────────────────────────────────────────────
 
-const CLAUDE_KEY_ENV = import.meta.env.VITE_CLAUDE_API_KEY as string | undefined;
 const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
 
 const getClaudeKey = (): string | null => {
-  if (CLAUDE_KEY_ENV) return CLAUDE_KEY_ENV;
   const runtime = localStorage.getItem('bbc_claude_api_key');
   return runtime && runtime.trim() ? runtime.trim() : null;
 };
