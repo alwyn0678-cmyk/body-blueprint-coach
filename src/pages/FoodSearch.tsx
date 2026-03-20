@@ -623,38 +623,43 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         </div>
 
         {/* Serving amount */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
           <label style={{ ...sectionLabelStyle, letterSpacing: '0.08em' }}>Serving Amount</label>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <input
-              type="number"
-              value={measurementValue}
-              onChange={e => setMeasurementValue(e.target.value)}
-              style={{
-                flex: 1, padding: '1rem 1.25rem', borderRadius: '14px',
-                border: '1px solid rgba(255,255,255,0.12)',
-                fontSize: '1.4rem', fontWeight: 700,
-                backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff',
-                fontVariantNumeric: 'tabular-nums', outline: 'none',
-              }}
-            />
-            <select
-              value={measurementUnit}
-              onChange={e => setMeasurementUnit(e.target.value)}
-              style={{
-                flex: 1, padding: '1rem', borderRadius: '14px',
-                border: '1px solid rgba(255,255,255,0.12)',
-                fontSize: '0.95rem', fontWeight: 700,
-                backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff',
-                outline: 'none', appearance: 'none', WebkitAppearance: 'none',
-              }}
-            >
-              <option value="g">Grams (g)</option>
-              <option value="oz">Ounces (oz)</option>
-              <option value="lbs">Pounds (lbs)</option>
-              <option value="ml">Milliliters (ml)</option>
-              <option value="serving">Serving</option>
-            </select>
+          <input
+            type="number"
+            value={measurementValue}
+            onChange={e => setMeasurementValue(e.target.value)}
+            style={{
+              width: '100%', padding: '1rem 1.25rem', borderRadius: '14px',
+              border: '1px solid rgba(255,255,255,0.12)',
+              fontSize: '1.6rem', fontWeight: 700, textAlign: 'center',
+              backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff',
+              fontVariantNumeric: 'tabular-nums', outline: 'none', boxSizing: 'border-box',
+            }}
+          />
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[
+              { val: 'g', label: 'g' },
+              { val: 'serving', label: 'srv' },
+              { val: 'oz', label: 'oz' },
+              { val: 'ml', label: 'ml' },
+            ].map(u => (
+              <button
+                key={u.val}
+                onClick={() => setMeasurementUnit(u.val)}
+                style={{
+                  flex: 1, padding: '0.65rem 0',
+                  borderRadius: '12px',
+                  border: `1.5px solid ${measurementUnit === u.val ? 'rgba(59,130,246,0.55)' : 'rgba(255,255,255,0.1)'}`,
+                  backgroundColor: measurementUnit === u.val ? 'rgba(59,130,246,0.14)' : 'rgba(255,255,255,0.04)',
+                  color: measurementUnit === u.val ? '#60A5FA' : 'rgba(255,255,255,0.4)',
+                  fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {u.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -946,7 +951,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
     { id: 'search', label: 'Search' },
     { id: 'barcode', label: 'Barcode' },
     { id: 'recent', label: `Recent${recentFoodItems.length > 0 ? ` (${recentFoodItems.length})` : ''}` },
-    { id: 'favorites', label: `Favourites${favoriteFoodItems.length > 0 ? ` (${favoriteFoodItems.length})` : ''}` },
+    { id: 'favorites', label: `Saved${favoriteFoodItems.length > 0 ? ` (${favoriteFoodItems.length})` : ''}` },
   ];
 
   return (
@@ -1148,7 +1153,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
               onClick={() => setShowCustomForm(true)}
               style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
-                width: '100%', padding: '0.75rem 0.875rem', marginBottom: '0.5rem',
+                width: 'calc(100% - 24px)', margin: '0 12px 8px',
+                padding: '0.75rem 0.875rem',
                 backgroundColor: 'rgba(255,255,255,0.03)',
                 border: '1px dashed rgba(255,255,255,0.1)',
                 borderRadius: '12px',

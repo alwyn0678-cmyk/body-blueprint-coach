@@ -25,33 +25,70 @@ const fmtNum = (n: number, dp = 0): string =>
 
 // ─── Calorie Arc SVG ──────────────────────────────────────────────────────────
 
-const CalorieArc: React.FC<{ calories: number; target: number; protein: number; proteinTarget: number }> = ({ calories, target, protein, proteinTarget }) => {
+const CalorieArc: React.FC<{
+  calories: number; target: number;
+  protein: number; proteinTarget: number;
+  carbs: number; carbsTarget: number;
+  fats: number; fatsTarget: number;
+}> = ({ calories, target, protein, proteinTarget, carbs, carbsTarget, fats, fatsTarget }) => {
   const R = 58;
   const circ = 2 * Math.PI * R;
   const calPct = Math.min(calories / Math.max(target, 1), 1);
   const calOffset = circ * (1 - calPct);
   const over = calories > target;
   const remaining = Math.max(target - calories, 0);
+
+  // Inner ring: 3 equal segments (protein / carbs / fats), each 120° of arc
+  const innerR = 44;
+  const innerCirc = 2 * Math.PI * innerR;
+  const oneThird = innerCirc / 3;
   const proPct = Math.min(protein / Math.max(proteinTarget, 1), 1);
-  const proCirc = 2 * Math.PI * 44;
+  const carPct = Math.min(carbs / Math.max(carbsTarget, 1), 1);
+  const fatPct = Math.min(fats / Math.max(fatsTarget, 1), 1);
 
   return (
     <div style={{ position: 'relative', width: 152, height: 152, flexShrink: 0 }}>
       <svg width={152} height={152} style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
-        {/* Outer track */}
+        {/* Outer calorie track */}
         <circle cx={76} cy={76} r={R} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={9} />
-        {/* Outer fill */}
+        {/* Outer calorie fill */}
         <circle cx={76} cy={76} r={R} fill="none" stroke={over ? '#EF4444' : '#22C55E'}
           strokeWidth={9} strokeLinecap="round"
           strokeDasharray={circ} strokeDashoffset={calOffset}
           style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.25,1,0.5,1), stroke 0.3s ease', filter: over ? 'drop-shadow(0 0 6px #EF4444)' : 'drop-shadow(0 0 6px #22C55E)' }} />
-        {/* Inner protein track */}
-        <circle cx={76} cy={76} r={44} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={7} />
-        <circle cx={76} cy={76} r={44} fill="none" stroke="#F59E0B"
-          strokeWidth={7} strokeLinecap="round"
-          strokeDasharray={proCirc}
-          strokeDashoffset={proCirc * (1 - proPct)}
-          style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.25,1,0.5,1)', filter: 'drop-shadow(0 0 4px rgba(245,158,11,0.6))' }} />
+
+        {/* Inner macro ring track */}
+        <circle cx={76} cy={76} r={innerR} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={7} />
+
+        {/* Protein segment — first 120° (top third) */}
+        <circle cx={76} cy={76} r={innerR} fill="none" stroke="#F59E0B"
+          strokeWidth={7} strokeLinecap="butt"
+          strokeDasharray={`${proPct * oneThird} ${innerCirc}`}
+          style={{
+            transform: 'rotate(0deg)', transformOrigin: '76px 76px',
+            transition: 'stroke-dasharray 1s cubic-bezier(0.25,1,0.5,1)',
+            filter: 'drop-shadow(0 0 4px rgba(245,158,11,0.5))',
+          }} />
+
+        {/* Carbs segment — second 120° (right third) */}
+        <circle cx={76} cy={76} r={innerR} fill="none" stroke="#3B82F6"
+          strokeWidth={7} strokeLinecap="butt"
+          strokeDasharray={`${carPct * oneThird} ${innerCirc}`}
+          style={{
+            transform: 'rotate(120deg)', transformOrigin: '76px 76px',
+            transition: 'stroke-dasharray 1s cubic-bezier(0.25,1,0.5,1)',
+            filter: 'drop-shadow(0 0 4px rgba(59,130,246,0.5))',
+          }} />
+
+        {/* Fats segment — third 120° (left third) */}
+        <circle cx={76} cy={76} r={innerR} fill="none" stroke="#22C55E"
+          strokeWidth={7} strokeLinecap="butt"
+          strokeDasharray={`${fatPct * oneThird} ${innerCirc}`}
+          style={{
+            transform: 'rotate(240deg)', transformOrigin: '76px 76px',
+            transition: 'stroke-dasharray 1s cubic-bezier(0.25,1,0.5,1)',
+            filter: 'drop-shadow(0 0 4px rgba(34,197,94,0.4))',
+          }} />
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums', lineHeight: 1, color: over ? '#EF4444' : 'var(--text-primary)' }}>
@@ -233,10 +270,19 @@ export const Dashboard: React.FC = () => {
             <CalorieArc
               calories={Math.round(totals.calories)} target={user.targets.calories}
               protein={Math.round(totals.protein)} proteinTarget={user.targets.protein}
+              carbs={Math.round(totals.carbs)} carbsTarget={user.targets.carbs}
+              fats={Math.round(totals.fats)} fatsTarget={user.targets.fats}
             />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#22C55E' }}>Today's Nutrition</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#22C55E' }}>Today's Nutrition</div>
+                  <div style={{ display: 'flex', gap: 3 }}>
+                    {[['#F59E0B', 'P'], ['#3B82F6', 'C'], ['#22C55E', 'F']].map(([color, label]) => (
+                      <span key={label} style={{ fontSize: '0.48rem', fontWeight: 800, color, opacity: 0.7 }}>{label}</span>
+                    ))}
+                  </div>
+                </div>
                 <div style={{ fontSize: '0.65rem', fontWeight: 800, padding: '2px 8px', borderRadius: 8, background: calPct >= 90 ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.07)', color: calPct >= 90 ? '#EF4444' : 'var(--text-secondary)' }}>
                   {calPct}%
                 </div>
@@ -259,7 +305,7 @@ export const Dashboard: React.FC = () => {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.11, duration: 0.38 }}
         style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
         {[
-          { icon: <Droplets size={16} color="#06B6D4" />, label: 'Water', value: `${water}g`, color: '#06B6D4', onClick: () => setActiveSheet('water') },
+          { icon: <Droplets size={16} color="#06B6D4" />, label: 'Water', value: `${water} gl`, color: '#06B6D4', onClick: () => setActiveSheet('water') },
           { icon: <Footprints size={16} color="#22C55E" />, label: 'Steps', value: steps >= 1000 ? `${(steps / 1000).toFixed(1)}k` : String(steps), color: '#22C55E', onClick: () => setActiveSheet('steps') },
           { icon: <Activity size={16} color="#6366F1" />, label: 'Weight', value: log?.weight ? String(log.weight) : String(user.weight), color: '#6366F1', onClick: () => setActiveSheet('weight') },
         ].map(({ icon, label, value, color, onClick }) => (
