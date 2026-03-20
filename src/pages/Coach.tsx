@@ -313,7 +313,15 @@ export const Coach: React.FC = () => {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const hasGeminiKey = !!localStorage.getItem('bbc_gemini_api_key') || !!import.meta.env.VITE_GEMINI_API_KEY;
+  const [hasGeminiKey, setHasGeminiKey] = useState(
+    () => !!localStorage.getItem('bbc_gemini_api_key') || !!import.meta.env.VITE_GEMINI_API_KEY
+  );
+  useEffect(() => {
+    const check = () => setHasGeminiKey(!!localStorage.getItem('bbc_gemini_api_key') || !!import.meta.env.VITE_GEMINI_API_KEY);
+    window.addEventListener('storage', check);
+    const interval = setInterval(check, 2000);
+    return () => { window.removeEventListener('storage', check); clearInterval(interval); };
+  }, []);
 
   useEffect(() => {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -343,7 +351,7 @@ export const Coach: React.FC = () => {
       );
       setChatMessages(prev => [...prev, {
         role: 'assistant',
-        content: reply ?? `I need a Gemini API key to reply. Add one for free at aistudio.google.com, then paste it in Settings → AI Coach. It unlocks Gemini 2.0 Flash powered coaching.`,
+        content: reply,
         id: `a_${Date.now()}`,
       }]);
     } finally {

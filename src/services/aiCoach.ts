@@ -54,9 +54,9 @@ async function geminiComplete(
   systemPrompt: string,
   userMessage: string,
   history: { role: 'user' | 'assistant'; content: string }[] = []
-): Promise<string | null> {
+): Promise<string> {
   const key = getGeminiKey();
-  if (!key) return null;
+  if (!key) return '⚠️ No API key found. Go to Settings → AI Coach and paste your Gemini key.';
   try {
     const contents = [
       ...history.slice(-8).map(m => ({
@@ -78,14 +78,12 @@ async function geminiComplete(
       }
     );
     const data = await res.json();
-    if (data.error) {
-      console.error('[Gemini] API error:', data.error);
-      return `[Gemini error: ${data.error.message}]`;
-    }
-    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+    if (data.error) return `⚠️ Gemini error: ${data.error.message}`;
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) return `⚠️ Gemini returned empty response. Raw: ${JSON.stringify(data).slice(0, 200)}`;
+    return text;
   } catch (e) {
-    console.error('[Gemini] fetch error:', e);
-    return null;
+    return `⚠️ Network error: ${e instanceof Error ? e.message : String(e)}`;
   }
 }
 
@@ -415,9 +413,8 @@ export class AICoachService {
     return getWorkoutFeedback(workout);
   }
 
-  /** Free-form AI chat with the coach — uses Gemini 2.0 Flash if key set, otherwise returns null */
-  async chat(ctx: CoachContext, userMessage: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<string | null> {
-    if (!getGeminiKey()) return null;
+  /** Free-form AI chat with the coach — uses Gemini 2.0 Flash */
+  async chat(ctx: CoachContext, userMessage: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<string> {
     return geminiComplete(buildSystemPrompt(ctx.user, ctx), userMessage, history);
   }
 }
