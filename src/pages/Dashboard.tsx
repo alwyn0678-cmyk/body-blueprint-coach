@@ -6,7 +6,10 @@ import {
   Minus, ChevronRight, Brain, Zap, Target, Activity,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { calculateWeightTrend, calculateStreak, computeWeeklyStats } from '../utils/aiCoachingEngine';
+import {
+  calculateWeightTrend, calculateStreak, computeWeeklyStats,
+  calculateWorkoutStreak, computeEarnedBadges, getWeeklyWorkoutNudge, computeConsistencyScore,
+} from '../utils/aiCoachingEngine';
 import { coachService } from '../services/aiCoach';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
@@ -181,7 +184,11 @@ export const Dashboard: React.FC = () => {
 
   const totals = useMemo(() => getNutritionTotals(dateStr), [state.logs, dateStr]);
   const streak = useMemo(() => calculateStreak(state.logs), [state.logs]);
+  const workoutStreak = useMemo(() => calculateWorkoutStreak(state.logs), [state.logs]);
   const weeklyStats = useMemo(() => computeWeeklyStats(state.logs, user.targets), [state.logs, user.targets]);
+  const earnedBadges = useMemo(() => computeEarnedBadges(state.logs, user), [state.logs, user]);
+  const weeklyNudge = useMemo(() => getWeeklyWorkoutNudge(weeklyStats.workoutsCompleted, user.trainingFrequency), [weeklyStats.workoutsCompleted, user.trainingFrequency]);
+  const consistencyScore = useMemo(() => computeConsistencyScore(weeklyStats.calorieAdherence, weeklyStats.proteinAdherence, weeklyStats.workoutsCompleted, user.trainingFrequency), [weeklyStats, user.trainingFrequency]);
 
   const weightTrendData = useMemo(() => {
     const data = calculateWeightTrend(state.logs, user.weight);
@@ -245,6 +252,12 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {workoutStreak > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 20 }}>
+                <Dumbbell size={11} color="#3B82F6" />
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#3B82F6' }}>{workoutStreak}d</span>
+              </div>
+            )}
             {streak > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)', borderRadius: 20 }}>
                 <Flame size={12} color="#F59E0B" />
@@ -381,11 +394,26 @@ export const Dashboard: React.FC = () => {
                 <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{recentWorkout.durationMinutes}min</span>
                 {recentWorkout.sessionRPE && <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>RPE {recentWorkout.sessionRPE}</span>}
               </div>
-              <div style={{ display: 'flex', gap: 4 }}>
+              <div style={{ display: 'flex', gap: 4, marginBottom: weeklyNudge ? 8 : 0 }}>
                 {Array.from({ length: Math.max(user.trainingFrequency, 1) }).map((_, i) => (
                   <div key={i} style={{ height: 4, flex: 1, borderRadius: 2, background: i < weeklyStats.workoutsCompleted ? '#3B82F6' : 'rgba(255,255,255,0.08)', transition: 'background 0.3s', boxShadow: i < weeklyStats.workoutsCompleted ? '0 0 6px rgba(59,130,246,0.5)' : 'none' }} />
                 ))}
               </div>
+              {weeklyNudge && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  marginTop: 2, padding: '6px 10px', borderRadius: 10,
+                  background: weeklyStats.workoutsCompleted >= user.trainingFrequency
+                    ? 'rgba(34,197,94,0.08)' : 'rgba(59,130,246,0.07)',
+                  border: `1px solid ${weeklyStats.workoutsCompleted >= user.trainingFrequency ? 'rgba(34,197,94,0.2)' : 'rgba(59,130,246,0.15)'}`,
+                }}>
+                  <Target size={10} color={weeklyStats.workoutsCompleted >= user.trainingFrequency ? '#22C55E' : '#3B82F6'} />
+                  <span style={{
+                    fontSize: '0.68rem', fontWeight: 700,
+                    color: weeklyStats.workoutsCompleted >= user.trainingFrequency ? '#22C55E' : '#3B82F6',
+                  }}>{weeklyNudge}</span>
+                </div>
+              )}
             </>
           ) : (
             <div style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>No sessions yet — start your first workout</div>
@@ -437,8 +465,18 @@ export const Dashboard: React.FC = () => {
         {/* Stats mini tiles */}
         <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[
-            { label: 'Cal adherence', value: `${weeklyStats.calorieAdherence}%`, sub: `${weeklyStats.daysLogged}/7 days`, color: weeklyStats.calorieAdherence >= 80 ? '#22C55E' : '#F59E0B' },
-            { label: 'Avg protein', value: `${weeklyStats.avgProtein}g`, sub: `vs ${user.targets.protein}g`, color: weeklyStats.proteinAdherence >= 80 ? '#22C55E' : '#F59E0B' },
+            {
+              label: 'Consistency',
+              value: `${consistencyScore}%`,
+              sub: 'nutrition + training',
+              color: consistencyScore >= 80 ? '#22C55E' : consistencyScore >= 60 ? '#F59E0B' : '#EF4444',
+            },
+            {
+              label: 'Avg protein',
+              value: `${weeklyStats.avgProtein}g`,
+              sub: `vs ${user.targets.protein}g`,
+              color: weeklyStats.proteinAdherence >= 80 ? '#22C55E' : '#F59E0B',
+            },
           ].map(({ label, value, sub, color }) => (
             <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '12px 12px', flex: 1, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
               <div style={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: 3 }}>{label}</div>
@@ -448,6 +486,25 @@ export const Dashboard: React.FC = () => {
           ))}
         </div>
       </motion.div>
+
+      {/* ── Badges row ── */}
+      {earnedBadges.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27, duration: 0.38 }}>
+          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, msOverflowStyle: 'none' }}>
+            {earnedBadges.slice(-5).map(badge => (
+              <div key={badge.id} style={{
+                display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
+                padding: '6px 10px', borderRadius: 99,
+                background: `${badge.color}10`,
+                border: `1px solid ${badge.color}28`,
+              }}>
+                <span style={{ fontSize: '0.72rem' }}>{badge.icon}</span>
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: badge.color, whiteSpace: 'nowrap' }}>{badge.label}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* ── Steps bar (visible when logged) ── */}
       {steps > 0 && (

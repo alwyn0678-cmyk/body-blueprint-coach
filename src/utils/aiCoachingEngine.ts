@@ -1,5 +1,15 @@
 import { DailyLog, UserProfile, MacroTargets, WeeklyStats } from '../types';
 
+// ─── Badge System ─────────────────────────────────────────────────────────────
+
+export interface Badge {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+  color: string;
+}
+
 /**
  * Calculate Exponential Moving Average (EMA) for weight trend.
  * Alpha of 0.15 gives 7-day smoothing — same approach as MacroFactor.
@@ -77,6 +87,107 @@ export const calculateStreak = (logs: Record<string, DailyLog>): number => {
     d.setDate(d.getDate() - 1);
   }
   return streak;
+};
+
+/**
+ * Streak of consecutive days with at least one workout logged.
+ */
+export const calculateWorkoutStreak = (logs: Record<string, DailyLog>): number => {
+  let streak = 0;
+  const d = new Date();
+  for (let i = 0; i < 365; i++) {
+    const dateStr = d.toISOString().split('T')[0];
+    const log = logs[dateStr];
+    const hasWorkout = log?.workouts && log.workouts.length > 0;
+    if (hasWorkout) {
+      streak++;
+    } else if (i > 0) {
+      break;
+    }
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+};
+
+/**
+ * Derive earned badges from logs + user profile. Pure computation — no state needed.
+ */
+export const computeEarnedBadges = (
+  logs: Record<string, DailyLog>,
+  user: UserProfile,
+): Badge[] => {
+  const badges: Badge[] = [];
+  const today = new Date().toISOString().split('T')[0];
+
+  const allWorkouts = Object.values(logs).flatMap(l => l.workouts ?? []);
+  const totalWorkouts = allWorkouts.length;
+
+  if (totalWorkouts >= 1) badges.push({ id: 'first_rep', label: 'First Rep', description: 'Logged your first workout', icon: '🏋️', color: '#3B82F6' });
+  if (totalWorkouts >= 10) badges.push({ id: 'consistent', label: 'Consistent', description: '10 workouts logged', icon: '🔥', color: '#F97316' });
+  if (totalWorkouts >= 25) badges.push({ id: 'dedicated', label: 'Dedicated', description: '25 workouts logged', icon: '💪', color: '#A855F7' });
+  if (totalWorkouts >= 50) badges.push({ id: 'elite', label: 'Elite', description: '50 workouts logged', icon: '⚡', color: '#EAB308' });
+
+  // Workout streak
+  const wStreak = calculateWorkoutStreak(logs);
+  if (wStreak >= 7) badges.push({ id: 'streak_7', label: '7-Day Grind', description: '7 consecutive training days', icon: '🗡️', color: '#EF4444' });
+
+  // Weekly training target
+  const weekStart = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - d.getDay()); // Sunday
+    return d.toISOString().split('T')[0];
+  })();
+  const thisWeekWorkouts = Object.entries(logs)
+    .filter(([date]) => date >= weekStart && date <= today)
+    .reduce((a, [, l]) => a + (l.workouts?.length ?? 0), 0);
+  if (thisWeekWorkouts >= (user.trainingFrequency ?? 3)) {
+    badges.push({ id: 'weekly_target', label: 'Week Complete', description: `Hit your ${user.trainingFrequency}x/week target`, icon: '🎯', color: '#22C55E' });
+  }
+
+  // Protein streak (7 consecutive days at ≥90% target)
+  let proteinStreak = 0;
+  const pd = new Date();
+  for (let i = 0; i < 14; i++) {
+    const dateStr = pd.toISOString().split('T')[0];
+    const log = logs[dateStr];
+    if (!log) { if (i > 0) break; pd.setDate(pd.getDate() - 1); continue; }
+    const macros = getMacrosFromLog(log);
+    if (macros.protein >= (user.targets.protein ?? 150) * 0.9) {
+      proteinStreak++;
+    } else if (i > 0) {
+      break;
+    }
+    pd.setDate(pd.getDate() - 1);
+  }
+  if (proteinStreak >= 7) badges.push({ id: 'protein_7', label: 'Protein Locked', description: '7 days hitting protein target', icon: '🥩', color: '#F59E0B' });
+
+  return badges;
+};
+
+/**
+ * Returns a short nudge string for the training card, or null if no nudge.
+ */
+export const getWeeklyWorkoutNudge = (
+  workoutsCompleted: number,
+  trainingFrequency: number,
+): string | null => {
+  const remaining = trainingFrequency - workoutsCompleted;
+  if (remaining <= 0) return 'Weekly target hit';
+  if (remaining === 1) return '1 workout left to hit your goal';
+  return null;
+};
+
+/**
+ * Overall consistency score 0-100 combining nutrition + training adherence.
+ */
+export const computeConsistencyScore = (
+  calorieAdherence: number,
+  proteinAdherence: number,
+  workoutsCompleted: number,
+  trainingFrequency: number,
+): number => {
+  const trainingScore = Math.min((workoutsCompleted / Math.max(trainingFrequency, 1)) * 100, 100);
+  return Math.round(calorieAdherence * 0.35 + proteinAdherence * 0.25 + trainingScore * 0.4);
 };
 
 /**

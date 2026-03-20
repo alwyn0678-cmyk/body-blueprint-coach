@@ -11,6 +11,7 @@ import { getLocalISOString } from '../utils/dateUtils';
 import { WorkoutSession, ExerciseEntry, ExerciseSet, CustomProgram } from '../types';
 import { getProgramById, WorkoutProgram, ProgramDay } from '../data/workoutPrograms';
 import { coachService } from '../services/aiCoach';
+import { computeEarnedBadges } from '../utils/aiCoachingEngine';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type SetType = 'W' | 'N' | 'D'; // Warm-up / Normal / Drop-set
@@ -298,17 +299,68 @@ interface SummaryData {
   prevVolume?: number;
 }
 
+// ── Confetti Burst ────────────────────────────────────────────────────────────
+const CONFETTI_COLORS = ['#22C55E', '#3B82F6', '#FBBF24', '#A855F7', '#F97316', '#06B6D4'];
+const ConfettiBurst: React.FC = () => {
+  const pieces = useMemo(() =>
+    Array.from({ length: 28 }, (_, i) => ({
+      id: i,
+      x: 5 + Math.random() * 90,
+      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      w: 5 + Math.random() * 6,
+      h: 3 + Math.random() * 4,
+      delay: Math.random() * 0.9,
+      duration: 1.6 + Math.random() * 1.4,
+    }))
+  , []);
+  return (
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9999, overflow: 'hidden' }}>
+      <style>{`@keyframes cfDrop{0%{transform:translateY(-12px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(540deg);opacity:0}}`}</style>
+      {pieces.map(p => (
+        <div key={p.id} style={{
+          position: 'absolute', left: `${p.x}%`, top: '-8px',
+          width: p.w, height: p.h, background: p.color, borderRadius: 2,
+          animation: `cfDrop ${p.duration}s ease-in ${p.delay}s forwards`,
+          opacity: 0,
+        }} />
+      ))}
+    </div>
+  );
+};
+
 // ── Workout Summary Screen ─────────────────────────────────────────────────────
 const WorkoutSummaryScreen: React.FC<{
   summary: SummaryData;
   coachFeedback: string;
+  logs: ReturnType<typeof useApp>['state']['logs'];
+  user: ReturnType<typeof useApp>['state']['user'];
   onDone: () => void;
-}> = ({ summary, coachFeedback, onDone }) => {
+}> = ({ summary, coachFeedback, logs, user, onDone }) => {
+  const [showConfetti, setShowConfetti] = useState(true);
+  const badges = useMemo(() =>
+    user ? computeEarnedBadges(logs, user) : []
+  , [logs, user]);
+
+  // Badges earned from this session: weekly target + PR milestones
+  const sessionBadges = useMemo(() => {
+    const earned: { icon: string; label: string; color: string }[] = [];
+    if (summary.prCount > 0) earned.push({ icon: '🏆', label: `${summary.prCount} new PR${summary.prCount > 1 ? 's' : ''}`, color: '#FBBF24' });
+    const weekBadge = badges.find(b => b.id === 'weekly_target');
+    if (weekBadge) earned.push({ icon: weekBadge.icon, label: weekBadge.label, color: weekBadge.color });
+    return earned;
+  }, [summary.prCount, badges]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowConfetti(false), 3500);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div style={{
       position: 'fixed', inset: 0, background: '#07070f',
       zIndex: 9020, display: 'flex', flexDirection: 'column', overflowY: 'auto',
     }}>
+      {showConfetti && <ConfettiBurst />}
       {/* Hero header */}
       <div style={{
         padding: '3.5rem 1.5rem 2rem', textAlign: 'center',
@@ -331,6 +383,20 @@ const WorkoutSummaryScreen: React.FC<{
         <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: 8 }}>
           {summary.name}
         </p>
+        {sessionBadges.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 14, flexWrap: 'wrap' }}>
+            {sessionBadges.map((b, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '5px 12px', borderRadius: 99,
+                background: `${b.color}14`, border: `1px solid ${b.color}30`,
+              }}>
+                <span style={{ fontSize: '0.78rem' }}>{b.icon}</span>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: b.color }}>{b.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div style={{ padding: '0 1.25rem', display: 'flex', flexDirection: 'column', gap: 14, paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))' }}>
@@ -1606,6 +1672,8 @@ export const Training: React.FC = () => {
       <WorkoutSummaryScreen
         summary={summaryData}
         coachFeedback={coachFeedback}
+        logs={state.logs}
+        user={state.user}
         onDone={() => {
           setShowSummary(false);
           setSummaryData(null);
