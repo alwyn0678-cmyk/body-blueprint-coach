@@ -2,10 +2,10 @@
  * AI Coach Service
  *
  * FREE by default — uses a data-driven coaching engine with no API required.
- * Optional upgrade: set a free Groq API key (https://console.groq.com — free tier)
- * for LLaMA 3 powered natural language responses.
+ * Optional upgrade: set a free Gemini API key (https://aistudio.google.com — free tier)
+ * for Gemini 2.0 Flash powered natural language responses.
  *
- * VITE_GROQ_API_KEY=your-key-here (in .env)
+ * VITE_GEMINI_API_KEY=your-key-here (in .env)
  */
 
 import { UserProfile, DailyLog, WeeklyStats, WorkoutSession, CoachInsight, GoalType } from '../types';
@@ -38,39 +38,47 @@ export interface CoachContext {
   trainingContext?: TrainingContext; // enriched training intelligence
 }
 
-// ─── Free Groq API (optional upgrade) ────────────────────────────────────────
+// ─── Gemini 2.0 Flash API ────────────────────────────────────────────────────
 
-const GROQ_KEY_ENV = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
-const GROQ_MODEL = 'llama-3.3-70b-versatile'; // free on Groq
+const GEMINI_KEY_ENV = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+const GEMINI_MODEL = 'gemini-2.0-flash';
 
-/** Reads Groq key from env var first, then localStorage runtime override */
-const getGroqKey = (): string | null => {
-  if (GROQ_KEY_ENV) return GROQ_KEY_ENV;
-  const runtime = localStorage.getItem('bbc_groq_api_key');
+/** Reads Gemini key from env var first, then localStorage runtime override */
+const getGeminiKey = (): string | null => {
+  if (GEMINI_KEY_ENV) return GEMINI_KEY_ENV;
+  const runtime = localStorage.getItem('bbc_gemini_api_key');
   return runtime && runtime.trim() ? runtime.trim() : null;
 };
 
-async function groqComplete(systemPrompt: string, userMessage: string): Promise<string | null> {
-  const key = getGroqKey();
+async function geminiComplete(
+  systemPrompt: string,
+  userMessage: string,
+  history: { role: 'user' | 'assistant'; content: string }[] = []
+): Promise<string | null> {
+  const key = getGeminiKey();
   if (!key) return null;
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        max_tokens: 350,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage },
-        ],
-      }),
-    });
+    const contents = [
+      ...history.slice(-8).map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      })),
+      { role: 'user', parts: [{ text: userMessage }] },
+    ];
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents,
+          generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
+        }),
+      }
+    );
     const data = await res.json();
-    return data.choices?.[0]?.message?.content ?? null;
+    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
   } catch {
     return null;
   }
@@ -375,10 +383,10 @@ export class AICoachService {
     return getGoalInsights(user, stats);
   }
 
-  /** Generate weekly review text — uses Groq LLaMA3 if API key set, otherwise free engine */
+  /** Generate weekly review text — uses Gemini 2.0 Flash if API key set, otherwise free engine */
   async getWeeklyReview(ctx: CoachContext): Promise<string> {
-    if (getGroqKey()) {
-      const aiResponse = await groqComplete(
+    if (getGeminiKey()) {
+      const aiResponse = await geminiComplete(
         buildSystemPrompt(ctx.user, ctx),
         `Give a 3-sentence weekly review of this client's progress: what went well, the single highest priority for next week, and any specific calorie or macro adjustment with exact numbers.`
       );
@@ -387,13 +395,13 @@ export class AICoachService {
     return getWeeklyReview(ctx);
   }
 
-  /** Workout feedback — uses Groq if available, otherwise free engine */
+  /** Workout feedback — uses Gemini if available, otherwise free engine */
   async getWorkoutFeedback(user: UserProfile, workout: WorkoutSession): Promise<string> {
-    if (getGroqKey()) {
+    if (getGeminiKey()) {
       const exerciseSummary = workout.exercises.map(ex =>
         `${ex.name}: ${ex.sets.map(s => `${s.weight}kg×${s.reps}${s.rpe ? ` @RPE${s.rpe}` : ''}`).join(', ')}`
       ).join('\n');
-      const aiResponse = await groqComplete(
+      const aiResponse = await geminiComplete(
         buildSystemPrompt(user),
         `Workout just completed: ${workout.name}, ${workout.durationMinutes}min, session RPE: ${workout.sessionRPE ?? 'not set'}\n${exerciseSummary}\n\nGive 2 sentences of specific technical coaching feedback. Highlight any PRs or strong sets, note anything to watch, and give one concrete focus for the next session.`
       );
@@ -402,30 +410,10 @@ export class AICoachService {
     return getWorkoutFeedback(workout);
   }
 
-  /** Free-form AI chat with the coach — uses Groq if key set, otherwise returns null */
+  /** Free-form AI chat with the coach — uses Gemini 2.0 Flash if key set, otherwise returns null */
   async chat(ctx: CoachContext, userMessage: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<string | null> {
-    const key = getGroqKey();
-    if (!key) return null;
-
-    const systemPrompt = buildSystemPrompt(ctx.user, ctx);
-
-    try {
-      const messages = [
-        { role: 'system' as const, content: systemPrompt },
-        ...history.slice(-8).map(m => ({ role: m.role, content: m.content })),
-        { role: 'user' as const, content: userMessage },
-      ];
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-        body: JSON.stringify({ model: GROQ_MODEL, max_tokens: 500, messages }),
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data.choices?.[0]?.message?.content ?? null;
-    } catch {
-      return null;
-    }
+    if (!getGeminiKey()) return null;
+    return geminiComplete(buildSystemPrompt(ctx.user, ctx), userMessage, history);
   }
 }
 

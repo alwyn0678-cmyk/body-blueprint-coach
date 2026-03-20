@@ -185,8 +185,8 @@ export const Settings: React.FC = () => {
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [comingSoonApp, setComingSoonApp] = useState<{ name: string; id: string } | null>(null);
   const [notifyEnabled, setNotifyEnabled] = useState<Record<string, boolean>>({});
-  const [groqKey, setGroqKey] = useState(() => localStorage.getItem('bbc_groq_api_key') ?? '');
-  const [groqKeySaved, setGroqKeySaved] = useState(false);
+  const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('bbc_gemini_api_key') ?? '');
+  const [geminiKeySaved, setGeminiKeySaved] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
   if (!user) return (
@@ -678,23 +678,23 @@ export const Settings: React.FC = () => {
         <SecLabel text="AI Coach" />
         <PageCard>
           <div style={{ padding: '14px 16px' }}>
-            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>Groq API Key</div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>Gemini API Key</div>
             <div style={{ fontSize: '0.72rem', color: C.textTertiary, fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
-              Optional — enables LLaMA 3 AI weekly reviews &amp; workout feedback. Free at console.groq.com
+              Optional — enables Gemini 2.0 Flash AI coaching. Free at aistudio.google.com
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 type="password"
-                placeholder="gsk_..."
-                value={groqKey}
+                placeholder="AIza..."
+                value={geminiKey}
                 onChange={e => {
                   const val = e.target.value;
-                  setGroqKey(val);
-                  setGroqKeySaved(false);
+                  setGeminiKey(val);
+                  setGeminiKeySaved(false);
                   if (val.trim()) {
-                    localStorage.setItem('bbc_groq_api_key', val.trim());
+                    localStorage.setItem('bbc_gemini_api_key', val.trim());
                   } else {
-                    localStorage.removeItem('bbc_groq_api_key');
+                    localStorage.removeItem('bbc_gemini_api_key');
                   }
                 }}
                 style={{
@@ -705,28 +705,28 @@ export const Settings: React.FC = () => {
               />
               <button
                 onClick={() => {
-                  if (groqKey.trim()) {
-                    localStorage.setItem('bbc_groq_api_key', groqKey.trim());
+                  if (geminiKey.trim()) {
+                    localStorage.setItem('bbc_gemini_api_key', geminiKey.trim());
                   } else {
-                    localStorage.removeItem('bbc_groq_api_key');
+                    localStorage.removeItem('bbc_gemini_api_key');
                   }
-                  setGroqKeySaved(true);
-                  setTimeout(() => setGroqKeySaved(false), 2500);
+                  setGeminiKeySaved(true);
+                  setTimeout(() => setGeminiKeySaved(false), 2500);
                 }}
                 style={{
                   padding: '10px 16px', borderRadius: 12,
-                  background: groqKeySaved ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
-                  border: `1px solid ${groqKeySaved ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.3)'}`,
-                  color: groqKeySaved ? '#22C55E' : '#6366F1',
+                  background: geminiKeySaved ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
+                  border: `1px solid ${geminiKeySaved ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.3)'}`,
+                  color: geminiKeySaved ? '#22C55E' : '#6366F1',
                   fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0,
                 }}
               >
-                {groqKeySaved ? '✓ Saved' : 'Save'}
+                {geminiKeySaved ? '✓ Saved' : 'Save'}
               </button>
             </div>
-            {groqKey && (
+            {geminiKey && (
               <button
-                onClick={() => { setGroqKey(''); localStorage.removeItem('bbc_groq_api_key'); }}
+                onClick={() => { setGeminiKey(''); localStorage.removeItem('bbc_gemini_api_key'); }}
                 style={{ marginTop: 8, background: 'none', border: 'none', color: C.textTertiary, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
               >
                 Clear key

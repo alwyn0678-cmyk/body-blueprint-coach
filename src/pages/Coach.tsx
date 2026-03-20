@@ -313,7 +313,7 @@ export const Coach: React.FC = () => {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const hasGroqKey = !!localStorage.getItem('bbc_groq_api_key') || !!import.meta.env.VITE_GROQ_API_KEY;
+  const hasGeminiKey = !!localStorage.getItem('bbc_gemini_api_key') || !!import.meta.env.VITE_GEMINI_API_KEY;
 
   useEffect(() => {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -343,7 +343,7 @@ export const Coach: React.FC = () => {
       );
       setChatMessages(prev => [...prev, {
         role: 'assistant',
-        content: reply ?? `I need a Groq API key to reply. Add one for free at console.groq.com, then paste it in Settings → AI Coach. It unlocks LLaMA 3.3-70B powered coaching.`,
+        content: reply ?? `I need a Gemini API key to reply. Add one for free at aistudio.google.com, then paste it in Settings → AI Coach. It unlocks Gemini 2.0 Flash powered coaching.`,
         id: `a_${Date.now()}`,
       }]);
     } finally {
@@ -598,15 +598,15 @@ export const Coach: React.FC = () => {
             style={{ display: 'flex', flexDirection: 'column', gap: 0, position: 'relative' }}>
 
             {/* Key required banner */}
-            {!hasGroqKey && (
+            {!hasGeminiKey && (
               <div style={{ borderRadius: 16, padding: '14px 16px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.22)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Lock size={15} color="#A5B4FC" />
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>AI Chat requires a Groq key</div>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>AI Chat requires a Gemini key</div>
                   <div style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                    Free at console.groq.com → enter in Settings → AI Coach. Powered by LLaMA 3.3-70B.
+                    Free at aistudio.google.com → enter in Settings → AI Coach. Powered by Gemini 2.0 Flash.
                   </div>
                 </div>
               </div>
@@ -677,19 +677,19 @@ export const Coach: React.FC = () => {
               <div style={{ flex: 1, position: 'relative' }}>
                 <input
                   className="input-field"
-                  placeholder={hasGroqKey ? 'Ask your coach...' : 'Set Groq key in Settings to chat...'}
+                  placeholder={hasGeminiKey ? 'Ask your coach...' : 'Set Groq key in Settings to chat...'}
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChat(); } }}
-                  disabled={!hasGroqKey}
+                  disabled={!hasGeminiKey}
                   style={{ paddingRight: '3rem', fontSize: '0.9rem' }}
                 />
               </div>
               <button
                 onClick={handleChat}
-                disabled={!chatInput.trim() || chatLoading || !hasGroqKey}
-                style={{ width: 44, height: 44, borderRadius: 14, background: chatInput.trim() && !chatLoading && hasGroqKey ? 'linear-gradient(135deg, #6366F1, #A855F7)' : 'rgba(255,255,255,0.07)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: chatInput.trim() && !chatLoading && hasGroqKey ? 'pointer' : 'default', flexShrink: 0, transition: 'background 0.2s', boxShadow: chatInput.trim() && hasGroqKey ? '0 4px 12px rgba(99,102,241,0.4)' : 'none' }}>
-                <Send size={16} color={chatInput.trim() && !chatLoading && hasGroqKey ? 'white' : 'rgba(255,255,255,0.3)'} />
+                disabled={!chatInput.trim() || chatLoading || !hasGeminiKey}
+                style={{ width: 44, height: 44, borderRadius: 14, background: chatInput.trim() && !chatLoading && hasGeminiKey ? 'linear-gradient(135deg, #6366F1, #A855F7)' : 'rgba(255,255,255,0.07)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: chatInput.trim() && !chatLoading && hasGeminiKey ? 'pointer' : 'default', flexShrink: 0, transition: 'background 0.2s', boxShadow: chatInput.trim() && hasGeminiKey ? '0 4px 12px rgba(99,102,241,0.4)' : 'none' }}>
+                <Send size={16} color={chatInput.trim() && !chatLoading && hasGeminiKey ? 'white' : 'rgba(255,255,255,0.3)'} />
               </button>
             </div>
           </motion.div>
