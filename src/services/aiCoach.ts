@@ -78,8 +78,13 @@ async function geminiComplete(
       }
     );
     const data = await res.json();
+    if (data.error) {
+      console.error('[Gemini] API error:', data.error);
+      return `[Gemini error: ${data.error.message}]`;
+    }
     return data.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-  } catch {
+  } catch (e) {
+    console.error('[Gemini] fetch error:', e);
     return null;
   }
 }
