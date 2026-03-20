@@ -444,27 +444,38 @@ Structure the response as:
   }
 
   /** Workout feedback — uses Claude if available, otherwise free engine */
-  async getWorkoutFeedback(user: UserProfile, workout: WorkoutSession): Promise<string> {
+  async getWorkoutFeedback(user: UserProfile, workout: WorkoutSession, prevSessionVolumeKg?: number): Promise<string> {
     if (getClaudeKey()) {
+      const totalVolume = workout.exercises.reduce(
+        (a, ex) => a + ex.sets.reduce((b, s) => b + s.weight * s.reps, 0), 0
+      );
       const exerciseSummary = workout.exercises.map(ex => {
         const completedSets = ex.sets.filter(s => s.weight > 0 && s.reps > 0);
-        return `${ex.name}: ${completedSets.map(s => `${s.weight}kg×${s.reps}${s.rpe ? ` @RPE${s.rpe}` : ''}`).join(', ')}`;
+        const vol = completedSets.reduce((a, s) => a + s.weight * s.reps, 0);
+        const best = completedSets.reduce<{ weight: number; reps: number } | null>((b, s) =>
+          !b || s.weight * s.reps > b.weight * b.reps ? { weight: s.weight, reps: s.reps } : b, null);
+        return `${ex.name}: ${completedSets.map(s => `${s.weight}kg×${s.reps}${s.rpe ? ` @RPE${s.rpe}` : ''}`).join(', ')}${best ? ` [best: ${best.weight}×${best.reps}]` : ''} — ${Math.round(vol)}kg volume`;
       }).filter(Boolean).join('\n');
+
+      const vsLast = prevSessionVolumeKg && prevSessionVolumeKg > 0
+        ? `\nVolume vs last session: ${Math.round(totalVolume)}kg vs ${Math.round(prevSessionVolumeKg)}kg (${totalVolume >= prevSessionVolumeKg ? '+' : ''}${(((totalVolume - prevSessionVolumeKg) / prevSessionVolumeKg) * 100).toFixed(0)}%)`
+        : '\nFirst time logging this session.';
+
       return claudeComplete(
         buildSystemPrompt(user),
-        `Workout completed: **${workout.name}** | ${workout.durationMinutes} minutes | Session RPE: ${workout.sessionRPE ?? 'not recorded'}
+        `Workout completed: **${workout.name}** | ${workout.durationMinutes} minutes | Session RPE: ${workout.sessionRPE ?? 'not recorded'}${vsLast}
 
 Exercises:
 ${exerciseSummary}
 
-Give 2–3 sentences of specific coaching feedback:
-- Call out any strong sets, PRs, or good execution
-- Flag anything to watch (RPE concerns, exercise volume, technique cues worth noting)
-- Give one concrete focus for the next identical session (specific lift, specific weight/rep target)
+Give 2–3 sentences of coaching feedback:
+- Name the single best lift or strongest set from today (specific numbers)
+- If volume is down vs last session or any RPE is high, flag it plainly
+- Give one concrete target for the next identical session (specific exercise, weight, rep goal)
 
-Be specific to the actual exercises and numbers shown. No generic praise.`,
+Be direct. Reference actual numbers. No generic praise.`,
         [],
-        400
+        450
       );
     }
     return getWorkoutFeedback(workout);

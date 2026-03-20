@@ -111,6 +111,45 @@ const getProgressionTrend = (
   return 'same';
 };
 
+const getLastExerciseVolume = (
+  logs: ReturnType<typeof useApp>['state']['logs'],
+  exerciseId: string,
+  excludeDate?: string,
+): number | null => {
+  const sorted = Object.entries(logs)
+    .filter(([date]) => date !== excludeDate)
+    .sort((a, b) => b[0].localeCompare(a[0]));
+  for (const [, log] of sorted) {
+    for (const workout of log.workouts) {
+      const ex = workout.exercises.find(e => e.exerciseId === exerciseId);
+      if (ex && ex.sets.length > 0) {
+        return ex.sets.reduce((a, s) => a + s.weight * s.reps, 0);
+      }
+    }
+  }
+  return null;
+};
+
+const getPrevSessionVolume = (
+  logs: ReturnType<typeof useApp>['state']['logs'],
+  sessionName: string,
+  excludeDate?: string,
+): number | null => {
+  const sorted = Object.entries(logs)
+    .filter(([date]) => date !== excludeDate)
+    .sort((a, b) => b[0].localeCompare(a[0]));
+  for (const [, log] of sorted) {
+    for (const workout of log.workouts) {
+      if (workout.name === sessionName) {
+        return workout.exercises.reduce(
+          (a, ex) => a + ex.sets.reduce((b, s) => b + s.weight * s.reps, 0), 0
+        );
+      }
+    }
+  }
+  return null;
+};
+
 const cycleRpe = (current: number): number => {
   if (current === 0) return 6;
   if (current >= 10) return 0;
@@ -160,13 +199,17 @@ const adaptCustomProgram = (cp: CustomProgram): WorkoutProgram => ({
 const getNextSetRecommendation = (
   doneSets: ActiveSet[],
   targetReps?: string,
-  lastPerf?: { weight: number; reps: number; sets: number } | null
+  lastPerf?: { weight: number; reps: number; sets: number } | null,
+  goalType?: string,
 ): string | null => {
   if (!doneSets.length) return null;
   const last = doneSets[doneSets.length - 1];
   const w = parseFloat(last.weight) || 0;
   const r = parseInt(last.reps) || 0;
   if (!w || !r) return null;
+
+  const rpe = last.rpe;
+  const isMuscleGain = goalType === 'muscle_gain';
 
   let tMin = 0, tMax = 0;
   if (targetReps) {
@@ -175,12 +218,65 @@ const getNextSetRecommendation = (
     if (m) { tMin = parseInt(m[1]); tMax = m[2] ? parseInt(m[2]) : tMin; }
   }
 
-  if (tMax > 0 && r >= tMax) return `Hit ${r} reps — try +2.5kg next set`;
-  if (tMin > 0 && r < tMin - 1) return `${tMin - r} rep${tMin - r > 1 ? 's' : ''} short of target — hold weight`;
-  if (lastPerf && w > lastPerf.weight) return `+${(w - lastPerf.weight).toFixed(1)}kg vs last session — on track`;
-  if (lastPerf && w === lastPerf.weight && r > lastPerf.reps) return `+${r - lastPerf.reps} rep vs last session — great`;
-  if (lastPerf && w === lastPerf.weight && r === lastPerf.reps) return `Matched last — push for one more rep`;
+  // RPE 10 — hard cap, reduce weight
+  if (rpe >= 10) {
+    const drop = (Math.round(w * 0.95 / 2.5) * 2.5);
+    return `RPE 10 — reduce to ${drop}kg next set`;
+  }
+
+  // Hit top of rep range with gas in the tank
+  if (tMax > 0 && r >= tMax && rpe < 9) {
+    return `Hit ${r} reps — push to ${w + 2.5}kg next set`;
+  }
+
+  // Short of target AND RPE 9 — form breakdown risk
+  if (tMin > 0 && r < tMin - 1 && rpe === 9) {
+    return `Short of target at RPE 9 — hold ${w}kg, drive reps`;
+  }
+
+  // Short of target — hold weight, more sets to go
+  if (tMin > 0 && r < tMin - 1) {
+    const gap = tMin - r;
+    return `${gap} rep${gap > 1 ? 's' : ''} short — hold at ${w}kg`;
+  }
+
+  // vs last session comparisons
+  if (lastPerf) {
+    if (w > lastPerf.weight) {
+      return `+${(w - lastPerf.weight).toFixed(1).replace(/\.0$/, '')}kg vs last — stay aggressive`;
+    }
+    if (w === lastPerf.weight && r > lastPerf.reps) {
+      return `+${r - lastPerf.reps} rep vs last — great progress`;
+    }
+    if (w === lastPerf.weight && r === lastPerf.reps) {
+      if (rpe >= 9) return `Matched last at RPE ${rpe} — you're at your limit here`;
+      return isMuscleGain
+        ? `Matched last — push one more rep or add 2.5kg next set`
+        : `Matched last — one more rep if you can`;
+    }
+    if (w < lastPerf.weight || (w === lastPerf.weight && r < lastPerf.reps)) {
+      return `Down from last (${lastPerf.weight}kg × ${lastPerf.reps}) — assess fatigue`;
+    }
+  }
   return null;
+};
+
+// ── Exercise Completion Verdict ───────────────────────────────────────────────
+const getExerciseVerdict = (
+  doneSets: ActiveSet[],
+  lastVolume: number | null,
+): { label: string; color: string } | null => {
+  const completedSets = doneSets.filter(s => s.done);
+  if (!completedSets.length) return null;
+  const vol = completedSets.reduce((a, s) => a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0);
+  if (vol === 0) return null;
+  if (lastVolume === null || lastVolume === 0) {
+    return { label: `First time — ${Math.round(vol)}kg volume`, color: '#3B82F6' };
+  }
+  const pct = ((vol - lastVolume) / lastVolume) * 100;
+  if (pct >= 5) return { label: `+${pct.toFixed(0)}% vs last (${Math.round(vol)} vs ${Math.round(lastVolume)}kg)`, color: '#22C55E' };
+  if (pct <= -5) return { label: `${pct.toFixed(0)}% vs last — below last session`, color: '#EF4444' };
+  return { label: `Matched last session · ${Math.round(vol)}kg`, color: '#F59E0B' };
 };
 
 // ── Summary Types ──────────────────────────────────────────────────────────────
@@ -199,6 +295,7 @@ interface SummaryData {
   prCount: number;
   caloriesBurned: number;
   exercises: ExerciseSummary[];
+  prevVolume?: number;
 }
 
 // ── Workout Summary Screen ─────────────────────────────────────────────────────
@@ -263,6 +360,29 @@ const WorkoutSummaryScreen: React.FC<{
             </div>
           ))}
         </div>
+
+        {/* vs Last Session */}
+        {summary.prevVolume !== undefined && summary.prevVolume > 0 && (() => {
+          const pct = ((summary.totalVolume - summary.prevVolume) / summary.prevVolume) * 100;
+          const up = pct >= 0;
+          return (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '10px 16px',
+              background: up ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)',
+              border: `1px solid ${up ? 'rgba(34,197,94,0.18)' : 'rgba(239,68,68,0.18)'}`,
+              borderRadius: 14,
+            }}>
+              {up ? <TrendingUp size={14} color="#22C55E" /> : <TrendingDown size={14} color="#EF4444" />}
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: up ? '#22C55E' : '#EF4444' }}>
+                {up ? '+' : ''}{pct.toFixed(0)}% vs last session
+              </span>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>
+                ({Math.round(summary.prevVolume)}→{Math.round(summary.totalVolume)}kg)
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Calories */}
         {summary.caloriesBurned > 0 && (
@@ -620,12 +740,13 @@ const ActiveWorkoutScreen: React.FC<{
   elapsed: number;
   logs: ReturnType<typeof useApp>['state']['logs'];
   today: string;
+  goalType?: string;
   onUpdateExercises: (fn: (prev: ActiveExercise[]) => ActiveExercise[]) => void;
   onAddExercise: () => void;
   onFinish: () => void;
   onCancel: () => void;
   showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
-}> = ({ workoutName, exercises, elapsed, logs, today, onUpdateExercises, onAddExercise, onFinish, onCancel, showToast }) => {
+}> = ({ workoutName, exercises, elapsed, logs, today, goalType, onUpdateExercises, onAddExercise, onFinish, onCancel, showToast }) => {
   const [restTimer, setRestTimer] = useState<number | null>(null);
   const restRef = useRef<ReturnType<typeof setTimeout>>();
   const [activeInput, setActiveInput] = useState<string | null>(null);
@@ -662,7 +783,13 @@ const ActiveWorkoutScreen: React.FC<{
       showToast('Enter weight and reps first', 'error');
       return;
     }
-    const restTime = exercises[exIdx]?.rest ?? 90;
+    // Smart rest: warm-up = 45s, high RPE gets extra rest
+    const base = exercises[exIdx]?.rest ?? 90;
+    const restTime = set?.type === 'W' ? 45
+      : set?.rpe >= 10 ? Math.max(base, 180)
+      : set?.rpe === 9 ? Math.max(base, 150)
+      : set?.rpe === 8 ? Math.max(base, 120)
+      : base;
     onUpdateExercises(prev => prev.map((ex, i) => i !== exIdx ? ex : {
       ...ex, sets: ex.sets.map((s, j) => j !== setIdx ? s : { ...s, done: !s.done }),
     }));
@@ -877,8 +1004,19 @@ const ActiveWorkoutScreen: React.FC<{
                       ) : (
                         <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.22)', fontWeight: 600 }}>First time</span>
                       )}
-                      {ex.targetReps && (
-                        <span style={{ fontSize: '0.65rem', color: 'rgba(99,102,241,0.7)', fontWeight: 700 }}>Target: {ex.targetReps}</span>
+                      {/* Today's Target — projected from last performance */}
+                      {!allDone && (lastPerf || ex.targetReps) && (
+                        <span style={{
+                          fontSize: '0.65rem', fontWeight: 800,
+                          color: '#22C55E',
+                          background: 'rgba(34,197,94,0.08)',
+                          padding: '2px 8px', borderRadius: 99,
+                          border: '1px solid rgba(34,197,94,0.18)',
+                        }}>
+                          {lastPerf
+                            ? `→ ${lastPerf.weight}kg × ${ex.targetReps || lastPerf.reps}`
+                            : `→ ${ex.targetReps} reps`}
+                        </span>
                       )}
                       {ex.rest && (
                         <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.22)', fontWeight: 600 }}>· {ex.rest}s rest</span>
@@ -1069,7 +1207,7 @@ const ActiveWorkoutScreen: React.FC<{
                   const doneSets = ex.sets.filter(s => s.done);
                   const undoneSets = ex.sets.filter(s => !s.done);
                   if (!doneSets.length || !undoneSets.length) return null;
-                  const rec = getNextSetRecommendation(doneSets, ex.targetReps, lastPerf);
+                  const rec = getNextSetRecommendation(doneSets, ex.targetReps, lastPerf, goalType);
                   if (!rec) return null;
                   return (
                     <div style={{
@@ -1081,6 +1219,25 @@ const ActiveWorkoutScreen: React.FC<{
                     }}>
                       <Zap size={10} color="#6366F1" fill="#6366F1" style={{ flexShrink: 0 }} />
                       <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(99,102,241,0.9)' }}>{rec}</span>
+                    </div>
+                  );
+                })()}
+
+                {/* Exercise completion verdict — shown when all sets done */}
+                {allDone && (() => {
+                  const lastVol = getLastExerciseVolume(logs, ex.libraryId, today);
+                  const verdict = getExerciseVerdict(ex.sets, lastVol);
+                  if (!verdict) return null;
+                  return (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '8px 12px', borderRadius: 10,
+                      background: `${verdict.color}10`,
+                      border: `1px solid ${verdict.color}25`,
+                      marginTop: 2,
+                    }}>
+                      <Check size={11} color={verdict.color} style={{ flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: verdict.color }}>{verdict.label}</span>
                     </div>
                   );
                 })()}
@@ -1324,12 +1481,19 @@ export const Training: React.FC = () => {
 
   const startProgramDay = (program: WorkoutProgram, day: ProgramDay) => {
     setSessionName(`${program.name} — ${day.name}`);
-    setExercises(day.exercises.map(e => ({
-      libraryId: e.exerciseId, name: e.name,
-      targetReps: e.reps, rest: e.rest, notes: e.notes,
-      supersetGroup: e.supersetGroup, variations: e.variations,
-      sets: Array.from({ length: e.sets }, () => ({ weight: '', reps: '', rpe: 0, type: 'N' as SetType, done: false })),
-    })));
+    setExercises(day.exercises.map(e => {
+      const lastPerf = getLastPerformance(state.logs, e.exerciseId, today);
+      return {
+        libraryId: e.exerciseId, name: e.name,
+        targetReps: e.reps, rest: e.rest, notes: e.notes,
+        supersetGroup: e.supersetGroup, variations: e.variations,
+        sets: Array.from({ length: e.sets }, () => ({
+          weight: lastPerf ? String(lastPerf.weight) : '',
+          reps: '',
+          rpe: 0, type: 'N' as SetType, done: false,
+        })),
+      };
+    }));
     setSessionActive(true);
   };
 
@@ -1344,7 +1508,13 @@ export const Training: React.FC = () => {
   const addExercisesToSession = (selected: { id: string; name: string }[]) => {
     setExercises(prev => [
       ...prev,
-      ...selected.map(s => ({ libraryId: s.id, name: s.name, sets: [{ weight: '', reps: '', rpe: 0, type: 'N' as SetType, done: false }] })),
+      ...selected.map(s => {
+        const lastPerf = getLastPerformance(state.logs, s.id, today);
+        return {
+          libraryId: s.id, name: s.name,
+          sets: [{ weight: lastPerf ? String(lastPerf.weight) : '', reps: '', rpe: 0, type: 'N' as SetType, done: false }],
+        };
+      }),
     ]);
     setShowPicker(false);
   };
@@ -1398,6 +1568,9 @@ export const Training: React.FC = () => {
     localStorage.removeItem('bbc_workout_draft');
     setSessionActive(false);
 
+    // Get previous session volume for comparison
+    const prevVolume = getPrevSessionVolume(state.logs, sessionName, today) ?? undefined;
+
     // Build summary and show summary screen
     const summary: SummaryData = {
       name: sessionName,
@@ -1406,6 +1579,7 @@ export const Training: React.FC = () => {
       prCount,
       caloriesBurned,
       exercises: exerciseSummaries,
+      prevVolume,
     };
     setSummaryData(summary);
     setCoachFeedback('');
@@ -1413,7 +1587,7 @@ export const Training: React.FC = () => {
 
     // Async: get AI coaching feedback and update when ready
     if (state.user) {
-      coachService.getWorkoutFeedback(state.user, session).then(feedback => {
+      coachService.getWorkoutFeedback(state.user, session, prevVolume).then(feedback => {
         setCoachFeedback(feedback);
       });
     }
@@ -1447,7 +1621,7 @@ export const Training: React.FC = () => {
       <>
         <ActiveWorkoutScreen
           workoutName={sessionName} exercises={exercises} elapsed={elapsed}
-          logs={state.logs} today={today}
+          logs={state.logs} today={today} goalType={state.user?.goalType}
           onUpdateExercises={setExercises}
           onAddExercise={() => setShowPicker(true)}
           onFinish={finishWorkout} onCancel={cancelWorkout} showToast={showToast}
