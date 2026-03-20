@@ -50,13 +50,14 @@ const getClaudeKey = (): string | null => {
 async function claudeComplete(
   systemPrompt: string,
   userMessage: string,
-  history: { role: 'user' | 'assistant'; content: string }[] = []
+  history: { role: 'user' | 'assistant'; content: string }[] = [],
+  maxTokens = 700
 ): Promise<string> {
   const key = getClaudeKey();
-  if (!key) return '⚠️ No API key found. Go to Settings → AI Coach and paste your Claude key.';
+  if (!key) return 'No API key set. Go to **Settings → AI Coach** and paste your Claude key.';
   try {
     const messages = [
-      ...history.slice(-8),
+      ...history.slice(-10),
       { role: 'user' as const, content: userMessage },
     ];
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -69,18 +70,22 @@ async function claudeComplete(
       },
       body: JSON.stringify({
         model: CLAUDE_MODEL,
-        max_tokens: 500,
+        max_tokens: maxTokens,
         system: systemPrompt,
         messages,
       }),
     });
     const data = await res.json();
-    if (data.error) return `⚠️ Claude error: ${data.error.message}`;
+    if (data.error) {
+      if (data.error.type === 'authentication_error') return 'Invalid API key. Double-check your key in **Settings → AI Coach**.';
+      if (data.error.type === 'rate_limit_error') return 'Rate limit hit. Wait 60 seconds and try again.';
+      return `API error: ${data.error.message}`;
+    }
     const text = data.content?.[0]?.text;
-    if (!text) return `⚠️ Empty response. Raw: ${JSON.stringify(data).slice(0, 200)}`;
+    if (!text) return 'Empty response from AI. Try again.';
     return text;
   } catch (e) {
-    return `⚠️ Network error: ${e instanceof Error ? e.message : String(e)}`;
+    return `Network error: ${e instanceof Error ? e.message : String(e)}`;
   }
 }
 
@@ -89,56 +94,86 @@ const buildSystemPrompt = (user: UserProfile, ctx?: Partial<CoachContext>): stri
   const ema = ctx?.currentEma;
   const delta = ctx?.weightDelta7d;
   const tc = ctx?.trainingContext;
+  const firstName = user.name.split(' ')[0];
+  const unitLabel = 'kg';
+
+  const goalLabel = user.goalType === 'fat_loss' ? 'fat loss'
+    : user.goalType === 'muscle_gain' ? 'muscle gain'
+    : user.goalType === 'recomposition' ? 'body recomposition'
+    : 'maintenance';
 
   const lines: string[] = [
-    `You are a world-class evidence-based fitness coach combining Jeff Nippard's scientific approach with MacroFactor's adaptive nutrition methodology.`,
+    `You are an elite evidence-based fitness coach — think Jeff Nippard meets Renaissance Periodization meets MacroFactor. You speak directly, use real data, and never give generic advice.`,
     ``,
-    `CLIENT: ${user.name}`,
-    `Goal: ${user.goalType.replace(/_/g, ' ')} | ${user.weight}kg${user.goalWeight ? ` → ${user.goalWeight}kg` : ''}`,
-    `Targets: ${user.targets.calories} kcal / ${user.targets.protein}g protein / ${user.targets.carbs}g carbs / ${user.targets.fats}g fats`,
+    `YOUR CLIENT: ${firstName} (${user.name})`,
+    `Primary goal: ${goalLabel}${user.goalWeight ? ` | target weight: ${user.goalWeight}${unitLabel}` : ''}`,
+    `Current weight: ${user.weight}${unitLabel} | Training: ${user.trainingFrequency}x/week`,
+    `Daily targets: ${user.targets.calories} kcal | ${user.targets.protein}g protein (${(user.targets.protein / user.weight).toFixed(1)}g/kg) | ${user.targets.carbs}g carbs | ${user.targets.fats}g fats`,
+    `Diet pace: ${user.preferredDietSpeed}`,
   ];
 
-  if (stats) {
-    lines.push(``, `THIS WEEK'S NUTRITION:`);
-    lines.push(`- Calories: avg ${stats.avgCalories} kcal (${stats.calorieAdherence}% adherence to ${user.targets.calories} target)`);
-    lines.push(`- Protein: avg ${stats.avgProtein}g (${stats.proteinAdherence}% adherence to ${user.targets.protein}g target)`);
-    lines.push(`- Days logged: ${stats.daysLogged}/7 | Workouts: ${stats.workoutsCompleted} completed`);
+  if (stats && stats.daysLogged > 0) {
+    lines.push(``, `THIS WEEK (${stats.daysLogged}/7 days logged):`);
+    lines.push(`- Calories: avg ${stats.avgCalories} kcal vs ${user.targets.calories} target → ${stats.calorieAdherence}% adherence`);
+    lines.push(`- Protein: avg ${stats.avgProtein}g vs ${user.targets.protein}g target → ${stats.proteinAdherence}% adherence`);
+    lines.push(`- Workouts completed: ${stats.workoutsCompleted}`);
+
+    if (stats.calorieAdherence < 80) {
+      lines.push(`  ↳ Calorie adherence is below target — identify and address the gap`);
+    }
+    if (stats.proteinAdherence < 80) {
+      lines.push(`  ↳ Protein adherence is below target — highest priority fix`);
+    }
   }
 
   if (ema !== undefined || delta !== undefined) {
     lines.push(``, `WEIGHT TREND:`);
-    if (ema !== undefined) lines.push(`- Current EMA: ${ema.toFixed(1)}kg`);
-    if (delta !== undefined) lines.push(`- 7-day change: ${delta > 0 ? '+' : ''}${delta.toFixed(2)}kg`);
+    if (ema !== undefined) lines.push(`- 7-day EMA: ${ema.toFixed(1)}${unitLabel}`);
+    if (delta !== undefined) {
+      const direction = delta < -0.05 ? 'losing ✓' : delta > 0.05 ? 'gaining' : 'stable';
+      lines.push(`- 7-day change: ${delta > 0 ? '+' : ''}${delta.toFixed(2)}${unitLabel} (${direction})`);
+      if (user.goalType === 'fat_loss' && delta > 0.1) {
+        lines.push(`  ↳ Weight trending up despite cut — likely a logging accuracy or adherence issue`);
+      }
+      if (user.goalType === 'fat_loss' && delta < -0.5) {
+        lines.push(`  ↳ Losing faster than ideal — monitor for muscle loss risk`);
+      }
+    }
   }
 
   if (tc?.recentSessions && tc.recentSessions.length > 0) {
-    lines.push(``, `RECENT TRAINING (last ${tc.recentSessions.length} sessions):`);
-    tc.recentSessions.forEach(s => {
-      const exStr = s.exercises.map(e => `${e.name} ${e.sets}×${e.bestSet.weight}kg×${e.bestSet.reps}`).join(', ');
-      lines.push(`- ${s.name} (${s.date}): ${s.durationMinutes}min${s.sessionRPE ? `, RPE ${s.sessionRPE}` : ''}. ${exStr}`);
+    lines.push(``, `RECENT TRAINING (${tc.recentSessions.length} sessions):`);
+    tc.recentSessions.slice(0, 3).forEach(s => {
+      const exStr = s.exercises
+        .slice(0, 4)
+        .map(e => `${e.name} ${e.sets}×${e.bestSet.weight}kg×${e.bestSet.reps}`)
+        .join(', ');
+      lines.push(`- ${s.name} (${s.date}): ${s.durationMinutes}min${s.sessionRPE ? ` @RPE${s.sessionRPE}` : ''}${exStr ? ` | ${exStr}` : ''}`);
     });
   }
 
   if (tc?.progressionReady && tc.progressionReady.length > 0) {
-    lines.push(``, `EXERCISES READY FOR PROGRESSION:`);
-    tc.progressionReady.forEach(p => lines.push(`- ${p.exerciseName}: ${p.reasoning}`));
+    lines.push(``, `READY TO PROGRESS:`);
+    tc.progressionReady.slice(0, 4).forEach(p => lines.push(`- ${p.exerciseName}: ${p.reasoning}`));
   }
 
   if (tc?.musclesUnderMEV && tc.musclesUnderMEV.length > 0) {
-    lines.push(``, `Muscle groups below minimum effective volume this week: ${tc.musclesUnderMEV.join(', ')}.`);
+    lines.push(``, `UNDER-TRAINED MUSCLES (below MEV this week): ${tc.musclesUnderMEV.join(', ')}`);
   }
 
-  if (tc?.deloadRecommended && tc.deloadReasons.length > 0) {
-    lines.push(``, `DELOAD SIGNAL: ${tc.deloadReasons.join('; ')}.`);
+  if (tc?.deloadRecommended && tc.deloadReasons && tc.deloadReasons.length > 0) {
+    lines.push(``, `DELOAD SIGNAL: ${tc.deloadReasons.join('; ')}`);
   }
 
-  lines.push(``, `COMMUNICATION RULES:`);
-  lines.push(`- Direct, confident, science-backed. Never vague or preachy.`);
-  lines.push(`- Lead with the most actionable insight. Use real numbers from their data.`);
-  lines.push(`- 2–4 sentences max. No bullet points unless asked.`);
-  lines.push(`- Forward-looking only — no shame, no moralizing.`);
-  lines.push(`- Reference their specific data (weights, adherence %, workout names) when relevant.`);
-  lines.push(`- For exercise technique questions: give 3–5 key cues, common errors, and the primary muscle targeted.`);
+  lines.push(``, `─── RESPONSE RULES ───`);
+  lines.push(`- Always reference ${firstName}'s actual data — never give generic advice`);
+  lines.push(`- Lead with the single most actionable point. Be direct, not diplomatic.`);
+  lines.push(`- For chat questions: 2–4 sentences unless the question genuinely needs more depth`);
+  lines.push(`- Use **bold** for key numbers, key terms, or critical actions`);
+  lines.push(`- Use bullet points only when listing 3+ discrete items`);
+  lines.push(`- No preamble ("Great question!"), no moralizing, no shame`);
+  lines.push(`- For technique questions: primary muscle → 3 key cues → 1 most common error`);
+  lines.push(`- If data is sparse, say so and give the best advice possible with what's available`);
 
   return lines.join('\n');
 };
@@ -386,9 +421,23 @@ export class AICoachService {
   /** Generate weekly review text — uses Claude if API key set, otherwise free engine */
   async getWeeklyReview(ctx: CoachContext): Promise<string> {
     if (getClaudeKey()) {
+      const { user, weeklyStats: stats, weightDelta7d: delta } = ctx;
+      const firstName = user.name.split(' ')[0];
+      const weightNote = delta !== undefined
+        ? `Weight trend: ${delta > 0 ? '+' : ''}${delta.toFixed(2)}kg over 7 days.`
+        : '';
       return claudeComplete(
-        buildSystemPrompt(ctx.user, ctx),
-        `Give a 3-sentence weekly review of this client's progress: what went well, the single highest priority for next week, and any specific calorie or macro adjustment with exact numbers.`
+        buildSystemPrompt(user, ctx),
+        `Write ${firstName}'s weekly coaching review. Data: ${stats.calorieAdherence}% calorie adherence (avg ${stats.avgCalories} kcal), ${stats.proteinAdherence}% protein adherence (avg ${stats.avgProtein}g), ${stats.workoutsCompleted} workouts completed. ${weightNote}
+
+Structure the response as:
+1. A direct assessment of this week (what the numbers actually mean for their goal)
+2. The single most important priority for next week (specific, actionable, with exact numbers if relevant)
+3. Any calorie or macro adjustment recommendation — either confirm targets are correct or state the specific change and why
+
+3–5 sentences total. Reference their actual numbers. No filler phrases.`,
+        [],
+        600
       );
     }
     return getWeeklyReview(ctx);
@@ -397,12 +446,25 @@ export class AICoachService {
   /** Workout feedback — uses Claude if available, otherwise free engine */
   async getWorkoutFeedback(user: UserProfile, workout: WorkoutSession): Promise<string> {
     if (getClaudeKey()) {
-      const exerciseSummary = workout.exercises.map(ex =>
-        `${ex.name}: ${ex.sets.map(s => `${s.weight}kg×${s.reps}${s.rpe ? ` @RPE${s.rpe}` : ''}`).join(', ')}`
-      ).join('\n');
+      const exerciseSummary = workout.exercises.map(ex => {
+        const completedSets = ex.sets.filter(s => s.weight > 0 && s.reps > 0);
+        return `${ex.name}: ${completedSets.map(s => `${s.weight}kg×${s.reps}${s.rpe ? ` @RPE${s.rpe}` : ''}`).join(', ')}`;
+      }).filter(Boolean).join('\n');
       return claudeComplete(
         buildSystemPrompt(user),
-        `Workout just completed: ${workout.name}, ${workout.durationMinutes}min, session RPE: ${workout.sessionRPE ?? 'not set'}\n${exerciseSummary}\n\nGive 2 sentences of specific technical coaching feedback. Highlight any PRs or strong sets, note anything to watch, and give one concrete focus for the next session.`
+        `Workout completed: **${workout.name}** | ${workout.durationMinutes} minutes | Session RPE: ${workout.sessionRPE ?? 'not recorded'}
+
+Exercises:
+${exerciseSummary}
+
+Give 2–3 sentences of specific coaching feedback:
+- Call out any strong sets, PRs, or good execution
+- Flag anything to watch (RPE concerns, exercise volume, technique cues worth noting)
+- Give one concrete focus for the next identical session (specific lift, specific weight/rep target)
+
+Be specific to the actual exercises and numbers shown. No generic praise.`,
+        [],
+        400
       );
     }
     return getWorkoutFeedback(workout);
@@ -410,7 +472,7 @@ export class AICoachService {
 
   /** Free-form AI chat with the coach — uses Claude Haiku */
   async chat(ctx: CoachContext, userMessage: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<string> {
-    return claudeComplete(buildSystemPrompt(ctx.user, ctx), userMessage, history);
+    return claudeComplete(buildSystemPrompt(ctx.user, ctx), userMessage, history, 700);
   }
 }
 

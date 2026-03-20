@@ -14,6 +14,75 @@ import {
 } from '../utils/volumeLandmarks';
 import { CoachInsight, WeeklyCheckIn } from '../types';
 
+// ─── Markdown renderer ────────────────────────────────────────────────────────
+
+const renderInline = (text: string): React.ReactNode => {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) =>
+    part.startsWith('**') && part.endsWith('**')
+      ? <strong key={i} style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{part.slice(2, -2)}</strong>
+      : part
+  );
+};
+
+const ChatMarkdown: React.FC<{ text: string }> = ({ text }) => {
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    // Collect bullet list
+    if (/^[-•*]\s+/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^[-•*]\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^[-•*]\s+/, ''));
+        i++;
+      }
+      elements.push(
+        <ul key={`ul-${i}`} style={{ paddingLeft: 16, margin: '5px 0', listStyleType: 'disc' }}>
+          {items.map((it, bi) => (
+            <li key={bi} style={{ marginBottom: 3, lineHeight: 1.5 }}>{renderInline(it)}</li>
+          ))}
+        </ul>
+      );
+      continue;
+    }
+    // Collect numbered list
+    if (/^\d+\.\s+/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\d+\.\s+/, ''));
+        i++;
+      }
+      elements.push(
+        <ol key={`ol-${i}`} style={{ paddingLeft: 18, margin: '5px 0' }}>
+          {items.map((it, ni) => (
+            <li key={ni} style={{ marginBottom: 3, lineHeight: 1.5 }}>{renderInline(it)}</li>
+          ))}
+        </ol>
+      );
+      continue;
+    }
+    // Empty line → spacer
+    if (line.trim() === '') {
+      if (elements.length > 0) elements.push(<div key={`sp-${i}`} style={{ height: 6 }} />);
+      i++;
+      continue;
+    }
+    // Normal line
+    const prevLine = lines[i - 1];
+    const needsBr = i > 0 && prevLine !== undefined && prevLine.trim() !== '' && !/^[-•*\d]/.test(prevLine);
+    elements.push(
+      <span key={`ln-${i}`}>
+        {needsBr && <br />}
+        {renderInline(line)}
+      </span>
+    );
+    i++;
+  }
+  return <>{elements}</>;
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const todayStr = () => new Date().toISOString().split('T')[0];
@@ -309,7 +378,15 @@ export const Coach: React.FC = () => {
   }, [state.logs, progressionSuggestions, deloadRec, musclesUnderMEV, activeMuscles]);
 
   // ── AI Chat state ──────────────────────────────────────────────────────────
-  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string; id: string }[]>([]);
+  type ChatMsg = { role: 'user' | 'assistant'; content: string; id: string };
+  const SESSION_KEY = 'evolved_coach_chat';
+
+  const [chatMessages, setChatMessages] = useState<ChatMsg[]>(() => {
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      return saved ? (JSON.parse(saved) as ChatMsg[]) : [];
+    } catch { return []; }
+  });
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -323,19 +400,24 @@ export const Coach: React.FC = () => {
     return () => { window.removeEventListener('storage', check); clearInterval(interval); };
   }, []);
 
+  // Persist chat to sessionStorage
+  useEffect(() => {
+    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(chatMessages)); } catch { /* quota */ }
+  }, [chatMessages]);
+
   useEffect(() => {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  const handleChat = useCallback(async () => {
-    const msg = chatInput.trim();
-    if (!msg || chatLoading) return;
+  const sendMessage = useCallback(async (msg: string) => {
+    if (!msg.trim() || chatLoading) return;
     setChatInput('');
-    const userMsg = { role: 'user' as const, content: msg, id: `u_${Date.now()}` };
+    const userMsg: ChatMsg = { role: 'user', content: msg.trim(), id: `u_${Date.now()}` };
     setChatMessages(prev => [...prev, userMsg]);
     setChatLoading(true);
     try {
       const weightTrend = weightDelta < -0.1 ? 'losing' as const : weightDelta > 0.1 ? 'gaining' as const : 'maintaining' as const;
+      const history = [...chatMessages, userMsg].map(m => ({ role: m.role, content: m.content }));
       const reply = await coachService.chat(
         {
           user,
@@ -346,18 +428,16 @@ export const Coach: React.FC = () => {
           currentEma: currentEma ?? undefined,
           trainingContext,
         },
-        msg,
-        chatMessages.map(m => ({ role: m.role, content: m.content })),
+        msg.trim(),
+        history.slice(0, -1), // history excludes the current message (passed separately)
       );
-      setChatMessages(prev => [...prev, {
-        role: 'assistant',
-        content: reply,
-        id: `a_${Date.now()}`,
-      }]);
+      setChatMessages(prev => [...prev, { role: 'assistant', content: reply, id: `a_${Date.now()}` }]);
     } finally {
       setChatLoading(false);
     }
-  }, [chatInput, chatLoading, chatMessages, user, weeklyStats, weightDelta, currentEma, trainingContext]);
+  }, [chatLoading, chatMessages, user, weeklyStats, weightDelta, currentEma, trainingContext]);
+
+  const handleChat = useCallback(() => sendMessage(chatInput), [chatInput, sendMessage]);
 
   // Coach insights (static library)
   const allInsights = useMemo(() => coachService.getInsights(user, weeklyStats), [user, weeklyStats]);
@@ -634,7 +714,8 @@ export const Coach: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {suggestedQuestions.map(q => (
-                    <button key={q} onClick={() => { setChatInput(q); }}
+                    <button key={q}
+                      onClick={() => { if (!chatLoading && hasClaudeKey) sendMessage(q); else setChatInput(q); }}
                       style={{ textAlign: 'left', padding: '9px 13px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }}>
                       {q}
                     </button>
@@ -657,10 +738,10 @@ export const Coach: React.FC = () => {
                       maxWidth: '86%', padding: '10px 14px', borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
                       background: m.role === 'user' ? 'var(--accent-blue)' : 'var(--bg-elevated)',
                       border: m.role === 'assistant' ? '1px solid rgba(255,255,255,0.08)' : 'none',
-                      fontSize: '0.84rem', fontWeight: 500, lineHeight: 1.55, color: 'var(--text-primary)',
+                      fontSize: '0.84rem', fontWeight: 500, lineHeight: 1.6, color: 'var(--text-primary)',
                       boxShadow: m.role === 'user' ? '0 4px 12px rgba(59,130,246,0.3)' : '0 2px 8px rgba(0,0,0,0.3)',
                     }}>
-                      {m.content}
+                      {m.role === 'assistant' ? <ChatMarkdown text={m.content} /> : m.content}
                     </div>
                   </div>
                 ))}
@@ -717,8 +798,8 @@ export const Coach: React.FC = () => {
             {thisWeekCheckIn?.coachResponse && (
               <div style={{ borderRadius: 16, background: 'var(--bg-card)', border: '1px solid var(--border-color)', padding: '14px 16px' }}>
                 <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#A5B4FC', marginBottom: 8 }}>Coach Review</div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                  {thisWeekCheckIn.coachResponse}
+                <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+                  <ChatMarkdown text={thisWeekCheckIn.coachResponse} />
                 </div>
               </div>
             )}
