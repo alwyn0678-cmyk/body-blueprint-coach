@@ -2,10 +2,10 @@
  * AI Coach Service
  *
  * FREE by default — uses a data-driven coaching engine with no API required.
- * Optional upgrade: set a free Gemini API key (https://aistudio.google.com — free tier)
- * for Gemini 2.0 Flash powered natural language responses.
+ * Optional upgrade: set a Claude API key (https://console.anthropic.com)
+ * for Claude Haiku 3.5 powered natural language responses.
  *
- * VITE_GEMINI_API_KEY=your-key-here (in .env)
+ * VITE_CLAUDE_API_KEY=your-key-here (in .env)
  */
 
 import { UserProfile, DailyLog, WeeklyStats, WorkoutSession, CoachInsight, GoalType } from '../types';
@@ -38,49 +38,48 @@ export interface CoachContext {
   trainingContext?: TrainingContext; // enriched training intelligence
 }
 
-// ─── Gemini 2.0 Flash API ────────────────────────────────────────────────────
+// ─── Claude API ───────────────────────────────────────────────────────────────
 
-const GEMINI_KEY_ENV = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-const GEMINI_MODEL = 'gemini-1.5-flash';
+const CLAUDE_KEY_ENV = import.meta.env.VITE_CLAUDE_API_KEY as string | undefined;
+const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
 
-/** Reads Gemini key from env var first, then localStorage runtime override */
-const getGeminiKey = (): string | null => {
-  if (GEMINI_KEY_ENV) return GEMINI_KEY_ENV;
-  const runtime = localStorage.getItem('bbc_gemini_api_key');
+const getClaudeKey = (): string | null => {
+  if (CLAUDE_KEY_ENV) return CLAUDE_KEY_ENV;
+  const runtime = localStorage.getItem('bbc_claude_api_key');
   return runtime && runtime.trim() ? runtime.trim() : null;
 };
 
-async function geminiComplete(
+async function claudeComplete(
   systemPrompt: string,
   userMessage: string,
   history: { role: 'user' | 'assistant'; content: string }[] = []
 ): Promise<string> {
-  const key = getGeminiKey();
-  if (!key) return '⚠️ No API key found. Go to Settings → AI Coach and paste your Gemini key.';
+  const key = getClaudeKey();
+  if (!key) return '⚠️ No API key found. Go to Settings → AI Coach and paste your Claude key.';
   try {
-    const contents = [
-      ...history.slice(-8).map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }],
-      })),
-      { role: 'user', parts: [{ text: userMessage }] },
+    const messages = [
+      ...history.slice(-8),
+      { role: 'user' as const, content: userMessage },
     ];
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents,
-          generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
-        }),
-      }
-    );
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: CLAUDE_MODEL,
+        max_tokens: 500,
+        system: systemPrompt,
+        messages,
+      }),
+    });
     const data = await res.json();
-    if (data.error) return `⚠️ Gemini error: ${data.error.message}`;
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) return `⚠️ Gemini returned empty response. Raw: ${JSON.stringify(data).slice(0, 200)}`;
+    if (data.error) return `⚠️ Claude error: ${data.error.message}`;
+    const text = data.content?.[0]?.text;
+    if (!text) return `⚠️ Empty response. Raw: ${JSON.stringify(data).slice(0, 200)}`;
     return text;
   } catch (e) {
     return `⚠️ Network error: ${e instanceof Error ? e.message : String(e)}`;
@@ -386,36 +385,34 @@ export class AICoachService {
     return getGoalInsights(user, stats);
   }
 
-  /** Generate weekly review text — uses Gemini 2.0 Flash if API key set, otherwise free engine */
+  /** Generate weekly review text — uses Claude if API key set, otherwise free engine */
   async getWeeklyReview(ctx: CoachContext): Promise<string> {
-    if (getGeminiKey()) {
-      const aiResponse = await geminiComplete(
+    if (getClaudeKey()) {
+      return claudeComplete(
         buildSystemPrompt(ctx.user, ctx),
         `Give a 3-sentence weekly review of this client's progress: what went well, the single highest priority for next week, and any specific calorie or macro adjustment with exact numbers.`
       );
-      if (aiResponse) return aiResponse;
     }
     return getWeeklyReview(ctx);
   }
 
-  /** Workout feedback — uses Gemini if available, otherwise free engine */
+  /** Workout feedback — uses Claude if available, otherwise free engine */
   async getWorkoutFeedback(user: UserProfile, workout: WorkoutSession): Promise<string> {
-    if (getGeminiKey()) {
+    if (getClaudeKey()) {
       const exerciseSummary = workout.exercises.map(ex =>
         `${ex.name}: ${ex.sets.map(s => `${s.weight}kg×${s.reps}${s.rpe ? ` @RPE${s.rpe}` : ''}`).join(', ')}`
       ).join('\n');
-      const aiResponse = await geminiComplete(
+      return claudeComplete(
         buildSystemPrompt(user),
         `Workout just completed: ${workout.name}, ${workout.durationMinutes}min, session RPE: ${workout.sessionRPE ?? 'not set'}\n${exerciseSummary}\n\nGive 2 sentences of specific technical coaching feedback. Highlight any PRs or strong sets, note anything to watch, and give one concrete focus for the next session.`
       );
-      if (aiResponse) return aiResponse;
     }
     return getWorkoutFeedback(workout);
   }
 
-  /** Free-form AI chat with the coach — uses Gemini 2.0 Flash */
+  /** Free-form AI chat with the coach — uses Claude Haiku */
   async chat(ctx: CoachContext, userMessage: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<string> {
-    return geminiComplete(buildSystemPrompt(ctx.user, ctx), userMessage, history);
+    return claudeComplete(buildSystemPrompt(ctx.user, ctx), userMessage, history);
   }
 }
 

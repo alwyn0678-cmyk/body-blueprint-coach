@@ -185,8 +185,8 @@ export const Settings: React.FC = () => {
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [comingSoonApp, setComingSoonApp] = useState<{ name: string; id: string } | null>(null);
   const [notifyEnabled, setNotifyEnabled] = useState<Record<string, boolean>>({});
-  const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('bbc_gemini_api_key') ?? '');
-  const [geminiKeySaved, setGeminiKeySaved] = useState(false);
+  const [claudeKey, setGeminiKey] = useState(() => localStorage.getItem('bbc_claude_api_key') ?? '');
+  const [claudeKeySaved, setClaudeKeySaved] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
   if (!user) return (
@@ -678,23 +678,23 @@ export const Settings: React.FC = () => {
         <SecLabel text="AI Coach" />
         <PageCard>
           <div style={{ padding: '14px 16px' }}>
-            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>Gemini API Key</div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>Claude API Key</div>
             <div style={{ fontSize: '0.72rem', color: C.textTertiary, fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
-              Optional — enables Gemini 2.0 Flash AI coaching. Free at aistudio.google.com
+              Optional — enables Claude Haiku AI coaching. Get a key at console.anthropic.com
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 type="password"
-                placeholder="AIza..."
-                value={geminiKey}
+                placeholder="sk-ant-..."
+                value={claudeKey}
                 onChange={e => {
                   const val = e.target.value;
                   setGeminiKey(val);
-                  setGeminiKeySaved(false);
+                  setClaudeKeySaved(false);
                   if (val.trim()) {
-                    localStorage.setItem('bbc_gemini_api_key', val.trim());
+                    localStorage.setItem('bbc_claude_api_key', val.trim());
                   } else {
-                    localStorage.removeItem('bbc_gemini_api_key');
+                    localStorage.removeItem('bbc_claude_api_key');
                   }
                 }}
                 style={{
@@ -705,28 +705,28 @@ export const Settings: React.FC = () => {
               />
               <button
                 onClick={() => {
-                  if (geminiKey.trim()) {
-                    localStorage.setItem('bbc_gemini_api_key', geminiKey.trim());
+                  if (claudeKey.trim()) {
+                    localStorage.setItem('bbc_claude_api_key', claudeKey.trim());
                   } else {
-                    localStorage.removeItem('bbc_gemini_api_key');
+                    localStorage.removeItem('bbc_claude_api_key');
                   }
-                  setGeminiKeySaved(true);
-                  setTimeout(() => setGeminiKeySaved(false), 2500);
+                  setClaudeKeySaved(true);
+                  setTimeout(() => setClaudeKeySaved(false), 2500);
                 }}
                 style={{
                   padding: '10px 16px', borderRadius: 12,
-                  background: geminiKeySaved ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
-                  border: `1px solid ${geminiKeySaved ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.3)'}`,
-                  color: geminiKeySaved ? '#22C55E' : '#6366F1',
+                  background: claudeKeySaved ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
+                  border: `1px solid ${claudeKeySaved ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.3)'}`,
+                  color: claudeKeySaved ? '#22C55E' : '#6366F1',
                   fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0,
                 }}
               >
-                {geminiKeySaved ? '✓ Saved' : 'Save'}
+                {claudeKeySaved ? '✓ Saved' : 'Save'}
               </button>
             </div>
-            {geminiKey && (
+            {claudeKey && (
               <button
-                onClick={() => { setGeminiKey(''); localStorage.removeItem('bbc_gemini_api_key'); }}
+                onClick={() => { setGeminiKey(''); localStorage.removeItem('bbc_claude_api_key'); }}
                 style={{ marginTop: 8, background: 'none', border: 'none', color: C.textTertiary, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
               >
                 Clear key
