@@ -41,7 +41,7 @@ export interface CoachContext {
 // ─── Gemini 2.0 Flash API ────────────────────────────────────────────────────
 
 const GEMINI_KEY_ENV = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-1.5-flash';
 
 /** Reads Gemini key from env var first, then localStorage runtime override */
 const getGeminiKey = (): string | null => {
