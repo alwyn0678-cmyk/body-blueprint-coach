@@ -12,6 +12,21 @@ import { UserProfile, DailyLog, WeeklyStats, WorkoutSession, CoachInsight, GoalT
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export interface TrainingContext {
+  recentSessions: Array<{
+    name: string;
+    date: string;
+    durationMinutes: number;
+    sessionRPE?: number;
+    exercises: Array<{ name: string; sets: number; bestSet: { weight: number; reps: number } }>;
+  }>;
+  progressionReady: Array<{ exerciseName: string; reasoning: string; type: string }>;
+  deloadRecommended: boolean;
+  deloadReasons: string[];
+  musclesUnderMEV: string[];
+  musclesAboveMEV: string[];
+}
+
 export interface CoachContext {
   user: UserProfile;
   todayLog?: DailyLog;
@@ -20,6 +35,7 @@ export interface CoachContext {
   weightTrend?: 'gaining' | 'losing' | 'maintaining' | 'unknown';
   weightDelta7d?: number; // kg change over 7 days
   currentEma?: number;
+  trainingContext?: TrainingContext; // enriched training intelligence
 }
 
 // ─── Free Groq API (optional upgrade) ────────────────────────────────────────
@@ -60,17 +76,64 @@ async function groqComplete(systemPrompt: string, userMessage: string): Promise<
   }
 }
 
-const buildSystemPrompt = (user: UserProfile) => `
-You are a world-class evidence-based fitness coach combining Jeff Nippard's scientific approach with MacroFactor's adaptive nutrition methodology.
+const buildSystemPrompt = (user: UserProfile, ctx?: Partial<CoachContext>): string => {
+  const stats = ctx?.weeklyStats;
+  const ema = ctx?.currentEma;
+  const delta = ctx?.weightDelta7d;
+  const tc = ctx?.trainingContext;
 
-User: ${user.name}, goal: ${user.goalType.replace('_', ' ')}, ${user.weight}kg → ${user.goalWeight ?? '?'}kg, targets: ${user.targets.calories} kcal / ${user.targets.protein}g protein.
+  const lines: string[] = [
+    `You are a world-class evidence-based fitness coach combining Jeff Nippard's scientific approach with MacroFactor's adaptive nutrition methodology.`,
+    ``,
+    `CLIENT: ${user.name}`,
+    `Goal: ${user.goalType.replace(/_/g, ' ')} | ${user.weight}kg${user.goalWeight ? ` → ${user.goalWeight}kg` : ''}`,
+    `Targets: ${user.targets.calories} kcal / ${user.targets.protein}g protein / ${user.targets.carbs}g carbs / ${user.targets.fats}g fats`,
+  ];
 
-Communication rules:
-- Direct, confident, science-backed. Never vague or preachy.
-- Lead with the most actionable insight. Use real numbers.
-- 2–4 sentences max. No bullet points unless asked.
-- Forward-looking only — no shame, no moralizing.
-`.trim();
+  if (stats) {
+    lines.push(``, `THIS WEEK'S NUTRITION:`);
+    lines.push(`- Calories: avg ${stats.avgCalories} kcal (${stats.calorieAdherence}% adherence to ${user.targets.calories} target)`);
+    lines.push(`- Protein: avg ${stats.avgProtein}g (${stats.proteinAdherence}% adherence to ${user.targets.protein}g target)`);
+    lines.push(`- Days logged: ${stats.daysLogged}/7 | Workouts: ${stats.workoutsCompleted} completed`);
+  }
+
+  if (ema !== undefined || delta !== undefined) {
+    lines.push(``, `WEIGHT TREND:`);
+    if (ema !== undefined) lines.push(`- Current EMA: ${ema.toFixed(1)}kg`);
+    if (delta !== undefined) lines.push(`- 7-day change: ${delta > 0 ? '+' : ''}${delta.toFixed(2)}kg`);
+  }
+
+  if (tc?.recentSessions && tc.recentSessions.length > 0) {
+    lines.push(``, `RECENT TRAINING (last ${tc.recentSessions.length} sessions):`);
+    tc.recentSessions.forEach(s => {
+      const exStr = s.exercises.map(e => `${e.name} ${e.sets}×${e.bestSet.weight}kg×${e.bestSet.reps}`).join(', ');
+      lines.push(`- ${s.name} (${s.date}): ${s.durationMinutes}min${s.sessionRPE ? `, RPE ${s.sessionRPE}` : ''}. ${exStr}`);
+    });
+  }
+
+  if (tc?.progressionReady && tc.progressionReady.length > 0) {
+    lines.push(``, `EXERCISES READY FOR PROGRESSION:`);
+    tc.progressionReady.forEach(p => lines.push(`- ${p.exerciseName}: ${p.reasoning}`));
+  }
+
+  if (tc?.musclesUnderMEV && tc.musclesUnderMEV.length > 0) {
+    lines.push(``, `Muscle groups below minimum effective volume this week: ${tc.musclesUnderMEV.join(', ')}.`);
+  }
+
+  if (tc?.deloadRecommended && tc.deloadReasons.length > 0) {
+    lines.push(``, `DELOAD SIGNAL: ${tc.deloadReasons.join('; ')}.`);
+  }
+
+  lines.push(``, `COMMUNICATION RULES:`);
+  lines.push(`- Direct, confident, science-backed. Never vague or preachy.`);
+  lines.push(`- Lead with the most actionable insight. Use real numbers from their data.`);
+  lines.push(`- 2–4 sentences max. No bullet points unless asked.`);
+  lines.push(`- Forward-looking only — no shame, no moralizing.`);
+  lines.push(`- Reference their specific data (weights, adherence %, workout names) when relevant.`);
+  lines.push(`- For exercise technique questions: give 3–5 key cues, common errors, and the primary muscle targeted.`);
+
+  return lines.join('\n');
+};
 
 // ─── Smart data-driven coaching engine (100% free, no API) ───────────────────
 
@@ -316,8 +379,8 @@ export class AICoachService {
   async getWeeklyReview(ctx: CoachContext): Promise<string> {
     if (getGroqKey()) {
       const aiResponse = await groqComplete(
-        buildSystemPrompt(ctx.user),
-        `Weekly data: calories ${ctx.weeklyStats.avgCalories}/${ctx.user.targets.calories} kcal (${ctx.weeklyStats.calorieAdherence}%), protein ${ctx.weeklyStats.avgProtein}/${ctx.user.targets.protein}g (${ctx.weeklyStats.proteinAdherence}%), ${ctx.weeklyStats.workoutsCompleted} workouts, weight change ${ctx.weightDelta7d !== undefined ? (ctx.weightDelta7d > 0 ? '+' : '') + ctx.weightDelta7d.toFixed(2) + 'kg' : 'insufficient data'}. Goal: ${ctx.user.goalType.replace('_', ' ')}. Give a 3-sentence weekly review: what went well, the #1 priority for next week, and any calorie/macro adjustment with specific numbers.`
+        buildSystemPrompt(ctx.user, ctx),
+        `Give a 3-sentence weekly review of this client's progress: what went well, the single highest priority for next week, and any specific calorie or macro adjustment with exact numbers.`
       );
       if (aiResponse) return aiResponse;
     }
@@ -332,7 +395,7 @@ export class AICoachService {
       ).join('\n');
       const aiResponse = await groqComplete(
         buildSystemPrompt(user),
-        `Workout: ${workout.name}, ${workout.durationMinutes}min, session RPE: ${workout.sessionRPE ?? 'not set'}\n${exerciseSummary}\n\nGive 2 sentences of specific technical coaching feedback. Mention performance vs expected, highlight any PRs, and give one focus for the next session.`
+        `Workout just completed: ${workout.name}, ${workout.durationMinutes}min, session RPE: ${workout.sessionRPE ?? 'not set'}\n${exerciseSummary}\n\nGive 2 sentences of specific technical coaching feedback. Highlight any PRs or strong sets, note anything to watch, and give one concrete focus for the next session.`
       );
       if (aiResponse) return aiResponse;
     }
@@ -344,17 +407,7 @@ export class AICoachService {
     const key = getGroqKey();
     if (!key) return null;
 
-    const { user, weeklyStats, weightDelta7d, currentEma } = ctx;
-    const systemPrompt = `${buildSystemPrompt(user)}
-
-Current stats:
-- Calories this week: avg ${weeklyStats.avgCalories} kcal / target ${user.targets.calories} kcal (${weeklyStats.calorieAdherence}% adherence)
-- Protein this week: avg ${weeklyStats.avgProtein}g / target ${user.targets.protein}g (${weeklyStats.proteinAdherence}% adherence)
-- Workouts: ${weeklyStats.workoutsCompleted} / ${user.trainingFrequency} planned
-- Weight: ${currentEma ? currentEma.toFixed(1) + 'kg (EMA trend)' : user.weight + 'kg'}${weightDelta7d !== undefined ? `, 7d change: ${weightDelta7d > 0 ? '+' : ''}${weightDelta7d.toFixed(2)}kg` : ''}
-- Days logged: ${weeklyStats.daysLogged}/7
-
-Respond in 2-3 sentences. Be specific, scientific, and direct. Use the user's actual data.`;
+    const systemPrompt = buildSystemPrompt(ctx.user, ctx);
 
     try {
       const messages = [
@@ -365,8 +418,9 @@ Respond in 2-3 sentences. Be specific, scientific, and direct. Use the user's ac
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-        body: JSON.stringify({ model: GROQ_MODEL, max_tokens: 400, messages }),
+        body: JSON.stringify({ model: GROQ_MODEL, max_tokens: 500, messages }),
       });
+      if (!res.ok) return null;
       const data = await res.json();
       return data.choices?.[0]?.message?.content ?? null;
     } catch {

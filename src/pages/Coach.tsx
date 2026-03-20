@@ -1,15 +1,17 @@
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Brain, ChevronRight, TrendingUp, TrendingDown, Minus,
-  CheckCircle2, AlertCircle, Info, ChevronDown, ChevronUp,
+  Brain, CheckCircle2, ChevronDown, ChevronUp,
   Zap, Target, BarChart3, Dumbbell, Apple, Moon,
-  RefreshCw, Send, Lock, Sparkles, MessageCircle, Bot, ArrowUp,
+  RefreshCw, Send, Lock, Sparkles,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { coachService } from '../services/aiCoach';
+import { coachService, TrainingContext } from '../services/aiCoach';
 import { computeWeeklyStats, calculateWeightTrend, evaluateWeeklyCheckIn } from '../utils/aiCoachingEngine';
-import { calculateTargets } from '../utils/macroEngine';
+import {
+  buildVolumeLandmarks, calculateProgression, assessDeloadNeed,
+  getVolumeStatus, VOLUME_STATUS_LABELS, ProgressionSuggestion,
+} from '../utils/volumeLandmarks';
 import { CoachInsight, WeeklyCheckIn } from '../types';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -225,72 +227,97 @@ export const Coach: React.FC = () => {
 
   const thisWeekCheckIn = state.weeklyCheckIns.find(c => c.weekStart === weekStartStr());
 
-  // ── AI Chat state (after data vars are declared) ───────────────────────────
+  // ── Training Intelligence ──────────────────────────────────────────────────
+  const exerciseHistories = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; history: Array<{ date: string; bestSet: { weight: number; reps: number }; rpe?: number }> }>();
+    Object.entries(state.logs).sort(([a], [b]) => a.localeCompare(b)).forEach(([date, log]) => {
+      log.workouts.forEach(w => {
+        w.exercises.forEach(ex => {
+          if (!map.has(ex.exerciseId)) map.set(ex.exerciseId, { id: ex.exerciseId, name: ex.name, history: [] });
+          const completedSets = ex.sets.filter(s => s.weight > 0 && s.reps > 0);
+          if (completedSets.length === 0) return;
+          const bestSet = completedSets.reduce((b, s) => s.weight * s.reps > b.weight * b.reps ? s : b);
+          const rpes = completedSets.filter(s => s.rpe);
+          const avgRpe = rpes.length ? rpes.reduce((a, s) => a + (s.rpe ?? 0), 0) / rpes.length : undefined;
+          map.get(ex.exerciseId)!.history.push({ date, bestSet: { weight: bestSet.weight, reps: bestSet.reps }, rpe: avgRpe });
+        });
+      });
+    });
+    return map;
+  }, [state.logs]);
+
+  const progressionSuggestions = useMemo<ProgressionSuggestion[]>(() => {
+    const results: ProgressionSuggestion[] = [];
+    exerciseHistories.forEach(({ id, name, history }) => {
+      if (history.length < 1) return;
+      const s = calculateProgression(name, id, history.slice(-4));
+      if (s && (s.type === 'weight_increase' || s.type === 'deload')) results.push(s);
+    });
+    return results.slice(0, 6);
+  }, [exerciseHistories]);
+
+  const thisWeekStart = weekStartStr();
+  const volumeLandmarkData = useMemo(() => buildVolumeLandmarks(state.logs, thisWeekStart), [state.logs, thisWeekStart]);
+  const activeMuscles = useMemo(() => volumeLandmarkData.filter(v => v.currentVolume > 0), [volumeLandmarkData]);
+  const musclesUnderMEV = useMemo(() => volumeLandmarkData.filter(v => v.currentVolume > 0 && v.currentVolume < v.mev).map(v => v.muscle), [volumeLandmarkData]);
+
+  const avgSessionRPE = useMemo(() => {
+    const recent = Object.values(state.logs).flatMap(l => l.workouts).filter(w => w.sessionRPE).slice(-5);
+    return recent.length ? recent.reduce((a, w) => a + (w.sessionRPE ?? 0), 0) / recent.length : undefined;
+  }, [state.logs]);
+
+  const deloadRec = useMemo(() => assessDeloadNeed(
+    state.activeMesocycle?.currentWeek ?? 0,
+    state.activeMesocycle?.totalWeeks ?? 4,
+    avgSessionRPE,
+    volumeLandmarkData.filter(v => v.currentVolume >= v.mrv * 0.9).length,
+    weeklyStats.workoutsCompleted,
+  ), [volumeLandmarkData, avgSessionRPE, weeklyStats.workoutsCompleted, state.activeMesocycle]);
+
+  // Build TrainingContext for AI chat
+  const trainingContext = useMemo<TrainingContext>(() => {
+    const recentSessions = Object.values(state.logs)
+      .flatMap(log => log.workouts)
+      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+      .slice(0, 5)
+      .map(w => ({
+        name: w.name,
+        date: w.timestamp.split('T')[0],
+        durationMinutes: w.durationMinutes,
+        sessionRPE: w.sessionRPE,
+        exercises: w.exercises.map(ex => {
+          const completedSets = ex.sets.filter(s => s.weight > 0 && s.reps > 0);
+          const bestSet = completedSets.length
+            ? completedSets.reduce((b, s) => s.weight * s.reps > b.weight * b.reps ? s : b)
+            : { weight: 0, reps: 0 };
+          return { name: ex.name, sets: completedSets.length, bestSet: { weight: bestSet.weight, reps: bestSet.reps } };
+        }).filter(e => e.sets > 0),
+      }));
+
+    return {
+      recentSessions,
+      progressionReady: progressionSuggestions.map(s => ({
+        exerciseName: s.exerciseName,
+        reasoning: s.reasoning,
+        type: s.type,
+      })),
+      deloadRecommended: deloadRec.recommended,
+      deloadReasons: deloadRec.reasons,
+      musclesUnderMEV,
+      musclesAboveMEV: activeMuscles.filter(v => v.currentVolume >= v.mev).map(v => v.muscle),
+    };
+  }, [state.logs, progressionSuggestions, deloadRec, musclesUnderMEV, activeMuscles]);
+
+  // ── AI Chat state ──────────────────────────────────────────────────────────
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string; id: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasGroqKey = !!localStorage.getItem('bbc_groq_api_key') || !!import.meta.env.VITE_GROQ_API_KEY;
 
-  // ── AI Chat Agent state (bottom section) ──────────────────────────────────
-  const [agentMessages, setAgentMessages] = useState<{role: 'user'|'assistant', text: string}[]>([]);
-  const [agentInput, setAgentInput] = useState('');
-  const [agentLoading, setAgentLoading] = useState(false);
-  const agentEndRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
-
-  useEffect(() => {
-    agentEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [agentMessages]);
-
-  const sendChat = async () => {
-    const msg = agentInput.trim();
-    if (!msg || agentLoading) return;
-    setAgentInput('');
-    const newMessages = [...agentMessages, {role: 'user' as const, text: msg}];
-    setAgentMessages(newMessages);
-    setAgentLoading(true);
-
-    try {
-      const key = localStorage.getItem('bbc_groq_api_key');
-      if (!key) {
-        setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: 'No API key found. Go to Settings → AI Coach, paste your Groq key, and come back. Get a free key at console.groq.com'}]);
-        setAgentLoading(false);
-        return;
-      }
-
-      const systemPrompt = `You are an elite fitness coach AI assistant for the Evolved app. You specialise in hypertrophy, Mark Carroll methodology, RPE-based training, and macro nutrition. Be concise, direct, and motivating. Answer in 2-4 sentences max unless more detail is requested.`;
-
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${key}`},
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          max_tokens: 400,
-          messages: [
-            {role: 'system', content: systemPrompt},
-            ...newMessages.map(m => ({role: m.role, content: m.text})),
-          ],
-        }),
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        const errMsg = errData?.error?.message ?? `HTTP ${res.status}`;
-        setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: `API error: ${errMsg}. Check your key in Settings is correct.`}]);
-        setAgentLoading(false);
-        return;
-      }
-      const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content ?? 'Sorry, I had trouble responding. Try again.';
-      setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: reply}]);
-    } catch (e: any) {
-      setAgentMessages(prev => [...prev, {role: 'assistant' as const, text: `Connection error: ${e?.message ?? 'unknown'}. Check your internet connection.`}]);
-    }
-    setAgentLoading(false);
-  };
 
   const handleChat = useCallback(async () => {
     const msg = chatInput.trim();
@@ -300,8 +327,17 @@ export const Coach: React.FC = () => {
     setChatMessages(prev => [...prev, userMsg]);
     setChatLoading(true);
     try {
+      const weightTrend = weightDelta < -0.1 ? 'losing' as const : weightDelta > 0.1 ? 'gaining' as const : 'maintaining' as const;
       const reply = await coachService.chat(
-        { user, weeklyStats, recentWorkouts: [], weightTrend: weightDelta < -0.1 ? 'losing' : weightDelta > 0.1 ? 'gaining' : 'maintaining', weightDelta7d: weightDelta, currentEma: currentEma ?? undefined },
+        {
+          user,
+          weeklyStats,
+          recentWorkouts: [],
+          weightTrend,
+          weightDelta7d: weightDelta,
+          currentEma: currentEma ?? undefined,
+          trainingContext,
+        },
         msg,
         chatMessages.map(m => ({ role: m.role, content: m.content })),
       );
@@ -313,11 +349,38 @@ export const Coach: React.FC = () => {
     } finally {
       setChatLoading(false);
     }
-  }, [chatInput, chatLoading, chatMessages, user, weeklyStats, weightDelta, currentEma]);
+  }, [chatInput, chatLoading, chatMessages, user, weeklyStats, weightDelta, currentEma, trainingContext]);
 
   // Coach insights (static library)
   const allInsights = useMemo(() => coachService.getInsights(user, weeklyStats), [user, weeklyStats]);
   const activeInsights = allInsights.filter(i => !state.coachInsights.find(s => s.id === i.id && s.dismissed));
+
+  // Personalized chat starter questions based on actual user data
+  const suggestedQuestions = useMemo(() => {
+    const questions: string[] = [];
+    if (weeklyStats.proteinAdherence < 70 && weeklyStats.daysLogged >= 3)
+      questions.push(`I'm only hitting ${weeklyStats.proteinAdherence}% protein adherence — what's the fix?`);
+    if (progressionSuggestions.some(s => s.type === 'deload'))
+      questions.push(`Should I deload on ${progressionSuggestions.find(s => s.type === 'deload')!.exerciseName}?`);
+    if (musclesUnderMEV.length > 0)
+      questions.push(`My ${musclesUnderMEV[0]} volume is below MEV — how should I fix this?`);
+    if (weightDelta > 0.1 && user.goalType === 'fat_loss')
+      questions.push('My weight is trending up despite a deficit — why could this be?');
+    if (progressionSuggestions.some(s => s.type === 'weight_increase')) {
+      const p = progressionSuggestions.find(s => s.type === 'weight_increase')!;
+      questions.push(`How do I execute a weight increase on ${p.exerciseName}?`);
+    }
+    if (deloadRec.recommended)
+      questions.push('What should my deload week look like?');
+    // Goal-specific fallbacks
+    const fallbacks = user.goalType === 'fat_loss'
+      ? ['How do I preserve muscle while cutting?', 'When should I schedule a refeed day?', 'What\'s the right cardio approach for fat loss?']
+      : user.goalType === 'muscle_gain'
+      ? ['How do I optimise training volume for muscle growth?', 'How important is sleep for hypertrophy?', 'How do I avoid gaining too much fat while bulking?']
+      : ['How do I know if I\'m making real progress?', 'What\'s the most important habit to build right now?', 'How should I structure my training week?'];
+    for (const fb of fallbacks) { if (questions.length >= 4) break; questions.push(fb); }
+    return questions.slice(0, 4);
+  }, [weeklyStats, progressionSuggestions, musclesUnderMEV, user.goalType, weightDelta, deloadRec]);
   const dailyInsight = useMemo(() => coachService.getDailyInsight({
     user, weeklyStats,
     recentWorkouts: Object.values(state.logs).flatMap(l => l.workouts)
@@ -330,12 +393,14 @@ export const Coach: React.FC = () => {
   const handleCompleteCheckIn = useCallback(async () => {
     setWeeklyLoading(true);
     try {
+      const weightTrend = weightDelta < -0.1 ? 'losing' as const : weightDelta > 0.1 ? 'gaining' as const : 'maintaining' as const;
       const reviewText = await coachService.getWeeklyReview({
         user, weeklyStats,
         recentWorkouts: [],
-        weightTrend: weightDelta < -0.1 ? 'losing' : weightDelta > 0.1 ? 'gaining' : 'maintaining',
+        weightTrend,
         weightDelta7d: weightDelta,
         currentEma: currentEma ?? undefined,
+        trainingContext,
       });
 
       const checkIn: WeeklyCheckIn = {
@@ -437,13 +502,87 @@ export const Coach: React.FC = () => {
         {activeTab === 'insights' && (
           <motion.div key="insights" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+            {/* Training Intelligence card */}
+            {(activeMuscles.length > 0 || progressionSuggestions.length > 0 || deloadRec.recommended) && (
+              <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                <div style={{ borderRadius: 16, border: '1px solid rgba(99,102,241,0.22)', background: 'rgba(99,102,241,0.05)', overflow: 'hidden', padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                    <BarChart3 size={14} color="#A5B4FC" />
+                    <span style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#A5B4FC' }}>Training Intelligence</span>
+                    <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '1px 6px', borderRadius: 6, background: 'rgba(99,102,241,0.18)', color: '#A5B4FC' }}>This week</span>
+                  </div>
+
+                  {/* Volume landmark bars */}
+                  {activeMuscles.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 12 }}>
+                      {activeMuscles.slice(0, 6).map(v => {
+                        const status = getVolumeStatus(v.currentVolume, v.mev, v.mav, v.mrv);
+                        const info = VOLUME_STATUS_LABELS[status];
+                        const pct = Math.min((v.currentVolume / v.mrv) * 100, 100);
+                        return (
+                          <div key={v.muscle}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{v.muscle}</span>
+                              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: info.color }}>{v.currentVolume} sets · {info.label}</span>
+                            </div>
+                            <div style={{ height: 4, borderRadius: 3, background: 'rgba(255,255,255,0.08)' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, borderRadius: 3, background: info.color, transition: 'width 0.5s ease' }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Exercises ready to progress */}
+                  {progressionSuggestions.filter(s => s.type === 'weight_increase').length > 0 && (
+                    <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.18)', marginBottom: 8 }}>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#22C55E', marginBottom: 5 }}>Ready to Progress</div>
+                      {progressionSuggestions.filter(s => s.type === 'weight_increase').slice(0, 3).map(s => (
+                        <div key={s.exerciseId} style={{ fontSize: '0.73rem', color: 'var(--text-primary)', marginBottom: 3 }}>
+                          <span style={{ fontWeight: 700 }}>{s.exerciseName}</span>
+                          <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}> — {s.reasoning}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Stalled exercises */}
+                  {progressionSuggestions.filter(s => s.type === 'deload').length > 0 && (
+                    <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)', marginBottom: 8 }}>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#F59E0B', marginBottom: 5 }}>Stalled — Consider Deload</div>
+                      {progressionSuggestions.filter(s => s.type === 'deload').slice(0, 2).map(s => (
+                        <div key={s.exerciseId} style={{ fontSize: '0.73rem', color: 'var(--text-primary)', marginBottom: 3 }}>
+                          <span style={{ fontWeight: 700 }}>{s.exerciseName}</span>
+                          <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}> — {s.reasoning}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Deload signal */}
+                  {deloadRec.recommended && (
+                    <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(191,90,242,0.07)', border: '1px solid rgba(191,90,242,0.18)' }}>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#BF5AF2', marginBottom: 4 }}>
+                        Deload Signal · {deloadRec.urgency.replace('_', ' ')}
+                      </div>
+                      <div style={{ fontSize: '0.73rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                        {deloadRec.reasons[0]}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
             <AnimatePresence>
               {activeInsights.slice(0, 6).map(insight => (
                 <InsightCard key={insight.id} insight={insight}
                   onDismiss={() => dismissCoachInsight(insight.id)} />
               ))}
             </AnimatePresence>
-            {activeInsights.length === 0 && (
+            {activeInsights.length === 0 && activeMuscles.length === 0 && (
               <div className="empty-state">
                 <div className="empty-state-icon">✨</div>
                 <div className="empty-state-title">All insights reviewed</div>
@@ -486,12 +625,7 @@ export const Coach: React.FC = () => {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {[
-                    'Why am I not losing weight?',
-                    'How should I adjust my macros?',
-                    'Best exercises for muscle growth?',
-                    'When should I do a refeed day?',
-                  ].map(q => (
+                  {suggestedQuestions.map(q => (
                     <button key={q} onClick={() => { setChatInput(q); }}
                       style={{ textAlign: 'left', padding: '9px 13px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }}>
                       {q}
@@ -661,74 +795,6 @@ export const Coach: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* AI Chat Agent */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #6366F1, #8B5CF6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Bot size={14} color="#fff" />
-          </div>
-          <span style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)' }}>AI Coach Chat</span>
-        </div>
-
-        {/* Messages */}
-        <div style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 18, padding: '12px', marginBottom: 10, minHeight: 80, maxHeight: 260, overflowY: 'auto' }}>
-          {agentMessages.length === 0 ? (
-            <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.82rem', fontWeight: 500, textAlign: 'center', padding: '16px 0' }}>
-              Ask me anything about training, nutrition, or recovery...
-            </div>
-          ) : (
-            agentMessages.map((m, i) => (
-              <div key={i} style={{ marginBottom: 10, display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                <div style={{
-                  maxWidth: '82%', padding: '8px 12px', borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                  background: m.role === 'user' ? 'linear-gradient(135deg, #3B82F6, #6366F1)' : 'rgba(255,255,255,0.07)',
-                  fontSize: '0.82rem', fontWeight: 500, lineHeight: 1.5,
-                  color: m.role === 'user' ? '#fff' : 'rgba(255,255,255,0.85)',
-                }}>
-                  {m.text}
-                </div>
-              </div>
-            ))
-          )}
-          {agentLoading && (
-            <div style={{ display: 'flex', gap: 4, padding: '4px 8px' }}>
-              {[0,1,2].map(i => (
-                <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(99,102,241,0.6)', animation: `chatDot 1.2s ease-in-out ${i*0.2}s infinite` }} />
-              ))}
-            </div>
-          )}
-          <div ref={agentEndRef} />
-        </div>
-
-        {/* Input row */}
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input
-            value={agentInput}
-            onChange={e => setAgentInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendChat()}
-            placeholder="Ask your AI coach..."
-            style={{
-              flex: 1, padding: '0.75rem 1rem', borderRadius: 14,
-              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-              color: '#fff', fontSize: '0.88rem', fontWeight: 500, outline: 'none',
-            }}
-          />
-          <button
-            onClick={sendChat}
-            disabled={!agentInput.trim() || agentLoading}
-            style={{
-              width: 44, height: 44, borderRadius: 14, border: 'none', cursor: 'pointer',
-              background: agentInput.trim() && !agentLoading ? 'linear-gradient(135deg, #3B82F6, #6366F1)' : 'rgba(255,255,255,0.07)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.2s',
-            }}
-          >
-            <ArrowUp size={18} color={agentInput.trim() && !agentLoading ? '#fff' : 'rgba(255,255,255,0.25)'} />
-          </button>
-        </div>
-      </div>
-
-      <style>{`@keyframes chatDot { 0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1); } }`}</style>
     </div>
   );
 };
