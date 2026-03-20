@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Dumbbell, Plus, Timer, X, Check, RotateCcw, Search,
   TrendingUp, TrendingDown, Trash2, Play, ChevronDown, ChevronUp,
@@ -7,7 +8,7 @@ import {
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useApp } from '../context/AppContext';
 import { getLocalISOString } from '../utils/dateUtils';
-import { WorkoutSession, ExerciseEntry, ExerciseSet } from '../types';
+import { WorkoutSession, ExerciseEntry, ExerciseSet, CustomProgram } from '../types';
 import { getProgramById, WorkoutProgram, ProgramDay } from '../data/workoutPrograms';
 import { coachService } from '../services/aiCoach';
 
@@ -130,6 +131,30 @@ const SET_TYPE_CONFIG: Record<SetType, { label: string; bg: string; color: strin
 };
 
 const cycleSetType = (t: SetType): SetType => t === 'W' ? 'N' : t === 'N' ? 'D' : 'W';
+
+// ── Custom Program Adapter ─────────────────────────────────────────────────────
+const adaptCustomProgram = (cp: CustomProgram): WorkoutProgram => ({
+  id: cp.id as any,
+  name: cp.name,
+  description: cp.description || '',
+  days: cp.days.map(d => ({
+    dayNumber: d.dayNumber,
+    name: d.name,
+    focus: d.focus || '',
+    exercises: d.exercises.map(e => ({
+      exerciseId: e.exerciseId,
+      name: e.name,
+      sets: e.sets,
+      reps: e.reps,
+      rest: e.rest,
+      notes: e.notes,
+      supersetGroup: e.supersetGroup,
+    })),
+  })),
+  sex: 'male' as const,
+  phase: 1,
+  weeklyFrequency: cp.days.length,
+});
 
 // ── Next-set Recommendation ────────────────────────────────────────────────────
 const getNextSetRecommendation = (
@@ -1149,7 +1174,8 @@ const ActiveWorkoutScreen: React.FC<{
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export const Training: React.FC = () => {
-  const { state, addWorkout, showToast, setAssignedProgram } = useApp();
+  const { state, addWorkout, showToast, setAssignedProgram, activateCustomProgram } = useApp();
+  const navigate = useNavigate();
   const today = getLocalISOString();
 
   const [sessionActive, setSessionActive] = useState(false);
@@ -1212,8 +1238,15 @@ export const Training: React.FC = () => {
   }, [sessionActive]);
 
   const programData = useMemo(() => {
-    if (!state.assignedProgram) return null;
-    const program = getProgramById(state.assignedProgram);
+    let program: WorkoutProgram | null = null;
+
+    if (state.assignedProgram) {
+      program = getProgramById(state.assignedProgram) || null;
+    } else if (state.activeCustomProgramId) {
+      const cp = (state.customPrograms || []).find(p => p.id === state.activeCustomProgramId);
+      if (cp) program = adaptCustomProgram(cp);
+    }
+
     if (!program) return null;
 
     const now = new Date();
@@ -1239,7 +1272,7 @@ export const Training: React.FC = () => {
       nextDayIndex: nextDayIndex >= 0 ? nextDayIndex : 0,
       nextDay: program.days[nextDayIndex >= 0 ? nextDayIndex : 0],
     };
-  }, [state.assignedProgram, state.logs]);
+  }, [state.assignedProgram, state.activeCustomProgramId, state.customPrograms, state.logs]);
 
   const volumeData = useMemo(() => {
     const mv: Record<string, number> = { Chest: 0, Back: 0, Legs: 0, Arms: 0, Delts: 0, Glutes: 0 };
@@ -1433,7 +1466,7 @@ export const Training: React.FC = () => {
   }
 
   // ── No Program Assigned ───────────────────────────────────────────────────
-  if (!state.assignedProgram) {
+  if (!state.assignedProgram && !state.activeCustomProgramId) {
     return (
       <div style={{
         minHeight: '100dvh', background: '#07070f',
@@ -1509,6 +1542,19 @@ export const Training: React.FC = () => {
           <Play size={14} /> Start custom workout now
         </button>
 
+        <button
+          onClick={() => navigate('/programs')}
+          style={{
+            padding: '1rem', borderRadius: 16, cursor: 'pointer',
+            background: 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(99,102,241,0.08))',
+            border: '1px solid rgba(59,130,246,0.25)',
+            color: '#3B82F6', fontWeight: 800, fontSize: '0.9rem',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}
+        >
+          <Target size={14} /> Build a custom program
+        </button>
+
         {showPicker && (
           <ExercisePicker
             library={state.workoutLibrary} alreadyAdded={[]} recentIds={recentExerciseIds}
@@ -1560,7 +1606,15 @@ export const Training: React.FC = () => {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
-            onClick={() => setAssignedProgram(null as any)}
+            onClick={() => navigate('/programs')}
+            style={{
+              padding: '7px 12px', borderRadius: 99,
+              background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
+              color: '#3B82F6', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
+            }}
+          >Programs</button>
+          <button
+            onClick={() => { setAssignedProgram(null as any); activateCustomProgram(null); }}
             style={{
               padding: '7px 12px', borderRadius: 99,
               background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',

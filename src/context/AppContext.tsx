@@ -4,7 +4,7 @@ import {
   MealEntry, WorkoutSession, HealthMetrics, SavedMeal, NutritionData,
   NutritionTotals, ProgressionRecord, ConnectionStatus,
   BodyMeasurement, ProgressPhoto, HabitDefinition, HabitLog,
-  CoachInsight, WeeklyCheckIn, Mesocycle, Recipe,
+  CoachInsight, WeeklyCheckIn, Mesocycle, Recipe, CustomProgram,
 } from '../types';
 import { additionalExercises } from '../data/workoutPrograms';
 import { safeLoadState } from '../utils/persistence';
@@ -77,6 +77,11 @@ interface AppContextType {
   toggleFavoriteFood: (food: FoodItem) => void;
   // Program
   setAssignedProgram: (programId: 'male_phase2' | 'female_phase1' | null) => void;
+  // Custom programs
+  saveCustomProgram: (program: CustomProgram) => void;
+  deleteCustomProgram: (id: string) => void;
+  activateCustomProgram: (id: string | null) => void;
+  duplicateCustomProgram: (id: string) => void;
   // Mesocycle
   setActiveMesocycle: (meso: Mesocycle | undefined) => void;
   // Weight
@@ -172,6 +177,8 @@ const defaultState: AppState = {
   recentFoods: [],
   favoriteFoods: [],
   assignedProgram: null,
+  customPrograms: [],
+  activeCustomProgramId: null,
   measurements: [],
   progressPhotos: [],
   habitDefinitions: DEFAULT_HABITS,
@@ -192,6 +199,8 @@ function loadInitialState(): AppState {
     coachInsights: loaded.coachInsights ?? [],
     weeklyCheckIns: loaded.weeklyCheckIns ?? [],
     recipes: loaded.recipes ?? [],
+    customPrograms: loaded.customPrograms ?? [],
+    activeCustomProgramId: loaded.activeCustomProgramId ?? null,
   };
 }
 
@@ -510,6 +519,52 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setState(prev => ({ ...prev, activeMesocycle: meso }));
   };
 
+  // ── Custom Programs ──────────────────────────────────────────────────────────
+
+  const saveCustomProgram = (program: CustomProgram) => {
+    setState(prev => ({
+      ...prev,
+      customPrograms: [program, ...prev.customPrograms.filter(p => p.id !== program.id)],
+    }));
+  };
+
+  const deleteCustomProgram = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      customPrograms: prev.customPrograms.filter(p => p.id !== id),
+      activeCustomProgramId: prev.activeCustomProgramId === id ? null : prev.activeCustomProgramId,
+    }));
+  };
+
+  const activateCustomProgram = (id: string | null) => {
+    setState(prev => ({
+      ...prev,
+      activeCustomProgramId: id,
+      assignedProgram: id ? null : prev.assignedProgram,
+    }));
+  };
+
+  const duplicateCustomProgram = (id: string) => {
+    setState(prev => {
+      const original = prev.customPrograms.find(p => p.id === id);
+      if (!original) return prev;
+      const copy: CustomProgram = {
+        ...original,
+        id: `cp_${Date.now()}`,
+        name: `${original.name} (Copy)`,
+        status: 'draft',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        days: original.days.map(d => ({
+          ...d,
+          id: `day_${Date.now()}_${d.dayNumber}`,
+          exercises: d.exercises.map(e => ({ ...e, id: `ex_${Date.now()}_${Math.random().toString(36).slice(2)}` })),
+        })),
+      };
+      return { ...prev, customPrograms: [copy, ...prev.customPrograms] };
+    });
+  };
+
   // ── Measurements ────────────────────────────────────────────────────────────
 
   const addMeasurement = (m: BodyMeasurement) => {
@@ -645,7 +700,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       updateSettings, updateConnectionStatus, updateUnits,
       getNutritionTotals, getProgressionHistory,
       trackRecentFood, clearRecentFoods, toggleFavoriteFood,
-      setAssignedProgram, setActiveMesocycle,
+      setAssignedProgram, saveCustomProgram, deleteCustomProgram, activateCustomProgram, duplicateCustomProgram, setActiveMesocycle,
       updateWeight,
       saveWorkoutDraft, clearWorkoutDraft, getWorkoutDraft,
       addMeasurement, deleteMeasurement,

@@ -324,6 +324,40 @@ export interface AppSettings {
   claudeApiKey?: string; // user's own API key for AI coaching
 }
 
+// ─── Custom Programs ──────────────────────────────────────────────────────────
+
+export type ProgramGoal = 'hypertrophy' | 'strength' | 'endurance' | 'fat_loss';
+
+export interface CustomProgramExercise {
+  id: string;
+  exerciseId: string;
+  name: string;
+  sets: number;
+  reps: string;
+  rest: number; // seconds
+  notes?: string;
+  supersetGroup?: string; // 'A', 'B', 'C', etc.
+}
+
+export interface CustomProgramDay {
+  id: string;
+  dayNumber: number;
+  name: string;
+  focus?: string;
+  exercises: CustomProgramExercise[];
+}
+
+export interface CustomProgram {
+  id: string;
+  name: string;
+  description?: string;
+  goal?: ProgramGoal;
+  days: CustomProgramDay[];
+  status: 'draft' | 'active';
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── App State ────────────────────────────────────────────────────────────────
 
 export interface AppState {
@@ -337,6 +371,9 @@ export interface AppState {
   recentFoods: FoodItem[];
   favoriteFoods: FoodItem[];
   assignedProgram: 'male_phase2' | 'female_phase1' | null;
+  // Custom programs
+  customPrograms: CustomProgram[];
+  activeCustomProgramId: string | null;
   // New state
   measurements: BodyMeasurement[];
   progressPhotos: ProgressPhoto[];

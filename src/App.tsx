@@ -11,6 +11,7 @@ import { Training } from './pages/Training';
 import { Health } from './pages/Health';
 import { Coach } from './pages/Coach';
 import { Habits } from './pages/Habits';
+import { ProgramBuilder } from './pages/ProgramBuilder';
 
 const AppRoutes: React.FC = () => {
   const { state } = useApp();
@@ -36,6 +37,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/coach" element={<Coach />} />
           <Route path="/habits" element={<Habits />} />
+          <Route path="/programs" element={<ProgramBuilder />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
