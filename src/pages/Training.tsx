@@ -9,6 +9,7 @@ import { useApp } from '../context/AppContext';
 import { getLocalISOString } from '../utils/dateUtils';
 import { WorkoutSession, ExerciseEntry, ExerciseSet } from '../types';
 import { getProgramById, WorkoutProgram, ProgramDay } from '../data/workoutPrograms';
+import { coachService } from '../services/aiCoach';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type SetType = 'W' | 'N' | 'D'; // Warm-up / Normal / Drop-set
@@ -129,6 +130,217 @@ const SET_TYPE_CONFIG: Record<SetType, { label: string; bg: string; color: strin
 };
 
 const cycleSetType = (t: SetType): SetType => t === 'W' ? 'N' : t === 'N' ? 'D' : 'W';
+
+// ── Next-set Recommendation ────────────────────────────────────────────────────
+const getNextSetRecommendation = (
+  doneSets: ActiveSet[],
+  targetReps?: string,
+  lastPerf?: { weight: number; reps: number; sets: number } | null
+): string | null => {
+  if (!doneSets.length) return null;
+  const last = doneSets[doneSets.length - 1];
+  const w = parseFloat(last.weight) || 0;
+  const r = parseInt(last.reps) || 0;
+  if (!w || !r) return null;
+
+  let tMin = 0, tMax = 0;
+  if (targetReps) {
+    const clean = targetReps.replace(/[–—]/g, '-');
+    const m = clean.match(/^(\d+)(?:\D+(\d+))?/);
+    if (m) { tMin = parseInt(m[1]); tMax = m[2] ? parseInt(m[2]) : tMin; }
+  }
+
+  if (tMax > 0 && r >= tMax) return `Hit ${r} reps — try +2.5kg next set`;
+  if (tMin > 0 && r < tMin - 1) return `${tMin - r} rep${tMin - r > 1 ? 's' : ''} short of target — hold weight`;
+  if (lastPerf && w > lastPerf.weight) return `+${(w - lastPerf.weight).toFixed(1)}kg vs last session — on track`;
+  if (lastPerf && w === lastPerf.weight && r > lastPerf.reps) return `+${r - lastPerf.reps} rep vs last session — great`;
+  if (lastPerf && w === lastPerf.weight && r === lastPerf.reps) return `Matched last — push for one more rep`;
+  return null;
+};
+
+// ── Summary Types ──────────────────────────────────────────────────────────────
+interface ExerciseSummary {
+  name: string;
+  setCount: number;
+  bestSet: { weight: number; reps: number } | null;
+  volume: number;
+  isPR: boolean;
+}
+
+interface SummaryData {
+  name: string;
+  durationMinutes: number;
+  totalVolume: number;
+  prCount: number;
+  caloriesBurned: number;
+  exercises: ExerciseSummary[];
+}
+
+// ── Workout Summary Screen ─────────────────────────────────────────────────────
+const WorkoutSummaryScreen: React.FC<{
+  summary: SummaryData;
+  coachFeedback: string;
+  onDone: () => void;
+}> = ({ summary, coachFeedback, onDone }) => {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: '#07070f',
+      zIndex: 9020, display: 'flex', flexDirection: 'column', overflowY: 'auto',
+    }}>
+      {/* Hero header */}
+      <div style={{
+        padding: '3.5rem 1.5rem 2rem', textAlign: 'center',
+        background: 'linear-gradient(180deg, rgba(34,197,94,0.07) 0%, transparent 100%)',
+      }}>
+        <div style={{
+          width: 80, height: 80, borderRadius: 28,
+          background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(34,197,94,0.06))',
+          border: '1px solid rgba(34,197,94,0.35)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 20px',
+          boxShadow: '0 0 50px rgba(34,197,94,0.18)',
+        }}>
+          <Check size={36} color="#22C55E" />
+        </div>
+        <h1 style={{
+          fontFamily: "'Outfit',sans-serif", fontSize: '2rem', fontWeight: 900,
+          letterSpacing: '-0.03em', margin: 0, color: '#fff',
+        }}>Workout Complete</h1>
+        <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: 8 }}>
+          {summary.name}
+        </p>
+      </div>
+
+      <div style={{ padding: '0 1.25rem', display: 'flex', flexDirection: 'column', gap: 14, paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))' }}>
+
+        {/* Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          {[
+            { label: 'Duration', value: `${summary.durationMinutes}m`, color: '#3B82F6', icon: <Timer size={14} color="#3B82F6" /> },
+            { label: 'Volume', value: summary.totalVolume > 1000 ? `${(summary.totalVolume / 1000).toFixed(1)}k` : String(Math.round(summary.totalVolume)), sub: 'kg', color: '#A855F7', icon: <BarChart2 size={14} color="#A855F7" /> },
+            { label: 'PRs', value: String(summary.prCount), color: '#FBBF24', icon: <Award size={14} color="#FBBF24" /> },
+          ].map(s => (
+            <div key={s.label} style={{
+              background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
+              borderRadius: 18, padding: '16px 8px',
+              border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center',
+              position: 'relative', overflow: 'hidden',
+            }}>
+              <div style={{ marginBottom: 6 }}>{s.icon}</div>
+              <div style={{
+                fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1.5rem',
+                color: s.color, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1,
+              }}>
+                {s.value}
+                {'sub' in s && s.sub && <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.7 }}>{s.sub}</span>}
+              </div>
+              <div style={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.25)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 6 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Calories */}
+        {summary.caloriesBurned > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '10px 16px',
+            background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.15)', borderRadius: 14,
+          }}>
+            <Flame size={14} color="#F97316" />
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>
+              ~{summary.caloriesBurned} kcal burned
+            </span>
+          </div>
+        )}
+
+        {/* AI Coach Feedback */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(59,130,246,0.04))',
+          border: '1px solid rgba(99,102,241,0.22)', borderRadius: 20, padding: '16px 18px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <Zap size={13} color="#6366F1" fill="#6366F1" />
+            <span style={{ fontSize: '0.58rem', fontWeight: 800, color: 'rgba(99,102,241,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Coach Feedback</span>
+          </div>
+          <p style={{
+            fontSize: '0.88rem',
+            color: coachFeedback ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.28)',
+            fontWeight: 600, lineHeight: 1.65, margin: 0,
+            fontStyle: coachFeedback ? 'normal' : 'italic',
+          }}>
+            {coachFeedback || 'Analyzing your session…'}
+          </p>
+        </div>
+
+        {/* Exercise breakdown */}
+        <div>
+          <div style={{ fontSize: '0.58rem', fontWeight: 800, color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+            Exercises · {summary.exercises.length}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {summary.exercises.map((ex, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 14px',
+                background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
+                border: `1px solid ${ex.isPR ? 'rgba(251,191,36,0.22)' : 'rgba(255,255,255,0.06)'}`,
+                borderRadius: 14,
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</span>
+                    {ex.isPR && (
+                      <span style={{
+                        fontSize: '0.54rem', fontWeight: 800, padding: '2px 6px', borderRadius: 99, flexShrink: 0,
+                        background: 'rgba(251,191,36,0.12)', color: '#FBBF24', border: '1px solid rgba(251,191,36,0.2)',
+                        display: 'flex', alignItems: 'center', gap: 3,
+                      }}>
+                        <Award size={8} /> PR
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.28)', fontWeight: 600, marginTop: 3 }}>
+                    {ex.setCount} sets{ex.bestSet ? ` · best ${ex.bestSet.weight}kg × ${ex.bestSet.reps}` : ''}
+                  </div>
+                </div>
+                {ex.volume > 0 && (
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', fontVariantNumeric: 'tabular-nums', flexShrink: 0, paddingLeft: 12 }}>
+                    {Math.round(ex.volume)}kg
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* Done CTA */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        padding: '1rem 1.25rem', paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
+        background: 'linear-gradient(to top, #07070f 55%, transparent)',
+      }}>
+        <button
+          onClick={onDone}
+          style={{
+            width: '100%', padding: '1.1rem',
+            background: 'linear-gradient(135deg, #22C55E, #16a34a)',
+            border: 'none', borderRadius: 18,
+            color: '#000', fontWeight: 900, fontSize: '1rem', cursor: 'pointer',
+            fontFamily: "'Outfit',sans-serif", letterSpacing: '-0.01em',
+            boxShadow: '0 8px 32px rgba(34,197,94,0.35)',
+          }}
+          onPointerDown={e => (e.currentTarget.style.transform = 'scale(0.98)')}
+          onPointerUp={e => (e.currentTarget.style.transform = 'scale(1)')}
+          onPointerLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // ── Muscle Colors ──────────────────────────────────────────────────────────────
 const MUSCLE_COLORS: Record<string, string> = {
@@ -827,6 +1039,27 @@ const ActiveWorkoutScreen: React.FC<{
                   );
                 })}
 
+                {/* Next-set recommendation */}
+                {(() => {
+                  const doneSets = ex.sets.filter(s => s.done);
+                  const undoneSets = ex.sets.filter(s => !s.done);
+                  if (!doneSets.length || !undoneSets.length) return null;
+                  const rec = getNextSetRecommendation(doneSets, ex.targetReps, lastPerf);
+                  if (!rec) return null;
+                  return (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '7px 10px', borderRadius: 10,
+                      background: 'rgba(99,102,241,0.07)',
+                      border: '1px solid rgba(99,102,241,0.15)',
+                      marginTop: 2,
+                    }}>
+                      <Zap size={10} color="#6366F1" fill="#6366F1" style={{ flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(99,102,241,0.9)' }}>{rec}</span>
+                    </div>
+                  );
+                })()}
+
                 {/* Add Set + Rest timers */}
                 <div style={{ display: 'flex', gap: 7, marginTop: 4 }}>
                   <button
@@ -931,6 +1164,9 @@ export const Training: React.FC = () => {
   const swipeTouchStartX = useRef<number | null>(null);
   const [showCustomOptions, setShowCustomOptions] = useState(false);
   const [expandedWorkout, setExpandedWorkout] = useState<string | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
+  const [coachFeedback, setCoachFeedback] = useState('');
 
   // Recent exercise IDs from logs
   const recentExerciseIds = useMemo(() => {
@@ -1087,14 +1323,26 @@ export const Training: React.FC = () => {
     const totalVolume = done.reduce((acc, ex) =>
       acc + ex.sets.filter(s => s.done).reduce((a, s) => a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0), 0);
 
+    // Build per-exercise summary and count PRs
     let prCount = 0;
-    done.forEach(ex => {
+    const exerciseSummaries: ExerciseSummary[] = done.map(ex => {
       const prevPR = getPersonalRecord(state.logs, ex.libraryId);
-      ex.sets.filter(s => s.done).forEach(s => {
+      const doneSets = ex.sets.filter(s => s.done);
+      const bestSet = doneSets.reduce<{ weight: number; reps: number } | null>((b, s) => {
         const w = parseFloat(s.weight) || 0; const r = parseInt(s.reps) || 0;
-        if (!prevPR || w * r > prevPR.weight * prevPR.reps) prCount++;
+        if (!b || w * r > b.weight * b.reps) return { weight: w, reps: r };
+        return b;
+      }, null);
+      const vol = doneSets.reduce((a, s) => a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0);
+      let isPR = false;
+      doneSets.forEach(s => {
+        const w = parseFloat(s.weight) || 0; const r = parseInt(s.reps) || 0;
+        if (!prevPR || w * r > prevPR.weight * prevPR.reps) { isPR = true; prCount++; }
       });
+      return { name: ex.name, setCount: doneSets.length, bestSet, volume: vol, isPR };
     });
+
+    const caloriesBurned = Math.round(elapsed / 60 * 5.5 * ((state.user?.weight ?? 70) / 70));
 
     const session: WorkoutSession = {
       id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
@@ -1110,14 +1358,32 @@ export const Training: React.FC = () => {
           ...(s.rpe ? { rpe: s.rpe } : {}),
         } as ExerciseSet)),
       } as ExerciseEntry)),
-      caloriesBurned: Math.round(elapsed / 60 * 5.5 * ((state.user?.weight ?? 70) / 70)),
+      caloriesBurned,
     };
 
     addWorkout(today, session);
     localStorage.removeItem('bbc_workout_draft');
     setSessionActive(false);
-    const prMsg = prCount > 0 ? ` · 🏆 ${prCount} PR${prCount > 1 ? 's' : ''}` : '';
-    showToast(`${sessionName} complete · ${Math.round(totalVolume)}kg${prMsg}`, 'success');
+
+    // Build summary and show summary screen
+    const summary: SummaryData = {
+      name: sessionName,
+      durationMinutes: Math.round(elapsed / 60),
+      totalVolume,
+      prCount,
+      caloriesBurned,
+      exercises: exerciseSummaries,
+    };
+    setSummaryData(summary);
+    setCoachFeedback('');
+    setShowSummary(true);
+
+    // Async: get AI coaching feedback and update when ready
+    if (state.user) {
+      coachService.getWorkoutFeedback(state.user, session).then(feedback => {
+        setCoachFeedback(feedback);
+      });
+    }
   }, [exercises, sessionName, elapsed, today, state.logs, state.user, addWorkout, showToast]);
 
   const cancelWorkout = () => {
@@ -1126,6 +1392,21 @@ export const Training: React.FC = () => {
     setExercises([]);
     showToast('Session cancelled', 'info');
   };
+
+  // ── Workout Summary ───────────────────────────────────────────────────────
+  if (showSummary && summaryData) {
+    return (
+      <WorkoutSummaryScreen
+        summary={summaryData}
+        coachFeedback={coachFeedback}
+        onDone={() => {
+          setShowSummary(false);
+          setSummaryData(null);
+          setExercises([]);
+        }}
+      />
+    );
+  }
 
   // ── Active Session ────────────────────────────────────────────────────────
   if (sessionActive) {
