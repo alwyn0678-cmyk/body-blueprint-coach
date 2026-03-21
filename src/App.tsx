@@ -21,18 +21,18 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
         <div style={{
           minHeight: '100dvh', display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', gap: 16,
-          padding: '2rem', textAlign: 'center', background: '#07070f',
+          padding: '2rem', textAlign: 'center', background: '#F5F0E8',
         }}>
           <div style={{ fontSize: '2rem' }}>⚠️</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F0F0FF' }}>Something went wrong</div>
-          <div style={{ fontSize: '0.82rem', color: 'rgba(240,240,255,0.45)', maxWidth: 280, lineHeight: 1.6 }}>
+          <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1A1A1A' }}>Something went wrong</div>
+          <div style={{ fontSize: '0.82rem', color: 'rgba(26,26,26,0.55)', maxWidth: 280, lineHeight: 1.6 }}>
             {err.message || 'An unexpected error occurred.'}
           </div>
           <button
             onClick={() => window.location.reload()}
             style={{
               marginTop: 8, padding: '0.75rem 1.75rem',
-              background: '#3B82F6', border: 'none', borderRadius: 99,
+              background: '#576038', border: 'none', borderRadius: 99,
               color: '#fff', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer',
             }}
           >

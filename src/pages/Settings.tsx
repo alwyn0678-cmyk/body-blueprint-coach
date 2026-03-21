@@ -23,7 +23,7 @@ const C = {
   bgCard:       'var(--bg-card)',
   bgElevated:   'var(--bg-elevated)',
   accentBlue:   '#576038',
-  accentGreen:  '#16A34A',
+  accentGreen:  '#576038',
   accentOrange: '#EA8C3A',
   accentRed:    '#DC2626',
   textPrimary:   'var(--text-primary)',
@@ -108,7 +108,7 @@ const PROGRAMS = [
     tag: 'Male · Phase 2',
     desc: 'Push-Pull-Legs-Upper split focused on hypertrophy and progressive overload.',
     split: 'Push · Pull · Legs · Upper · 4 days/week',
-    accent: '#3B82F6',
+    accent: '#576038',
   },
 ];
 
@@ -1095,7 +1095,7 @@ export const Settings: React.FC = () => {
                 onClick={() => setNotifyEnabled(prev => ({ ...prev, [comingSoonApp.id]: !prev[comingSoonApp.id] }))}
                 style={{
                   width: 44, height: 26, borderRadius: 13,
-                  background: notifyEnabled[comingSoonApp.id] ? '#22C55E' : 'var(--border-strong)',
+                  background: notifyEnabled[comingSoonApp.id] ? '#576038' : 'var(--border-strong)',
                   border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s ease',
                 }}
               >

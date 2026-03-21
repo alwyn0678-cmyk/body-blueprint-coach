@@ -27,7 +27,7 @@ const MEAL_LABELS: Record<MealType, string> = {
 };
 
 const CONFIDENCE_COLOR: Record<DetectedFood['confidence'], string> = {
-  high: '#22C55E',
+  high: '#576038',
   medium: '#F59E0B',
   low: '#EF4444',
 };
@@ -147,7 +147,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
     onClose();
   };
 
-  const bg = 'var(--bg-primary, #07070f)';
+  const bg = 'var(--bg-primary, #FAF9F6)';
   const card = 'rgba(0,0,0,0.03)';
   const border = '1px solid rgba(0,0,0,0.06)';
 
@@ -363,8 +363,8 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
               <div style={{ display: 'flex', gap: 16 }}>
                 {[
                   { label: 'P', value: totalNutrition.protein, color: '#F59E0B' },
-                  { label: 'C', value: totalNutrition.carbs, color: '#3B82F6' },
-                  { label: 'F', value: totalNutrition.fats, color: '#22C55E' },
+                  { label: 'C', value: totalNutrition.carbs, color: '#576038' },
+                  { label: 'F', value: totalNutrition.fats, color: '#576038' },
                 ].map(m => (
                   <div key={m.label} style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '0.95rem', fontWeight: 900, color: m.color, fontVariantNumeric: 'tabular-nums' }}>{m.value}g</div>
@@ -403,7 +403,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                         })}
                         style={{
                           width: 22, height: 22, borderRadius: 6, flexShrink: 0, cursor: 'pointer',
-                          background: isChecked ? '#22C55E' : 'rgba(0,0,0,0.06)',
+                          background: isChecked ? '#576038' : 'rgba(0,0,0,0.06)',
                           border: isChecked ? 'none' : '1.5px solid rgba(0,0,0,0.13)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}
@@ -477,8 +477,8 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                           <div style={{ display: 'flex', gap: 8 }}>
                             {[
                               { label: 'Protein', value: n.protein, color: '#F59E0B' },
-                              { label: 'Carbs', value: n.carbs, color: '#3B82F6' },
-                              { label: 'Fats', value: n.fats, color: '#22C55E' },
+                              { label: 'Carbs', value: n.carbs, color: '#576038' },
+                              { label: 'Fats', value: n.fats, color: '#576038' },
                             ].map(m => (
                               <div key={m.label} style={{
                                 flex: 1, background: 'rgba(0,0,0,0.03)', borderRadius: 10,
@@ -516,7 +516,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
               style={{
                 width: '100%', padding: '1.1rem',
                 background: selected.size > 0
-                  ? 'linear-gradient(135deg, #22C55E, #16A34A)'
+                  ? 'linear-gradient(135deg, #576038, #3E4528)'
                   : 'rgba(0,0,0,0.06)',
                 border: 'none', borderRadius: 18,
                 color: selected.size > 0 ? '#fff' : 'rgba(0,0,0,0.20)',

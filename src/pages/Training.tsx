@@ -159,15 +159,15 @@ const cycleRpe = (current: number): number => {
 
 const rpeColor = (rpe: number): string => {
   if (rpe === 0) return 'rgba(0,0,0,0.10)';
-  if (rpe <= 7) return '#22C55E';
-  if (rpe <= 8) return '#F59E0B';
-  return '#EF4444';
+  if (rpe <= 7) return '#8B9467';
+  if (rpe <= 8) return '#974400';
+  return '#DC2626';
 };
 
 const SET_TYPE_CONFIG: Record<SetType, { label: string; bg: string; color: string }> = {
-  W: { label: 'W', bg: 'rgba(251,191,36,0.12)', color: '#FBBF24' },
-  N: { label: 'N', bg: 'rgba(59,130,246,0.1)', color: '#3B82F6' },
-  D: { label: 'D', bg: 'rgba(239,68,68,0.12)', color: '#EF4444' },
+  W: { label: 'W', bg: 'rgba(194,203,154,0.25)', color: '#576038' },
+  N: { label: 'N', bg: 'rgba(87,96,56,0.12)',    color: '#3E4528' },
+  D: { label: 'D', bg: 'rgba(151,68,0,0.12)',    color: '#974400' },
 };
 
 const cycleSetType = (t: SetType): SetType => t === 'W' ? 'N' : t === 'N' ? 'D' : 'W';
@@ -272,10 +272,10 @@ const getExerciseVerdict = (
   const vol = completedSets.reduce((a, s) => a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0);
   if (vol === 0) return null;
   if (lastVolume === null || lastVolume === 0) {
-    return { label: `First time — ${Math.round(vol)}kg volume`, color: '#3B82F6' };
+    return { label: `First time — ${Math.round(vol)}kg volume`, color: '#576038' };
   }
   const pct = ((vol - lastVolume) / lastVolume) * 100;
-  if (pct >= 5) return { label: `+${pct.toFixed(0)}% vs last (${Math.round(vol)} vs ${Math.round(lastVolume)}kg)`, color: '#22C55E' };
+  if (pct >= 5) return { label: `+${pct.toFixed(0)}% vs last (${Math.round(vol)} vs ${Math.round(lastVolume)}kg)`, color: '#576038' };
   if (pct <= -5) return { label: `${pct.toFixed(0)}% vs last — below last session`, color: '#EF4444' };
   return { label: `Matched last session · ${Math.round(vol)}kg`, color: '#F59E0B' };
 };
@@ -300,7 +300,7 @@ interface SummaryData {
 }
 
 // ── Confetti Burst ────────────────────────────────────────────────────────────
-const CONFETTI_COLORS = ['#22C55E', '#3B82F6', '#FBBF24', '#A855F7', '#F97316', '#06B6D4'];
+const CONFETTI_COLORS = ['#576038', '#974400', '#8B9467', '#C2CB9A', '#D2691E', '#3E4528'];
 const ConfettiBurst: React.FC = () => {
   const pieces = useMemo(() =>
     Array.from({ length: 28 }, (_, i) => ({
@@ -369,12 +369,12 @@ const WorkoutSummaryScreen: React.FC<{
         <div style={{
           width: 80, height: 80, borderRadius: 28,
           background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(34,197,94,0.06))',
-          border: '1px solid rgba(34,197,94,0.35)',
+          border: '1px solid rgba(87,96,56,0.30)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto 20px',
           boxShadow: '0 0 50px rgba(34,197,94,0.18)',
         }}>
-          <Check size={36} color="#22C55E" />
+          <Check size={36} color="#576038" />
         </div>
         <h1 style={{
           fontFamily: "'Outfit',sans-serif", fontSize: '2rem', fontWeight: 900,
@@ -404,8 +404,8 @@ const WorkoutSummaryScreen: React.FC<{
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
           {[
-            { label: 'Duration', value: `${summary.durationMinutes}m`, color: '#3B82F6', icon: <Timer size={14} color="#3B82F6" /> },
-            { label: 'Volume', value: summary.totalVolume > 1000 ? `${(summary.totalVolume / 1000).toFixed(1)}k` : String(Math.round(summary.totalVolume)), sub: 'kg', color: '#A855F7', icon: <BarChart2 size={14} color="#A855F7" /> },
+            { label: 'Duration', value: `${summary.durationMinutes}m`, color: '#576038', icon: <Timer size={14} color="#576038" /> },
+            { label: 'Volume', value: summary.totalVolume > 1000 ? `${(summary.totalVolume / 1000).toFixed(1)}k` : String(Math.round(summary.totalVolume)), sub: 'kg', color: '#974400', icon: <BarChart2 size={14} color="#974400" /> },
             { label: 'PRs', value: String(summary.prCount), color: '#FBBF24', icon: <Award size={14} color="#FBBF24" /> },
           ].map(s => (
             <div key={s.label} style={{
@@ -439,8 +439,8 @@ const WorkoutSummaryScreen: React.FC<{
               border: `1px solid ${up ? 'rgba(34,197,94,0.18)' : 'rgba(239,68,68,0.18)'}`,
               borderRadius: 14,
             }}>
-              {up ? <TrendingUp size={14} color="#22C55E" /> : <TrendingDown size={14} color="#EF4444" />}
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: up ? '#22C55E' : '#EF4444' }}>
+              {up ? <TrendingUp size={14} color="#576038" /> : <TrendingDown size={14} color="#EF4444" />}
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: up ? '#576038' : '#EF4444' }}>
                 {up ? '+' : ''}{pct.toFixed(0)}% vs last session
               </span>
               <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(0,0,0,0.20)' }}>
@@ -470,7 +470,7 @@ const WorkoutSummaryScreen: React.FC<{
           border: '1px solid rgba(99,102,241,0.22)', borderRadius: 20, padding: '16px 18px',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <Zap size={13} color="#6366F1" fill="#6366F1" />
+            <Zap size={13} color="#576038" fill="#576038" />
             <span style={{ fontSize: '0.58rem', fontWeight: 800, color: 'rgba(99,102,241,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Coach Feedback</span>
           </div>
           <p style={{
@@ -536,11 +536,11 @@ const WorkoutSummaryScreen: React.FC<{
           onClick={onDone}
           style={{
             width: '100%', padding: '1.1rem',
-            background: 'linear-gradient(135deg, #22C55E, #16a34a)',
+            background: 'linear-gradient(135deg, #576038, #3E4528)',
             border: 'none', borderRadius: 18,
-            color: '#000', fontWeight: 900, fontSize: '1rem', cursor: 'pointer',
+            color: '#FFFFFF', fontWeight: 900, fontSize: '1rem', cursor: 'pointer',
             fontFamily: "'Outfit',sans-serif", letterSpacing: '-0.01em',
-            boxShadow: '0 8px 32px rgba(34,197,94,0.35)',
+            boxShadow: '0 8px 32px rgba(87,96,56,0.35)',
           }}
           onPointerDown={e => (e.currentTarget.style.transform = 'scale(0.98)')}
           onPointerUp={e => (e.currentTarget.style.transform = 'scale(1)')}
@@ -555,9 +555,9 @@ const WorkoutSummaryScreen: React.FC<{
 
 // ── Muscle Colors ──────────────────────────────────────────────────────────────
 const MUSCLE_COLORS: Record<string, string> = {
-  Chest: '#3B82F6', Back: '#22C55E', Legs: '#F59E0B',
-  Arms: '#A855F7', Delts: '#EC4899', Glutes: '#06B6D4',
-  Hamstrings: '#F59E0B', Triceps: '#EF4444', Core: '#8B5CF6',
+  Chest: '#576038', Back: '#3E4528', Legs: '#974400',
+  Arms: '#8B9467', Delts: '#C2CB9A', Glutes: '#D2691E',
+  Hamstrings: '#974400', Triceps: '#576038', Core: '#8B9467',
 };
 
 const PUSH_MUSCLES = ['Chest', 'Triceps', 'Delts', 'Shoulders'];
@@ -574,8 +574,8 @@ const getMovementPattern = (muscles: string[]): 'push' | 'pull' | 'legs' | 'core
 };
 
 const PATTERN_COLOR: Record<string, string> = {
-  push: '#3B82F6', pull: '#22C55E', legs: '#F59E0B', core: '#A855F7',
-  favorites: '#F59E0B', swap: '#A855F7',
+  push: '#576038', pull: '#3E4528', legs: '#974400', core: '#8B9467',
+  favorites: '#974400', swap: '#8B9467',
 };
 
 const FILTER_TABS = [
@@ -691,7 +691,7 @@ const ExercisePicker: React.FC<{
                 flexShrink: 0, padding: '6px 16px', borderRadius: 99, fontSize: '0.78rem', fontWeight: 800,
                 border: 'none', cursor: 'pointer',
                 background: filter === t.key
-                  ? (t.key === 'all' ? '#3B82F6' : PATTERN_COLOR[t.key as keyof typeof PATTERN_COLOR] || '#3B82F6')
+                  ? (t.key === 'all' ? '#576038' : PATTERN_COLOR[t.key as keyof typeof PATTERN_COLOR] || '#576038')
                   : 'rgba(0,0,0,0.05)',
                 color: filter === t.key ? '#fff' : 'rgba(0,0,0,0.30)',
                 transition: 'all 0.15s',
@@ -717,13 +717,13 @@ const ExercisePicker: React.FC<{
                     onClick={() => !already && toggle(ex.id, ex.name)}
                     style={{
                       padding: '8px 14px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 700,
-                      background: sel ? 'rgba(34,197,94,0.15)' : already ? 'rgba(0,0,0,0.02)' : 'rgba(0,0,0,0.06)',
+                      background: sel ? 'rgba(87,96,56,0.12)' : already ? 'rgba(0,0,0,0.02)' : 'rgba(0,0,0,0.06)',
                       border: sel ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(0,0,0,0.07)',
-                      color: sel ? '#22C55E' : already ? 'rgba(0,0,0,0.16)' : '#fff',
+                      color: sel ? '#576038' : already ? 'rgba(0,0,0,0.16)' : '#fff',
                       cursor: already ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 6,
                     }}
                   >
-                    {sel && <Check size={12} color="#22C55E" />}
+                    {sel && <Check size={12} color="#576038" />}
                     {ex.name}
                   </button>
                 );
@@ -759,7 +759,7 @@ const ExercisePicker: React.FC<{
               >
                 <div style={{
                   width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-                  background: sel ? '#22C55E' : 'rgba(0,0,0,0.06)',
+                  background: sel ? '#576038' : 'rgba(0,0,0,0.06)',
                   border: sel ? 'none' : '1.5px solid rgba(0,0,0,0.10)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.15s',
@@ -808,7 +808,7 @@ const ExercisePicker: React.FC<{
           style={{
             width: '100%', padding: '1.1rem',
             background: selected.length > 0
-              ? 'linear-gradient(135deg, #3B82F6, #6366F1)'
+              ? 'linear-gradient(135deg, #576038, #3E4528)'
               : 'rgba(0,0,0,0.06)',
             border: 'none', borderRadius: 18,
             color: selected.length > 0 ? '#fff' : 'rgba(0,0,0,0.28)',
@@ -957,13 +957,13 @@ const ActiveWorkoutScreen: React.FC<{
               }}>{workoutName}</h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <Timer size={12} color="#3B82F6" />
-                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#3B82F6', fontVariantNumeric: 'tabular-nums' }}>{formatDuration(elapsed)}</span>
+                  <Timer size={12} color="#576038" />
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#576038', fontVariantNumeric: 'tabular-nums' }}>{formatDuration(elapsed)}</span>
                 </div>
                 <span style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600 }}>{completedSets}/{totalSets} sets</span>
                 {progressPct > 0 && (
                   <span style={{
-                    fontSize: '0.65rem', fontWeight: 800, color: '#22C55E',
+                    fontSize: '0.65rem', fontWeight: 800, color: '#576038',
                     background: 'rgba(34,197,94,0.12)', padding: '2px 8px', borderRadius: 99,
                   }}>{Math.round(progressPct)}%</span>
                 )}
@@ -984,8 +984,8 @@ const ActiveWorkoutScreen: React.FC<{
           <div style={{
             height: '100%', width: `${progressPct}%`,
             background: progressPct === 100
-              ? 'linear-gradient(90deg, #22C55E, #16a34a)'
-              : 'linear-gradient(90deg, #3B82F6, #6366F1)',
+              ? 'linear-gradient(90deg, #576038, #3E4528)'
+              : 'linear-gradient(90deg, #576038, #3E4528)',
             transition: 'width 0.4s ease',
             boxShadow: progressPct > 0 ? '0 0 12px rgba(59,130,246,0.5)' : 'none',
           }} />
@@ -996,7 +996,7 @@ const ActiveWorkoutScreen: React.FC<{
       {restTimer !== null && restTimer > 0 && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
+          background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(87,96,56,0.15)',
           margin: '12px 16px 0', padding: '12px 16px', borderRadius: 16,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1005,18 +1005,18 @@ const ActiveWorkoutScreen: React.FC<{
               border: '2px solid rgba(59,130,246,0.4)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <RotateCcw size={16} color="#3B82F6" />
+              <RotateCcw size={16} color="#576038" />
             </div>
             <div>
               <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(59,130,246,0.7)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Rest</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#3B82F6', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{formatDuration(restTimer)}</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#576038', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{formatDuration(restTimer)}</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
             {[30, 60].map(s => (
               <button key={s} onClick={() => setRestTimer(t => (t ?? 0) + s)} style={{
-                background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.2)',
-                borderRadius: 99, padding: '4px 10px', color: '#3B82F6',
+                background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(87,96,56,0.15)',
+                borderRadius: 99, padding: '4px 10px', color: '#576038',
                 fontWeight: 800, fontSize: '0.72rem', cursor: 'pointer',
               }}>+{s}s</button>
             ))}
@@ -1065,7 +1065,7 @@ const ActiveWorkoutScreen: React.FC<{
               <div style={{
                 height: 2,
                 background: allDone
-                  ? 'linear-gradient(90deg, transparent, #22C55E, transparent)'
+                  ? 'linear-gradient(90deg, transparent, #576038, transparent)'
                   : 'linear-gradient(90deg, transparent, rgba(59,130,246,0.4), transparent)',
               }} />
 
@@ -1078,8 +1078,8 @@ const ActiveWorkoutScreen: React.FC<{
                         fontFamily: "'Outfit',sans-serif", fontWeight: 800, fontSize: '1rem',
                         color: allDone ? 'rgba(0,0,0,0.38)' : '#fff',
                       }}>{ex.name}</span>
-                      {allDone && <Check size={15} color="#22C55E" />}
-                      {trend === 'up' && <TrendingUp size={13} color="#22C55E" />}
+                      {allDone && <Check size={15} color="#576038" />}
+                      {trend === 'up' && <TrendingUp size={13} color="#576038" />}
                       {trend === 'down' && <TrendingDown size={13} color="#EF4444" />}
                       {pr && (
                         <span style={{
@@ -1094,7 +1094,7 @@ const ActiveWorkoutScreen: React.FC<{
                     </div>
                     <div style={{ display: 'flex', gap: 8, marginTop: 5, alignItems: 'center', flexWrap: 'wrap' }}>
                       <span style={{
-                        fontSize: '0.65rem', fontWeight: 800, color: '#22C55E',
+                        fontSize: '0.65rem', fontWeight: 800, color: '#576038',
                         background: 'rgba(34,197,94,0.1)', padding: '2px 8px', borderRadius: 99,
                       }}>{doneSets}/{ex.sets.length} sets</span>
                       {lastPerf ? (
@@ -1108,7 +1108,7 @@ const ActiveWorkoutScreen: React.FC<{
                       {!allDone && (lastPerf || ex.targetReps) && (
                         <span style={{
                           fontSize: '0.65rem', fontWeight: 800,
-                          color: '#22C55E',
+                          color: '#576038',
                           background: 'rgba(34,197,94,0.08)',
                           padding: '2px 8px', borderRadius: 99,
                           border: '1px solid rgba(34,197,94,0.18)',
@@ -1196,10 +1196,10 @@ const ActiveWorkoutScreen: React.FC<{
                       <div style={{
                         width: 24, height: 42, borderRadius: 9, flexShrink: 0,
                         background: set.done ? 'rgba(34,197,94,0.12)' : 'rgba(0,0,0,0.03)',
-                        border: `1.5px solid ${set.done ? 'rgba(34,197,94,0.35)' : 'rgba(0,0,0,0.06)'}`,
+                        border: `1.5px solid ${set.done ? 'rgba(87,96,56,0.30)' : 'rgba(0,0,0,0.06)'}`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 900, color: set.done ? '#22C55E' : 'rgba(255,255,255,0.28)' }}>{setIdx + 1}</span>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 900, color: set.done ? '#576038' : 'rgba(255,255,255,0.28)' }}>{setIdx + 1}</span>
                       </div>
 
                       {/* Set Type badge */}
@@ -1233,12 +1233,12 @@ const ActiveWorkoutScreen: React.FC<{
                         disabled={set.done}
                         style={{
                           width: 62, height: 42, borderRadius: 11, flexShrink: 0,
-                          background: isActive ? 'rgba(59,130,246,0.1)' : 'rgba(0,0,0,0.04)',
+                          background: isActive ? 'rgba(87,96,56,0.10)' : 'rgba(0,0,0,0.04)',
                           border: `1.5px solid ${isActive ? 'rgba(59,130,246,0.5)' : 'rgba(0,0,0,0.06)'}`,
                           color: '#fff', textAlign: 'center',
                           fontSize: '1.05rem', fontWeight: 800,
                           outline: 'none', fontVariantNumeric: 'tabular-nums',
-                          boxShadow: isActive ? '0 0 16px rgba(59,130,246,0.2)' : 'none',
+                          boxShadow: isActive ? '0 0 16px rgba(87,96,56,0.15)' : 'none',
                           transition: 'all 0.15s',
                         }}
                       />
@@ -1254,12 +1254,12 @@ const ActiveWorkoutScreen: React.FC<{
                         disabled={set.done}
                         style={{
                           width: 52, height: 42, borderRadius: 11, flexShrink: 0,
-                          background: isActive ? 'rgba(59,130,246,0.1)' : 'rgba(0,0,0,0.04)',
+                          background: isActive ? 'rgba(87,96,56,0.10)' : 'rgba(0,0,0,0.04)',
                           border: `1.5px solid ${isActive ? 'rgba(59,130,246,0.5)' : 'rgba(0,0,0,0.06)'}`,
                           color: '#fff', textAlign: 'center',
                           fontSize: '1.05rem', fontWeight: 800,
                           outline: 'none', fontVariantNumeric: 'tabular-nums',
-                          boxShadow: isActive ? '0 0 16px rgba(59,130,246,0.2)' : 'none',
+                          boxShadow: isActive ? '0 0 16px rgba(87,96,56,0.15)' : 'none',
                           transition: 'all 0.15s',
                         }}
                       />
@@ -1301,7 +1301,7 @@ const ActiveWorkoutScreen: React.FC<{
                           transition: 'all 0.2s',
                         }}
                       >
-                        <Check size={20} color={set.done ? '#22C55E' : (set.weight && set.reps ? 'rgba(34,197,94,0.6)' : 'rgba(0,0,0,0.10)')} />
+                        <Check size={20} color={set.done ? '#576038' : (set.weight && set.reps ? 'rgba(87,96,56,0.5)' : 'rgba(0,0,0,0.10)')} />
                       </button>
 
                       {/* Remove set */}
@@ -1333,7 +1333,7 @@ const ActiveWorkoutScreen: React.FC<{
                       border: '1px solid rgba(99,102,241,0.15)',
                       marginTop: 2,
                     }}>
-                      <Zap size={10} color="#6366F1" fill="#6366F1" style={{ flexShrink: 0 }} />
+                      <Zap size={10} color="#576038" fill="#576038" style={{ flexShrink: 0 }} />
                       <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(99,102,241,0.9)' }}>{rec}</span>
                     </div>
                   );
@@ -1381,7 +1381,7 @@ const ActiveWorkoutScreen: React.FC<{
                         padding: '0 10px', height: 38,
                         background: ex.rest === t ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.06)',
                         border: `1px solid ${ex.rest === t ? 'rgba(59,130,246,0.4)' : 'rgba(59,130,246,0.12)'}`,
-                        borderRadius: 11, color: '#3B82F6',
+                        borderRadius: 11, color: '#576038',
                         fontWeight: 800, fontSize: '0.68rem', cursor: 'pointer', flexShrink: 0,
                       }}
                     >{t >= 60 ? `${t / 60}m` : `${t}s`}</button>
@@ -1414,9 +1414,9 @@ const ActiveWorkoutScreen: React.FC<{
             onClick={onAddExercise}
             style={{
               flex: 1, height: 54, borderRadius: 16,
-              background: 'rgba(59,130,246,0.1)',
+              background: 'rgba(87,96,56,0.10)',
               border: '1.5px solid rgba(59,130,246,0.3)',
-              color: '#3B82F6', fontWeight: 800, fontSize: '0.92rem', cursor: 'pointer',
+              color: '#576038', fontWeight: 800, fontSize: '0.92rem', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
             }}
           >
@@ -1426,11 +1426,11 @@ const ActiveWorkoutScreen: React.FC<{
             onClick={onFinish}
             style={{
               flex: 1, height: 54, borderRadius: 16,
-              background: 'linear-gradient(135deg, #22C55E, #16a34a)',
-              border: 'none', color: '#000',
+              background: 'linear-gradient(135deg, #576038, #3E4528)',
+              border: 'none', color: '#FFFFFF',
               fontWeight: 900, fontSize: '0.95rem', cursor: 'pointer',
               fontFamily: "'Outfit',sans-serif",
-              boxShadow: '0 8px 32px rgba(34,197,94,0.35)',
+              boxShadow: '0 8px 32px rgba(87,96,56,0.30)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
             }}
             onPointerDown={e => (e.currentTarget.style.transform = 'scale(0.97)')}
@@ -1802,7 +1802,7 @@ export const Training: React.FC = () => {
             display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
             boxShadow: '0 0 40px rgba(59,130,246,0.15)',
           }}>
-            <Dumbbell size={32} color="#3B82F6" />
+            <Dumbbell size={32} color="#576038" />
           </div>
           <h1 style={{ fontFamily: "'Outfit',sans-serif", fontSize: '1.8rem', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>Choose your program</h1>
           <p style={{ fontSize: '0.82rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
@@ -1814,7 +1814,7 @@ export const Training: React.FC = () => {
           {
             id: 'male_phase2' as const,
             emoji: '💪', label: 'Strength & Hypertrophy', tag: 'Push · Pull · Legs',
-            desc: '4 days/week · RPE 7-9 · Volume focus', color: '#3B82F6',
+            desc: '4 days/week · RPE 7-9 · Volume focus', color: '#576038',
             sub: 'High volume PPL — maximise muscle & strength',
           },
           {
@@ -1869,7 +1869,7 @@ export const Training: React.FC = () => {
             padding: '1rem', borderRadius: 16, cursor: 'pointer',
             background: 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(99,102,241,0.08))',
             border: '1px solid rgba(59,130,246,0.25)',
-            color: '#3B82F6', fontWeight: 800, fontSize: '0.9rem',
+            color: '#576038', fontWeight: 800, fontSize: '0.9rem',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           }}
         >
@@ -1904,15 +1904,15 @@ export const Training: React.FC = () => {
     acc + w.exercises.reduce((a, ex) => a + ex.sets.reduce((s, set) => s + set.weight * set.reps, 0), 0), 0);
 
   const CUSTOM_SESSIONS = [
-    { name: 'Push Day', emoji: '💪', color: '#3B82F6', pattern: 'push' },
-    { name: 'Pull Day', emoji: '🔄', color: '#22C55E', pattern: 'pull' },
+    { name: 'Push Day', emoji: '💪', color: '#576038', pattern: 'push' },
+    { name: 'Pull Day', emoji: '🔄', color: '#576038', pattern: 'pull' },
     { name: 'Leg Day', emoji: '🦵', color: '#F59E0B', pattern: 'legs' },
-    { name: 'Upper Body', emoji: '🏋️', color: '#A855F7', pattern: 'push' },
+    { name: 'Upper Body', emoji: '🏋️', color: '#974400', pattern: 'push' },
     { name: 'Glutes & Hams', emoji: '🍑', color: '#EC4899', pattern: 'legs' },
     { name: 'Full Body', emoji: '⚡', color: '#06B6D4', pattern: 'all' },
     { name: 'Core & Arms', emoji: '💥', color: '#8B5CF6', pattern: 'core' },
     { name: 'Shoulders', emoji: '🎯', color: '#F97316', pattern: 'push' },
-    { name: 'Back & Bis', emoji: '🔝', color: '#22C55E', pattern: 'pull' },
+    { name: 'Back & Bis', emoji: '🔝', color: '#576038', pattern: 'pull' },
   ];
 
   return (
@@ -1932,8 +1932,8 @@ export const Training: React.FC = () => {
             onClick={() => navigate('/programs')}
             style={{
               padding: '7px 12px', borderRadius: 99,
-              background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
-              color: '#3B82F6', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
+              background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(87,96,56,0.15)',
+              color: '#576038', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
             }}
           >Programs</button>
           <button
@@ -1951,7 +1951,7 @@ export const Training: React.FC = () => {
               padding: '7px 14px', borderRadius: 99,
               background: showCustomOptions ? 'rgba(59,130,246,0.15)' : 'rgba(0,0,0,0.06)',
               border: `1px solid ${showCustomOptions ? 'rgba(59,130,246,0.35)' : 'rgba(0,0,0,0.07)'}`,
-              color: showCustomOptions ? '#3B82F6' : 'rgba(28,28,46,0.55)',
+              color: showCustomOptions ? '#576038' : 'rgba(28,28,46,0.55)',
               fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
               transition: 'all 0.15s',
             }}
@@ -2049,7 +2049,7 @@ export const Training: React.FC = () => {
         <div style={{
           background: 'linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(99,102,241,0.08) 100%)',
           border: '1px solid rgba(59,130,246,0.25)', borderRadius: 24, overflow: 'hidden',
-          boxShadow: '0 8px 40px rgba(59,130,246,0.1)',
+          boxShadow: '0 8px 40px rgba(87,96,56,0.10)',
           position: 'relative',
         }}>
           <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(59,130,246,0.08)', filter: 'blur(50px)', pointerEvents: 'none' }} />
@@ -2099,7 +2099,7 @@ export const Training: React.FC = () => {
               onClick={() => startProgramDay(program, selectedDay)}
               style={{
                 width: '100%', padding: '15px',
-                background: 'linear-gradient(135deg, #3B82F6, #6366F1)',
+                background: 'linear-gradient(135deg, #576038, #3E4528)',
                 border: 'none', borderRadius: 16,
                 color: '#fff', fontFamily: "'Outfit',sans-serif",
                 fontWeight: 900, fontSize: '1rem', cursor: 'pointer',
@@ -2123,7 +2123,7 @@ export const Training: React.FC = () => {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.16)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>This Week</span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: completedDayNames.size === program.days.length ? '#22C55E' : 'rgba(0,0,0,0.20)' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: completedDayNames.size === program.days.length ? '#576038' : 'rgba(0,0,0,0.20)' }}>
               {completedDayNames.size}/{program.days.length} done
             </span>
           </div>
@@ -2146,18 +2146,18 @@ export const Training: React.FC = () => {
                 <div key={i} onClick={() => setSelectedDayOverride(i)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                   <div style={{
                     width: 48, height: 48, borderRadius: '50%',
-                    background: isDone ? 'rgba(34,197,94,0.15)' : isSel ? 'rgba(59,130,246,0.18)' : 'rgba(0,0,0,0.03)',
+                    background: isDone ? 'rgba(87,96,56,0.12)' : isSel ? 'rgba(59,130,246,0.18)' : 'rgba(0,0,0,0.03)',
                     border: `2px solid ${isDone ? 'rgba(34,197,94,0.5)' : isSel ? 'rgba(59,130,246,0.7)' : 'rgba(0,0,0,0.06)'}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: isSel && !isDone ? '0 0 20px rgba(59,130,246,0.2)' : isDone ? '0 0 20px rgba(34,197,94,0.15)' : 'none',
+                    boxShadow: isSel && !isDone ? '0 0 20px rgba(87,96,56,0.15)' : isDone ? '0 0 20px rgba(87,96,56,0.12)' : 'none',
                     transition: 'all 0.2s',
                   }}>
                     {isDone
-                      ? <Check size={18} color="#22C55E" />
-                      : <span style={{ fontSize: '0.9rem', fontWeight: 900, color: isSel ? '#3B82F6' : 'rgba(0,0,0,0.13)' }}>{i + 1}</span>
+                      ? <Check size={18} color="#576038" />
+                      : <span style={{ fontSize: '0.9rem', fontWeight: 900, color: isSel ? '#576038' : 'rgba(0,0,0,0.13)' }}>{i + 1}</span>
                     }
                   </div>
-                  <span style={{ fontSize: '0.58rem', fontWeight: 700, color: isDone ? '#22C55E' : isSel ? '#3B82F6' : 'rgba(0,0,0,0.13)', textAlign: 'center', maxWidth: 52 }}>
+                  <span style={{ fontSize: '0.58rem', fontWeight: 700, color: isDone ? '#576038' : isSel ? '#576038' : 'rgba(0,0,0,0.13)', textAlign: 'center', maxWidth: 52 }}>
                     {day.name.split(' ')[0]}
                   </span>
                 </div>
@@ -2165,8 +2165,8 @@ export const Training: React.FC = () => {
             })}
           </div>
           {allDone && (
-            <div style={{ marginTop: 12, textAlign: 'center', padding: '8px', background: 'rgba(34,197,94,0.07)', borderRadius: 12, border: '1px solid rgba(34,197,94,0.15)' }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#22C55E' }}>Week complete — program restarts next week 🎉</span>
+            <div style={{ marginTop: 12, textAlign: 'center', padding: '8px', background: 'rgba(34,197,94,0.07)', borderRadius: 12, border: '1px solid rgba(87,96,56,0.12)' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#576038' }}>Week complete — program restarts next week 🎉</span>
             </div>
           )}
         </div>
@@ -2175,9 +2175,9 @@ export const Training: React.FC = () => {
         {recentWorkouts.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
             {[
-              { label: 'Sessions', value: String(thisWeekWorkouts.length), sub: 'this week', color: '#3B82F6', icon: <Dumbbell size={14} color="#3B82F6" /> },
-              { label: 'Volume', value: totalVolumeRecent > 1000 ? `${(totalVolumeRecent / 1000).toFixed(1)}k` : String(Math.round(totalVolumeRecent)), sub: 'kg lifted', color: '#A855F7', icon: <BarChart2 size={14} color="#A855F7" /> },
-              { label: 'Last', value: recentWorkouts[0] ? `${recentWorkouts[0].durationMinutes}m` : '—', sub: 'duration', color: '#22C55E', icon: <Timer size={14} color="#22C55E" /> },
+              { label: 'Sessions', value: String(thisWeekWorkouts.length), sub: 'this week', color: '#576038', icon: <Dumbbell size={14} color="#576038" /> },
+              { label: 'Volume', value: totalVolumeRecent > 1000 ? `${(totalVolumeRecent / 1000).toFixed(1)}k` : String(Math.round(totalVolumeRecent)), sub: 'kg lifted', color: '#974400', icon: <BarChart2 size={14} color="#974400" /> },
+              { label: 'Last', value: recentWorkouts[0] ? `${recentWorkouts[0].durationMinutes}m` : '—', sub: 'duration', color: '#576038', icon: <Timer size={14} color="#576038" /> },
               { label: 'PRs', value: String(prsThisMonth), sub: 'this month', color: '#FBBF24', icon: <Award size={14} color="#FBBF24" /> },
             ].map(stat => (
               <div key={stat.label} style={{
@@ -2219,7 +2219,7 @@ export const Training: React.FC = () => {
                 />
                 <Bar dataKey="sets" radius={[7, 7, 0, 0]} barSize={26}>
                   {volumeData.map((entry, i) => (
-                    <Cell key={i} fill={entry.sets > 0 ? (MUSCLE_COLORS[entry.name] || '#3B82F6') : 'rgba(0,0,0,0.03)'} fillOpacity={entry.sets > 0 ? 0.8 : 1} />
+                    <Cell key={i} fill={entry.sets > 0 ? (MUSCLE_COLORS[entry.name] || '#576038') : 'rgba(0,0,0,0.03)'} fillOpacity={entry.sets > 0 ? 0.8 : 1} />
                   ))}
                 </Bar>
               </BarChart>
@@ -2281,9 +2281,9 @@ export const Training: React.FC = () => {
                           {musclesHit.map(m => (
                             <span key={m} style={{
                               fontSize: '0.58rem', fontWeight: 700, padding: '2px 6px', borderRadius: 99,
-                              background: `${MUSCLE_COLORS[m] || '#3B82F6'}12`,
-                              color: MUSCLE_COLORS[m] || '#3B82F6',
-                              border: `1px solid ${MUSCLE_COLORS[m] || '#3B82F6'}20`,
+                              background: `${MUSCLE_COLORS[m] || '#576038'}12`,
+                              color: MUSCLE_COLORS[m] || '#576038',
+                              border: `1px solid ${MUSCLE_COLORS[m] || '#576038'}20`,
                             }}>{m}</span>
                           ))}
                         </div>
@@ -2291,7 +2291,7 @@ export const Training: React.FC = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, paddingLeft: 12 }}>
                         {totalVolume > 0 && (
                           <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '0.95rem', color: '#A855F7', fontVariantNumeric: 'tabular-nums' }}>
+                            <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '0.95rem', color: '#974400', fontVariantNumeric: 'tabular-nums' }}>
                               {totalVolume > 1000 ? `${(totalVolume / 1000).toFixed(1)}k` : Math.round(totalVolume)}
                             </div>
                             <div style={{ fontSize: '0.5rem', color: 'rgba(0,0,0,0.14)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>kg</div>

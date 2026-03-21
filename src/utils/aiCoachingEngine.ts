@@ -122,9 +122,9 @@ export const computeEarnedBadges = (
   const allWorkouts = Object.values(logs).flatMap(l => l.workouts ?? []);
   const totalWorkouts = allWorkouts.length;
 
-  if (totalWorkouts >= 1) badges.push({ id: 'first_rep', label: 'First Rep', description: 'Logged your first workout', icon: '🏋️', color: '#3B82F6' });
+  if (totalWorkouts >= 1) badges.push({ id: 'first_rep', label: 'First Rep', description: 'Logged your first workout', icon: '🏋️', color: '#576038' });
   if (totalWorkouts >= 10) badges.push({ id: 'consistent', label: 'Consistent', description: '10 workouts logged', icon: '🔥', color: '#F97316' });
-  if (totalWorkouts >= 25) badges.push({ id: 'dedicated', label: 'Dedicated', description: '25 workouts logged', icon: '💪', color: '#A855F7' });
+  if (totalWorkouts >= 25) badges.push({ id: 'dedicated', label: 'Dedicated', description: '25 workouts logged', icon: '💪', color: '#974400' });
   if (totalWorkouts >= 50) badges.push({ id: 'elite', label: 'Elite', description: '50 workouts logged', icon: '⚡', color: '#EAB308' });
 
   // Workout streak
@@ -141,7 +141,7 @@ export const computeEarnedBadges = (
     .filter(([date]) => date >= weekStart && date <= today)
     .reduce((a, [, l]) => a + (l.workouts?.length ?? 0), 0);
   if (thisWeekWorkouts >= (user.trainingFrequency ?? 3)) {
-    badges.push({ id: 'weekly_target', label: 'Week Complete', description: `Hit your ${user.trainingFrequency}x/week target`, icon: '🎯', color: '#22C55E' });
+    badges.push({ id: 'weekly_target', label: 'Week Complete', description: `Hit your ${user.trainingFrequency}x/week target`, icon: '🎯', color: '#576038' });
   }
 
   // Protein streak (7 consecutive days at ≥90% target)

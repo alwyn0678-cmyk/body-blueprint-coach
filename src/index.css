@@ -16,8 +16,8 @@
 
   /* ── Brand Accent (Organic Performance) ── */
   --accent-primary:   #576038;
-  --accent-blue:      #3B82F6;
-  --accent-blue-glow: rgba(59,130,246,0.2);
+  --accent-blue:      #576038;
+  --accent-blue-glow: rgba(87,96,56,0.2);
   --accent-green:     #576038;
   --accent-green-glow:rgba(87,96,56,0.2);
   --accent-orange:    #974400;
@@ -35,7 +35,7 @@
   /* ── Macro Colors ── */
   --color-calories: #974400;
   --color-protein:  #974400;
-  --color-carbs:    #3B82F6;
+  --color-carbs:    #8B9467;
   --color-fats:     #576038;
 
   /* ── Text ── */
@@ -57,7 +57,7 @@
   --shadow-md:     0 4px 20px rgba(26,28,26,0.06);
   --shadow-lg:     0 12px 40px rgba(26,28,26,0.06);
   --shadow-xl:     0 20px 60px rgba(26,28,26,0.09);
-  --shadow-blue:   0 0 24px rgba(59,130,246,0.15);
+  --shadow-blue:   0 0 24px rgba(87,96,56,0.15);
   --shadow-green:  0 0 24px rgba(87,96,56,0.15);
   --shadow-coach:  0 0 30px rgba(87,96,56,0.15);
 
@@ -635,7 +635,7 @@ button:focus:not(:focus-visible) { outline: none; }
 /* ═══════════════════════════════════════════════════════════════════
    GRADIENT UTILITIES
    ═══════════════════════════════════════════════════════════════════ */
-.gradient-blue    { background: linear-gradient(135deg, #3B82F6 0%, #0891B2 100%); }
+.gradient-blue    { background: linear-gradient(135deg, #576038 0%, #3E4528 100%); }
 .gradient-green   { background: linear-gradient(135deg, #576038 0%, #8B9467 100%); }
 .gradient-orange  { background: linear-gradient(135deg, #974400 0%, #D2691E 100%); }
 .gradient-purple  { background: linear-gradient(135deg, #7C3AED 0%, #576038 100%); }
@@ -926,9 +926,9 @@ button:focus:not(:focus-visible) { outline: none; }
   content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 1.5px;
   border-radius: 0 0 2px 2px;
 }
-.macro-chip.protein::before { background: #F59E0B; }
-.macro-chip.carbs::before   { background: #3B82F6; }
-.macro-chip.fats::before    { background: #22C55E; }
+.macro-chip.protein::before { background: #974400; }
+.macro-chip.carbs::before   { background: #8B9467; }
+.macro-chip.fats::before    { background: #576038; }
 
 /* ── Streak trophy ── */
 .streak-trophy {
@@ -1114,10 +1114,10 @@ button:focus:not(:focus-visible) { outline: none; }
 .card-left-accent { border-left: 3px solid currentColor; }
 
 /* RPE scale colours */
-.rpe-6  { color: #16A34A; }
-.rpe-7  { color: #65A30D; }
-.rpe-8  { color: #CA8A04; }
-.rpe-9  { color: #D97706; }
+.rpe-6  { color: #8B9467; }
+.rpe-7  { color: #576038; }
+.rpe-8  { color: #974400; }
+.rpe-9  { color: #C05200; }
 .rpe-10 { color: #DC2626; }
 
 /* ═══════════════════════════════════════════════════════════════════

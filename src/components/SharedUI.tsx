@@ -44,8 +44,8 @@ const T = {
   text:     '#FFFFFF',
   muted:    'rgba(0,0,0,0.30)',
   subtle:   'rgba(0,0,0,0.14)',
-  accent:   'var(--accent-blue, #3B82F6)',
-  green:    'var(--accent-green, #22C55E)',
+  accent:   'var(--accent-primary, #576038)',
+  green:    'var(--accent-green, #576038)',
   red:      '#EF4444',
   amber:    '#F59E0B',
   radius:   {
@@ -865,8 +865,8 @@ export const FoodRow: React.FC<FoodRowProps> = ({
           <span style={{
             fontSize: '0.6875rem',
             fontWeight: 600,
-            color: '#3B82F6',
-            backgroundColor: 'rgba(59,130,246,0.12)',
+            color: '#974400',
+            backgroundColor: 'rgba(151,68,0,0.10)',
             borderRadius: T.radius.full,
             padding: '1px 6px',
           }}>
@@ -932,7 +932,7 @@ interface StatusBadgeProps {
 const STATUS_CONFIG: Record<ConnectionStatus, { label: string; color: string; bg: string; pulse?: boolean }> = {
   disconnected: { label: 'Disconnected', color: 'rgba(0,0,0,0.30)', bg: 'rgba(0,0,0,0.06)' },
   connecting:   { label: 'Connecting',   color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', pulse: true },
-  connected:    { label: 'Connected',    color: '#22C55E', bg: 'rgba(34,197,94,0.15)' },
+  connected:    { label: 'Connected',    color: '#576038', bg: 'rgba(87,96,56,0.12)' },
   failed:       { label: 'Failed',       color: '#EF4444', bg: 'rgba(239,68,68,0.15)' },
   disabled:     { label: 'Disabled',     color: 'rgba(0,0,0,0.16)', bg: 'rgba(0,0,0,0.03)' },
 };
@@ -1237,9 +1237,9 @@ export const MacroRing: React.FC<MacroRingProps> = ({
   const innerStroke = 7;
   const gap = 10;
   const macros = [
-    { pct: targetProtein > 0 ? Math.min(1, protein / targetProtein) : 0, color: '#3B82F6' },
-    { pct: targetCarbs   > 0 ? Math.min(1, carbs   / targetCarbs)   : 0, color: '#A855F7' },
-    { pct: targetFats    > 0 ? Math.min(1, fats    / targetFats)    : 0, color: '#F97316' },
+    { pct: targetProtein > 0 ? Math.min(1, protein / targetProtein) : 0, color: '#974400' },
+    { pct: targetCarbs   > 0 ? Math.min(1, carbs   / targetCarbs)   : 0, color: '#8B9467' },
+    { pct: targetFats    > 0 ? Math.min(1, fats    / targetFats)    : 0, color: '#576038' },
   ];
 
   const remaining = Math.max(0, targetCalories - calories);
@@ -1259,7 +1259,7 @@ export const MacroRing: React.FC<MacroRingProps> = ({
         {/* Calories arc */}
         <circle
           cx={cx} cy={cy} r={outerR}
-          stroke="var(--accent-primary, #22C55E)"
+          stroke="var(--accent-primary, #576038)"
           strokeWidth={outerStroke}
           fill="none"
           strokeDasharray={outerCirc}

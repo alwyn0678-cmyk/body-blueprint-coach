@@ -755,9 +755,9 @@ const ToastStack: React.FC<{ toasts: ToastItem[] }> = ({ toasts }) => {
 };
 
 const TOAST_STYLES = {
-  success: { bg: 'rgba(50,215,75,0.12)',  border: '#32D74B', icon: '✓' },
-  error:   { bg: 'rgba(255,69,58,0.12)',  border: '#FF453A', icon: '!' },
-  info:    { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.15)', icon: 'i' },
+  success: { bg: 'rgba(87,96,56,0.10)',  border: '#576038', icon: '✓' },
+  error:   { bg: 'rgba(151,68,0,0.10)',  border: '#974400', icon: '!' },
+  info:    { bg: 'rgba(87,96,56,0.07)',  border: 'rgba(87,96,56,0.25)', icon: 'i' },
 };
 
 const ToastBubble: React.FC<{ toast: ToastItem }> = ({ toast }) => {
@@ -765,9 +765,9 @@ const ToastBubble: React.FC<{ toast: ToastItem }> = ({ toast }) => {
   return (
     <div className="animate-slide-up" style={{
       background: s.bg, border: `1px solid ${s.border}`,
-      backdropFilter: 'blur(16px)', color: 'white',
+      backdropFilter: 'blur(16px)', color: '#1A1A1A',
       padding: '12px 16px', borderRadius: '14px',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+      boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
       fontWeight: 600, fontSize: '0.875rem',
       width: '100%', maxWidth: '460px',
       display: 'flex', alignItems: 'center', gap: '10px',
@@ -777,6 +777,7 @@ const ToastBubble: React.FC<{ toast: ToastItem }> = ({ toast }) => {
         width: 22, height: 22, borderRadius: '50%',
         background: s.border, display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontSize: '0.65rem', fontWeight: 900, flexShrink: 0,
+        color: '#FFFFFF',
       }}>{s.icon}</span>
       <span style={{ flex: 1, lineHeight: 1.4 }}>{toast.message}</span>
     </div>

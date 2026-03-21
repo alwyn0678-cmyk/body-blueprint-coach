@@ -322,7 +322,7 @@ export const Progress: React.FC = () => {
                       <YAxis tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.24)', fontWeight: 600 }} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
                       <Tooltip content={<CustomTooltip />} />
                       {user.goalWeight && (
-                        <ReferenceLine y={user.goalWeight} stroke="#22C55E" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: 'Goal', fill: '#22C55E', fontSize: 9 }} />
+                        <ReferenceLine y={user.goalWeight} stroke="#576038" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: 'Goal', fill: '#576038', fontSize: 9 }} />
                       )}
                       <Area type="monotone" dataKey="weight" stroke="transparent" fill="none" dot={{ r: 2, fill: 'rgba(87,96,56,0.5)', strokeWidth: 0 }} name="Logged" />
                       <Area type="monotone" dataKey="trend" stroke="#576038" strokeWidth={2.5} fill="url(#weightG)"
