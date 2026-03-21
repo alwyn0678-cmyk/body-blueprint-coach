@@ -641,6 +641,78 @@ Confidence levels: "high" = clearly identifiable food with well-known macros, "m
   }
 }
 
+// ─── AI Workout Generator ─────────────────────────────────────────────────────
+
+export interface AIGeneratedExercise {
+  name: string;
+  sets: number;
+  reps: string;
+  rest: number;
+  notes?: string;
+}
+
+export interface AIGeneratedWorkout {
+  name: string;
+  exercises: AIGeneratedExercise[];
+}
+
+export async function generateWorkout(params: {
+  muscleGroup: string;
+  durationMinutes: number;
+  level: string;
+  notes?: string;
+}): Promise<AIGeneratedWorkout> {
+  const key = getClaudeKey();
+  if (!key) throw new Error('No Claude API key. Set it in Settings → AI Coach.');
+
+  const exerciseCount =
+    params.durationMinutes <= 20 ? 4
+    : params.durationMinutes <= 35 ? 5
+    : params.durationMinutes <= 50 ? 6
+    : 8;
+
+  const userMessage = `Generate a ${params.durationMinutes}-minute ${params.muscleGroup} workout for a ${params.level} trainee.${params.notes ? ` Notes: ${params.notes}` : ''}
+
+Return ONLY a JSON object — no markdown, no explanation:
+{
+  "name": "short descriptive workout name",
+  "exercises": [
+    { "name": "Exercise Name", "sets": 3, "reps": "8-12", "rest": 90, "notes": "brief coaching cue or null" }
+  ]
+}
+
+Rules:
+- Exactly ${exerciseCount} exercises
+- Real gym exercises (barbells, dumbbells, cables, machines, bodyweight)
+- Rest in seconds (45–180)
+- Reps as a range string like "8-12" or single number like "10"
+- Beginner: simple compound moves, 3 sets, 10-15 reps, longer rest
+- Intermediate: compound + isolation mix, 3-4 sets
+- Advanced: 4 sets, drop sets / superset notes welcome`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: 1200,
+      system: 'You are an expert personal trainer. Output only valid JSON, nothing else.',
+      messages: [{ role: 'user', content: userMessage }],
+    }),
+  });
+
+  const data = await res.json();
+  const text: string = data.content?.[0]?.text?.trim() ?? '';
+  // Strip markdown code fences if Claude wraps the JSON
+  const jsonStr = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+  return JSON.parse(jsonStr) as AIGeneratedWorkout;
+}
+
 // ─── Singleton ────────────────────────────────────────────────────────────────
 
 export const coachService = new AICoachService();

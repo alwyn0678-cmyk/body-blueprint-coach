@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Dumbbell, Plus, Timer, X, Check, RotateCcw, Search,
   TrendingUp, TrendingDown, Trash2, Play, ChevronDown, ChevronUp,
-  Award, Zap, Flame, Target, BarChart2, Copy, Star, RefreshCw,
+  Award, Zap, Flame, Target, BarChart2, Copy, Star, RefreshCw, Sparkles,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useApp } from '../context/AppContext';
@@ -12,6 +12,7 @@ import { WorkoutSession, ExerciseEntry, ExerciseSet, CustomProgram } from '../ty
 import { getProgramById, WorkoutProgram, ProgramDay } from '../data/workoutPrograms';
 import { coachService } from '../services/aiCoach';
 import { computeEarnedBadges } from '../utils/aiCoachingEngine';
+import { AIWorkoutBuilder, BuiltExercise } from '../components/AIWorkoutBuilder';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type SetType = 'W' | 'N' | 'D'; // Warm-up / Normal / Drop-set
@@ -1489,6 +1490,7 @@ export const Training: React.FC = () => {
   const [selectedDayOverride, setSelectedDayOverride] = useState<number | null>(null);
   const swipeTouchStartX = useRef<number | null>(null);
   const [showCustomOptions, setShowCustomOptions] = useState(false);
+  const [showAIBuilder, setShowAIBuilder] = useState(false);
   const [expandedWorkout, setExpandedWorkout] = useState<string | null>(null);
   const [showSummary, setShowSummary] = useState(false);
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
@@ -1640,6 +1642,30 @@ export const Training: React.FC = () => {
     setSessionActive(true);
   };
 
+  const startAIWorkout = (workoutName: string, builtExercises: BuiltExercise[]) => {
+    setSessionName(workoutName);
+    setExercises(builtExercises.map(ex => {
+      const lastPerf = getLastPerformance(state.logs, ex.libraryId, today);
+      return {
+        libraryId: ex.libraryId,
+        name: ex.name,
+        targetReps: ex.targetReps,
+        rest: ex.rest,
+        notes: ex.notes,
+        sets: Array.from({ length: ex.targetSets }, () => ({
+          weight: lastPerf ? String(lastPerf.weight) : '',
+          reps: '',
+          rpe: 0,
+          type: 'N' as SetType,
+          done: false,
+        })),
+      };
+    }));
+    setShowAIBuilder(false);
+    setShowCustomOptions(false);
+    setSessionActive(true);
+  };
+
   const startCustomSession = (name: string) => {
     setSessionName(name);
     setExercises([]);
@@ -1742,6 +1768,17 @@ export const Training: React.FC = () => {
     setExercises([]);
     showToast('Session cancelled', 'info');
   };
+
+  // ── AI Workout Builder ────────────────────────────────────────────────────
+  if (showAIBuilder) {
+    return (
+      <AIWorkoutBuilder
+        library={state.workoutLibrary}
+        onStart={startAIWorkout}
+        onClose={() => setShowAIBuilder(false)}
+      />
+    );
+  }
 
   // ── Workout Summary ───────────────────────────────────────────────────────
   if (showSummary && summaryData) {
@@ -1849,6 +1886,27 @@ export const Training: React.FC = () => {
             <span style={{ fontWeight: 600, fontSize: '0.72rem', color: `${opt.color}90` }}>{opt.desc}</span>
           </button>
         ))}
+
+        <button
+          onClick={() => setShowAIBuilder(true)}
+          style={{
+            padding: '1.25rem', background: 'linear-gradient(135deg, rgba(87,96,56,0.10), rgba(87,96,56,0.07))',
+            border: '1px solid rgba(87,96,56,0.25)', borderRadius: 18,
+            cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 8,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: '1.5rem' }}>✨</span>
+            <div>
+              <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1.05rem', color: '#576038', letterSpacing: '-0.01em' }}>
+                Ask AI Coach
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(87,96,56,0.70)', fontWeight: 600, marginTop: 2 }}>
+                Tell me what you want to train — I'll build your workout
+              </div>
+            </div>
+          </div>
+        </button>
 
         <button
           onClick={() => startCustomSession('Custom Workout')}
@@ -2028,11 +2086,23 @@ export const Training: React.FC = () => {
                 </button>
               ))}
             </div>
-            <div style={{ padding: '0 12px 12px' }}>
+            <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button
+                onClick={() => setShowAIBuilder(true)}
+                style={{
+                  width: '100%', padding: '12px 16px', marginTop: 8,
+                  background: 'linear-gradient(135deg, rgba(87,96,56,0.12), rgba(87,96,56,0.08))',
+                  border: '1px solid rgba(87,96,56,0.30)', borderRadius: 14,
+                  color: '#576038', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <Sparkles size={15} /> Ask AI Coach to build my workout
+              </button>
               <button
                 onClick={() => startCustomSession('My Workout')}
                 style={{
-                  width: '100%', padding: '10px', marginTop: 8,
+                  width: '100%', padding: '10px',
                   background: 'rgba(0,0,0,0.02)', border: '1.5px dashed rgba(0,0,0,0.07)',
                   borderRadius: 12, color: 'rgba(0,0,0,0.28)',
                   fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
