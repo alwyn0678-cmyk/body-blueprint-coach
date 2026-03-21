@@ -96,8 +96,8 @@ const weekStartStr = () => {
 
 const InsightCard: React.FC<{ insight: CoachInsight; onDismiss: () => void }> = ({ insight, onDismiss }) => {
   const [expanded, setExpanded] = useState(false);
-  const color = insight.priority === 'high' ? '#EF4444'
-    : insight.priority === 'medium' ? '#F59E0B' : '#6366F1';
+  const color = insight.priority === 'high' ? '#974400'
+    : insight.priority === 'medium' ? '#974400' : '#576038';
   const Icon = insight.type === 'nutrition' ? Apple
     : insight.type === 'training' ? Dumbbell
     : insight.type === 'recovery' ? Moon
@@ -164,30 +164,30 @@ const WeeklyCheckInCard: React.FC<{
   loading: boolean;
 }> = ({ stats, checkIn, adjustment, onComplete, loading }) => {
   const completed = !!checkIn?.completedAt;
-  const adjColor = adjustment.recommendation === 'maintain' ? '#22C55E'
-    : adjustment.recommendation === 'decrease_calories' ? '#EF4444' : '#3B82F6';
+  const adjColor = adjustment.recommendation === 'maintain' ? '#576038'
+    : adjustment.recommendation === 'decrease_calories' ? '#974400' : '#576038';
 
   return (
-    <div style={{ borderRadius: 20, background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.06) 100%)', border: '1px solid rgba(99,102,241,0.25)', padding: '18px 18px', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ borderRadius: 20, background: 'linear-gradient(135deg, rgba(87,96,56,0.10) 0%, rgba(151,68,0,0.05) 100%)', border: '1px solid rgba(87,96,56,0.20)', padding: '18px 18px', position: 'relative', overflow: 'hidden' }}>
       {/* Background glow */}
-      <div style={{ position: 'absolute', top: -20, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: -20, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(87,96,56,0.10) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <div>
-          <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A5B4FC', marginBottom: 3 }}>Weekly Check-In</div>
+          <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(87,96,56,0.6)', marginBottom: 3 }}>Weekly Check-In</div>
           <div style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
             {completed ? 'This week reviewed' : 'Week in review'}
           </div>
         </div>
-        {completed ? <CheckCircle2 size={22} color="#22C55E" /> : <RefreshCw size={18} color="#A5B4FC" />}
+        {completed ? <CheckCircle2 size={22} color="#576038" /> : <RefreshCw size={18} color="rgba(87,96,56,0.6)" />}
       </div>
 
       {/* Stats grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 14 }}>
         {[
-          { label: 'Cal adherence', value: `${stats.calorieAdherence}%`, color: stats.calorieAdherence >= 80 ? '#22C55E' : '#F59E0B' },
-          { label: 'Protein avg', value: `${stats.avgProtein}g`, color: stats.proteinAdherence >= 80 ? '#22C55E' : '#F59E0B' },
-          { label: 'Workouts', value: `${stats.workoutsCompleted}`, color: '#3B82F6' },
+          { label: 'Cal adherence', value: `${stats.calorieAdherence}%`, color: stats.calorieAdherence >= 80 ? '#576038' : '#974400' },
+          { label: 'Protein avg', value: `${stats.avgProtein}g`, color: stats.proteinAdherence >= 80 ? '#576038' : '#974400' },
+          { label: 'Workouts', value: `${stats.workoutsCompleted}`, color: '#576038' },
         ].map(({ label, value, color }) => (
           <div key={label} style={{ background: 'rgba(0,0,0,0.04)', borderRadius: 12, padding: '10px 10px' }}>
             <div style={{ fontSize: '0.56rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginBottom: 3 }}>{label}</div>
@@ -240,7 +240,7 @@ const AdaptiveTDEECard: React.FC<{ user: any; weeklyStats: any; currentEma: numb
 
   if (evaluation.recommendation === 'maintain') return null;
 
-  const color = evaluation.recommendation === 'decrease_calories' ? '#EF4444' : '#3B82F6';
+  const color = evaluation.recommendation === 'decrease_calories' ? '#974400' : '#576038';
 
   return (
     <div style={{ borderRadius: 16, background: `${color}08`, border: `1px solid ${color}20`, padding: '14px 16px' }}>
@@ -516,8 +516,8 @@ export const Coach: React.FC = () => {
     }
   }, [user, weeklyStats, weightDelta, currentEma, weekAdjustment]);
 
-  const insightColor = dailyInsight.priority === 'high' ? '#EF4444'
-    : dailyInsight.priority === 'medium' ? '#F59E0B' : '#6366F1';
+  const insightColor = dailyInsight.priority === 'high' ? '#974400'
+    : dailyInsight.priority === 'medium' ? '#974400' : '#576038';
 
   return (
     <div className="page page-top-pad safe-bottom" style={{ gap: 14 }}>
@@ -531,7 +531,7 @@ export const Coach: React.FC = () => {
               Science-based adaptive coaching
             </div>
           </div>
-          <div style={{ width: 38, height: 38, borderRadius: 12, background: 'linear-gradient(135deg, #6366F1, #A855F7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: 'linear-gradient(135deg, #576038, #C2CB9A)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Brain size={18} color="white" />
           </div>
         </div>
@@ -594,11 +594,11 @@ export const Coach: React.FC = () => {
             {/* Training Intelligence card */}
             {(activeMuscles.length > 0 || progressionSuggestions.length > 0 || deloadRec.recommended) && (
               <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                <div style={{ borderRadius: 16, border: '1px solid rgba(99,102,241,0.22)', background: 'rgba(99,102,241,0.05)', overflow: 'hidden', padding: '14px 16px' }}>
+                <div style={{ borderRadius: 16, border: '1px solid rgba(87,96,56,0.18)', background: 'rgba(87,96,56,0.05)', overflow: 'hidden', padding: '14px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                    <BarChart3 size={14} color="#A5B4FC" />
-                    <span style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#A5B4FC' }}>Training Intelligence</span>
-                    <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '1px 6px', borderRadius: 6, background: 'rgba(99,102,241,0.18)', color: '#A5B4FC' }}>This week</span>
+                    <BarChart3 size={14} color="rgba(87,96,56,0.6)" />
+                    <span style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(87,96,56,0.6)' }}>Training Intelligence</span>
+                    <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '1px 6px', borderRadius: 6, background: 'rgba(87,96,56,0.12)', color: 'rgba(87,96,56,0.6)' }}>This week</span>
                   </div>
 
                   {/* Volume landmark bars */}
@@ -625,8 +625,8 @@ export const Coach: React.FC = () => {
 
                   {/* Exercises ready to progress */}
                   {progressionSuggestions.filter(s => s.type === 'weight_increase').length > 0 && (
-                    <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.18)', marginBottom: 8 }}>
-                      <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#22C55E', marginBottom: 5 }}>Ready to Progress</div>
+                    <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(87,96,56,0.08)', border: '1px solid rgba(87,96,56,0.18)', marginBottom: 8 }}>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#576038', marginBottom: 5 }}>Ready to Progress</div>
                       {progressionSuggestions.filter(s => s.type === 'weight_increase').slice(0, 3).map(s => (
                         <div key={s.exerciseId} style={{ fontSize: '0.73rem', color: 'var(--text-primary)', marginBottom: 3 }}>
                           <span style={{ fontWeight: 700 }}>{s.exerciseName}</span>
@@ -639,7 +639,7 @@ export const Coach: React.FC = () => {
                   {/* Stalled exercises */}
                   {progressionSuggestions.filter(s => s.type === 'deload').length > 0 && (
                     <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)', marginBottom: 8 }}>
-                      <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#F59E0B', marginBottom: 5 }}>Stalled — Consider Deload</div>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#974400', marginBottom: 5 }}>Stalled — Consider Deload</div>
                       {progressionSuggestions.filter(s => s.type === 'deload').slice(0, 2).map(s => (
                         <div key={s.exerciseId} style={{ fontSize: '0.73rem', color: 'var(--text-primary)', marginBottom: 3 }}>
                           <span style={{ fontWeight: 700 }}>{s.exerciseName}</span>
@@ -651,8 +651,8 @@ export const Coach: React.FC = () => {
 
                   {/* Deload signal */}
                   {deloadRec.recommended && (
-                    <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(191,90,242,0.07)', border: '1px solid rgba(191,90,242,0.18)' }}>
-                      <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#BF5AF2', marginBottom: 4 }}>
+                    <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(151,68,0,0.07)', border: '1px solid rgba(151,68,0,0.20)' }}>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#974400', marginBottom: 4 }}>
                         Deload Signal · {deloadRec.urgency.replace('_', ' ')}
                       </div>
                       <div style={{ fontSize: '0.73rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
@@ -687,9 +687,9 @@ export const Coach: React.FC = () => {
 
             {/* Key required banner */}
             {!hasClaudeKey && (
-              <div style={{ borderRadius: 16, padding: '14px 16px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.22)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Lock size={15} color="#A5B4FC" />
+              <div style={{ borderRadius: 16, padding: '14px 16px', background: 'rgba(87,96,56,0.08)', border: '1px solid rgba(87,96,56,0.18)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(87,96,56,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Lock size={15} color="rgba(87,96,56,0.6)" />
                 </div>
                 <div>
                   <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>AI Chat requires a Claude key</div>
@@ -702,13 +702,13 @@ export const Coach: React.FC = () => {
 
             {/* Intro if no messages */}
             {chatMessages.length === 0 && (
-              <div style={{ borderRadius: 18, padding: '18px 16px', background: 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.06) 100%)', border: '1px solid rgba(99,102,241,0.22)', marginBottom: 14 }}>
+              <div style={{ borderRadius: 18, padding: '18px 16px', background: 'linear-gradient(135deg, rgba(87,96,56,0.08) 0%, rgba(151,68,0,0.05) 100%)', border: '1px solid rgba(87,96,56,0.18)', marginBottom: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 11, background: 'linear-gradient(135deg, #6366F1, #A855F7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 11, background: 'linear-gradient(135deg, #576038, #C2CB9A)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Sparkles size={16} color="white" />
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#A5B4FC', textTransform: 'uppercase', letterSpacing: '0.07em' }}>AI Coach</div>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'rgba(87,96,56,0.6)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>AI Coach</div>
                     <div style={{ fontSize: '0.88rem', fontWeight: 700 }}>Ask me anything</div>
                   </div>
                 </div>
@@ -730,16 +730,16 @@ export const Coach: React.FC = () => {
                 {chatMessages.map(m => (
                   <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
                     {m.role === 'assistant' && (
-                      <div style={{ width: 22, height: 22, borderRadius: 7, background: 'linear-gradient(135deg, #6366F1, #A855F7)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
+                      <div style={{ width: 22, height: 22, borderRadius: 7, background: 'linear-gradient(135deg, #576038, #C2CB9A)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
                         <Brain size={11} color="white" />
                       </div>
                     )}
                     <div style={{
                       maxWidth: '86%', padding: '10px 14px', borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
-                      background: m.role === 'user' ? 'var(--accent-blue)' : 'var(--bg-elevated)',
+                      background: m.role === 'user' ? 'linear-gradient(135deg, #576038, #3E4528)' : 'var(--bg-elevated)',
                       border: m.role === 'assistant' ? '1px solid rgba(0,0,0,0.06)' : 'none',
                       fontSize: '0.84rem', fontWeight: 500, lineHeight: 1.6, color: 'var(--text-primary)',
-                      boxShadow: m.role === 'user' ? '0 4px 12px rgba(59,130,246,0.3)' : '0 2px 8px rgba(0,0,0,0.3)',
+                      boxShadow: m.role === 'user' ? '0 4px 12px rgba(87,96,56,0.25)' : '0 2px 8px rgba(0,0,0,0.06)',
                     }}>
                       {m.role === 'assistant' ? <ChatMarkdown text={m.content} /> : m.content}
                     </div>
@@ -747,12 +747,12 @@ export const Coach: React.FC = () => {
                 ))}
                 {chatLoading && (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                    <div style={{ width: 22, height: 22, borderRadius: 7, background: 'linear-gradient(135deg, #6366F1, #A855F7)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: 7, background: 'linear-gradient(135deg, #576038, #C2CB9A)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
                       <Brain size={11} color="white" />
                     </div>
                     <div style={{ padding: '10px 16px', borderRadius: '4px 18px 18px 18px', background: 'var(--bg-elevated)', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 4, alignItems: 'center' }}>
                       {[0, 1, 2].map(i => (
-                        <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366F1', animation: 'pulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />
+                        <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#576038', animation: 'pulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />
                       ))}
                     </div>
                   </div>
@@ -777,7 +777,7 @@ export const Coach: React.FC = () => {
               <button
                 onClick={handleChat}
                 disabled={!chatInput.trim() || chatLoading || !hasClaudeKey}
-                style={{ width: 44, height: 44, borderRadius: 14, background: chatInput.trim() && !chatLoading && hasClaudeKey ? 'linear-gradient(135deg, #6366F1, #A855F7)' : 'rgba(0,0,0,0.06)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: chatInput.trim() && !chatLoading && hasClaudeKey ? 'pointer' : 'default', flexShrink: 0, transition: 'background 0.2s', boxShadow: chatInput.trim() && hasClaudeKey ? '0 4px 12px rgba(99,102,241,0.4)' : 'none' }}>
+                style={{ width: 44, height: 44, borderRadius: 14, background: chatInput.trim() && !chatLoading && hasClaudeKey ? 'linear-gradient(135deg, #576038, #C2CB9A)' : 'rgba(0,0,0,0.06)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: chatInput.trim() && !chatLoading && hasClaudeKey ? 'pointer' : 'default', flexShrink: 0, transition: 'background 0.2s', boxShadow: chatInput.trim() && hasClaudeKey ? '0 4px 12px rgba(87,96,56,0.25)' : 'none' }}>
                 <Send size={16} color={chatInput.trim() && !chatLoading && hasClaudeKey ? 'white' : 'rgba(0,0,0,0.20)'} />
               </button>
             </div>
@@ -797,7 +797,7 @@ export const Coach: React.FC = () => {
             />
             {thisWeekCheckIn?.coachResponse && (
               <div style={{ borderRadius: 16, background: 'var(--bg-card)', border: '1px solid var(--border-color)', padding: '14px 16px' }}>
-                <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#A5B4FC', marginBottom: 8 }}>Coach Review</div>
+                <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(87,96,56,0.6)', marginBottom: 8 }}>Coach Review</div>
                 <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
                   <ChatMarkdown text={thisWeekCheckIn.coachResponse} />
                 </div>
@@ -813,7 +813,7 @@ export const Coach: React.FC = () => {
                       <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>
                         Week of {new Date(ci.weekStart).toLocaleDateString('en-AU', { month: 'short', day: 'numeric' })}
                       </span>
-                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: ci.calorieAdherence >= 80 ? '#22C55E' : '#F59E0B' }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: ci.calorieAdherence >= 80 ? '#576038' : '#974400' }}>
                         {ci.calorieAdherence}% adherence
                       </span>
                     </div>
@@ -839,10 +839,10 @@ export const Coach: React.FC = () => {
               <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: 12 }}>Current Targets</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {[
-                  { label: 'Calories', value: `${user.targets.calories}`, unit: 'kcal', color: '#EF4444' },
-                  { label: 'Protein', value: `${user.targets.protein}`, unit: 'g/day', color: '#F59E0B' },
-                  { label: 'Carbs', value: `${user.targets.carbs}`, unit: 'g/day', color: '#3B82F6' },
-                  { label: 'Fats', value: `${user.targets.fats}`, unit: 'g/day', color: '#22C55E' },
+                  { label: 'Calories', value: `${user.targets.calories}`, unit: 'kcal', color: '#974400' },
+                  { label: 'Protein', value: `${user.targets.protein}`, unit: 'g/day', color: '#974400' },
+                  { label: 'Carbs', value: `${user.targets.carbs}`, unit: 'g/day', color: '#576038' },
+                  { label: 'Fats', value: `${user.targets.fats}`, unit: 'g/day', color: '#576038' },
                 ].map(({ label, value, unit, color }) => (
                   <div key={label} className="metric-tile" style={{ background: `${color}08`, border: `1px solid ${color}15` }}>
                     <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)' }}>{label}</div>
@@ -873,7 +873,7 @@ export const Coach: React.FC = () => {
 
             {/* Science notes */}
             <div style={{ borderRadius: 16, background: 'var(--bg-card)', border: '1px solid var(--border-color)', padding: '14px 16px' }}>
-              <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#A5B4FC', marginBottom: 10 }}>How your plan is calculated</div>
+              <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(87,96,56,0.6)', marginBottom: 10 }}>How your plan is calculated</div>
               <div style={{ fontSize: '0.78rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
                 <strong style={{ color: 'var(--text-primary)' }}>TDEE:</strong> Mifflin-St Jeor BMR × activity multiplier, refined weekly using actual weight trend vs. calories consumed.<br /><br />
                 <strong style={{ color: 'var(--text-primary)' }}>Protein:</strong> {(user.targets.protein / user.weight).toFixed(1)}g/kg — optimised for {user.goalType === 'muscle_gain' ? 'maximising MPS during surplus' : user.goalType === 'fat_loss' ? 'maximum muscle retention in deficit' : 'body recomposition'}.<br /><br />

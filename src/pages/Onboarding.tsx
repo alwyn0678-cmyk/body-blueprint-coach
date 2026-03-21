@@ -11,20 +11,20 @@ const FORM_STEPS = 7;
 const STEP_CALCULATING = 8;
 const STEP_PLAN = 9;
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
+// ── Design tokens (Organic Performance) ──────────────────────────────────────
 const C = {
-  bgPrimary: '#F5F0E8',
+  bgPrimary: '#FAF9F6',
   bgCard: '#FFFFFF',
-  bgElevated: '#F8F5F0',
-  accentBlue: '#3B82F6',
-  accentGreen: '#16A34A',
-  accentOrange: '#EA8C3A',
-  accentRed: '#DC2626',
-  textPrimary: '#1C1C2E',
-  textSecondary: 'rgba(28,28,46,0.65)',
-  textTertiary: 'rgba(28,28,46,0.42)',
-  border: 'rgba(0,0,0,0.06)',
-  borderMd: 'rgba(0,0,0,0.09)',
+  bgElevated: '#F4F3F1',
+  accentBlue: '#576038',    // olive primary
+  accentGreen: '#576038',   // olive
+  accentOrange: '#974400',  // terracotta
+  accentRed: '#974400',     // terracotta
+  textPrimary: '#1B1C1A',
+  textSecondary: '#564338',
+  textTertiary: 'rgba(27,28,26,0.42)',
+  border: 'rgba(87,96,56,0.08)',
+  borderMd: 'rgba(87,96,56,0.14)',
 };
 
 // ── Form data shape ───────────────────────────────────────────────────────────
@@ -52,45 +52,44 @@ interface FormData {
 const StepHeader: React.FC<{ title: string; subtitle: string }> = ({ title, subtitle }) => (
   <div style={{ marginBottom: '1.75rem' }}>
     <h1 style={{
-      fontFamily: 'var(--font-display)',
-      fontSize: '1.75rem',
+      fontFamily: 'var(--font-sans)',
+      fontSize: '1.625rem',
       fontWeight: 800,
-      letterSpacing: '-0.025em',
-      lineHeight: 1.1,
+      letterSpacing: '-0.02em',
+      lineHeight: 1.15,
       color: C.textPrimary,
       marginBottom: '0.5rem',
     }}>
       {title}
     </h1>
-    <p style={{ fontSize: '0.875rem', color: C.textSecondary, fontWeight: 400, lineHeight: 1.5 }}>
+    <p style={{ fontSize: '0.875rem', color: 'rgba(87,96,56,0.65)', fontWeight: 500, lineHeight: 1.5 }}>
       {subtitle}
     </p>
   </div>
 );
 
-// Goal / selection card with colored left-border accent when selected
+// Goal / selection card
 const BigSelectionCard: React.FC<{
   title: string;
   desc: string;
   emoji?: string;
   selected: boolean;
-  accentColor?: string;
   onClick: () => void;
-}> = ({ title, desc, emoji, selected, accentColor = '#1C1C2E', onClick }) => (
+}> = ({ title, desc, emoji, selected, onClick }) => (
   <div
     onClick={onClick}
     style={{
       padding: '1rem 1.125rem',
       cursor: 'pointer',
-      borderRadius: 'var(--radius-lg)',
-      border: selected ? `1.5px solid ${accentColor}` : `1px solid ${C.border}`,
-      borderLeft: selected ? `3px solid ${accentColor}` : `1px solid ${C.border}`,
-      backgroundColor: selected ? `rgba(${hexToRgbStr(accentColor)}, 0.08)` : C.bgCard,
+      borderRadius: 20,
+      backgroundColor: selected ? 'rgba(87,96,56,0.08)' : C.bgCard,
       display: 'flex',
       alignItems: 'center',
       gap: '1rem',
-      transition: 'border-color 0.15s ease, background-color 0.15s ease',
-      boxShadow: selected ? `0 0 0 3px ${accentColor}22` : 'none',
+      transition: 'background-color 0.15s ease, box-shadow 0.15s ease',
+      boxShadow: selected
+        ? '0 0 0 2px #576038, 0 8px 24px rgba(87,96,56,0.12)'
+        : '0 2px 12px rgba(27,28,26,0.05)',
     }}
   >
     {emoji && (
@@ -108,26 +107,16 @@ const BigSelectionCard: React.FC<{
     </div>
     <div style={{
       width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-      backgroundColor: selected ? accentColor : 'transparent',
-      border: selected ? 'none' : `1.5px solid rgba(0,0,0,0.12)`,
+      backgroundColor: selected ? '#576038' : 'transparent',
+      border: selected ? 'none' : `1.5px solid rgba(87,96,56,0.2)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       transition: 'background-color 0.15s ease',
     }}>
-      {selected && <Check size={12} color="#000" strokeWidth={3} />}
+      {selected && <Check size={12} color="#FAF9F6" strokeWidth={3} />}
     </div>
   </div>
 );
 
-// Helper: convert hex to rgb string for rgba()
-function hexToRgbStr(hex: string): string {
-  // fallback for non-hex values (like CSS vars or rgba strings)
-  if (!hex.startsWith('#')) return '255,255,255';
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  if (isNaN(r) || isNaN(g) || isNaN(b)) return '255,255,255';
-  return `${r},${g},${b}`;
-}
 
 const FloatingInput: React.FC<{
   label: string;
@@ -178,14 +167,14 @@ const FloatingInput: React.FC<{
           paddingBottom: '0.5rem',
           paddingLeft: '1rem',
           paddingRight: suffix ? '3rem' : '1rem',
-          border: `1px solid ${hasError ? '#f87171' : focused ? C.borderMd : C.border}`,
-          borderRadius: 'var(--radius-md)',
-          backgroundColor: 'var(--bg-input)',
+          border: `1.5px solid ${hasError ? '#f87171' : focused ? '#576038' : 'rgba(87,96,56,0.12)'}`,
+          borderRadius: 14,
+          backgroundColor: '#FFFFFF',
           color: C.textPrimary,
           fontSize: '1rem',
           fontWeight: 500,
           transition: 'border-color 0.2s ease',
-          boxShadow: focused ? '0 0 0 3px rgba(0,0,0,0.03)' : 'none',
+          boxShadow: focused ? '0 0 0 3px rgba(87,96,56,0.08)' : '0 2px 8px rgba(27,28,26,0.04)',
           outline: 'none',
         }}
       />
@@ -222,10 +211,9 @@ const UnitToggle: React.FC<{
   <div style={{
     display: 'flex',
     gap: 2,
-    background: 'rgba(0,0,0,0.05)',
-    borderRadius: 'var(--radius-full)',
+    background: 'rgba(87,96,56,0.07)',
+    borderRadius: 9999,
     padding: 2,
-    border: `1px solid ${C.border}`,
   }}>
     {options.map(opt => (
       <button
@@ -233,10 +221,10 @@ const UnitToggle: React.FC<{
         onClick={() => onChange(opt)}
         style={{
           padding: '0.25rem 0.75rem',
-          borderRadius: 'var(--radius-full)',
+          borderRadius: 9999,
           border: 'none',
-          background: value === opt ? 'rgba(0,0,0,0.08)' : 'transparent',
-          color: value === opt ? C.textPrimary : C.textTertiary,
+          background: value === opt ? '#576038' : 'transparent',
+          color: value === opt ? '#FAF9F6' : C.textTertiary,
           fontSize: '0.75rem',
           fontWeight: 700,
           letterSpacing: '0.03em',
@@ -531,21 +519,23 @@ export const Onboarding: React.FC = () => {
             flex: 1, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center',
             padding: '2rem', textAlign: 'center', gap: '1.75rem',
+            background: 'linear-gradient(160deg, rgba(87,96,56,0.06) 0%, rgba(151,68,0,0.04) 100%)',
           }}
         >
+          {/* Olive ring logo */}
           <div style={{
-            width: 96, height: 96, borderRadius: 28,
-            background: '#FFFFFF',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+            width: 100, height: 100, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #576038, #3E4528)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 16px 48px rgba(87,96,56,0.25)',
             animation: 'scaleIn 0.7s cubic-bezier(0.16,1,0.3,1) both',
           }}>
             <span style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '2.2rem', fontWeight: 900,
-              letterSpacing: '-0.06em', color: '#1C1C2E',
+              fontFamily: 'var(--font-sans)',
+              fontSize: '1.1rem', fontWeight: 900,
+              letterSpacing: '0.16em', color: '#FAF9F6',
             }}>
-              CB
+              VITALITY
             </span>
           </div>
           <div style={{
@@ -553,18 +543,18 @@ export const Onboarding: React.FC = () => {
             animation: 'slideUp 0.7s 0.3s cubic-bezier(0.16,1,0.3,1) both',
           }}>
             <div style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: '2.1rem', fontWeight: 900,
-              letterSpacing: '-0.04em', lineHeight: 1.05,
-              color: '#1C1C2E',
+              fontFamily: 'var(--font-sans)',
+              fontSize: '2rem', fontWeight: 900,
+              letterSpacing: '-0.02em', lineHeight: 1.1,
+              color: '#1B1C1A',
             }}>
-              Welcome to<br />Carly Evolved
+              Your Personal<br />Body Blueprint
             </div>
             <div style={{
-              fontSize: '0.9rem', color: 'rgba(28,28,46,0.50)',
+              fontSize: '0.9rem', color: 'rgba(87,96,56,0.7)',
               fontWeight: 500, lineHeight: 1.5,
             }}>
-              Your intelligent fitness companion
+              Science-backed fitness coaching
             </div>
           </div>
         </div>
@@ -575,37 +565,32 @@ export const Onboarding: React.FC = () => {
         <div
           key="step-1"
           className="animate-slide-up"
-          style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '2rem 1.5rem', textAlign: 'center', gap: '2rem' }}
+          style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '2.5rem 1.5rem', textAlign: 'center', gap: '2rem' }}
         >
-          {/* Premium CB logo */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem' }}>
+          {/* Organic logo mark */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
             <div style={{
-              width: 96, height: 96, borderRadius: 28,
-              background: '#FFFFFF',
-              border: '1px solid rgba(0,0,0,0.07)',
+              width: 104, height: 104, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #576038 0%, #974400 100%)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              position: 'relative', overflow: 'hidden',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)',
+              boxShadow: '0 20px 60px rgba(87,96,56,0.22), 0 4px 16px rgba(151,68,0,0.1)',
             }}>
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 40% 30%, rgba(59,130,246,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
               <span style={{
-                fontFamily: 'var(--font-display)', fontSize: '2.2rem', fontWeight: 900,
-                letterSpacing: '-0.06em', lineHeight: 1,
-                color: '#1C1C2E',
-                position: 'relative', zIndex: 1,
+                fontFamily: 'var(--font-sans)', fontSize: '0.95rem', fontWeight: 900,
+                letterSpacing: '0.18em', color: '#FAF9F6',
               }}>
-                CB
+                VITALITY
               </span>
             </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{
-                fontFamily: 'var(--font-display)', fontSize: '2.4rem', fontWeight: 900,
-                letterSpacing: '-0.04em', lineHeight: 0.95,
+                fontFamily: 'var(--font-sans)', fontSize: '2.2rem', fontWeight: 900,
+                letterSpacing: '-0.02em', lineHeight: 1,
                 color: C.textPrimary,
               }}>
-                Evolved
+                Your Blueprint
               </div>
-              <div style={{ fontSize: '0.82rem', color: C.textTertiary, fontWeight: 600, marginTop: 6, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '0.82rem', color: 'rgba(87,96,56,0.65)', fontWeight: 600, marginTop: 8, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
                 Intelligent fitness coaching
               </div>
             </div>
@@ -616,8 +601,8 @@ export const Onboarding: React.FC = () => {
             {['Science-backed', 'AI-powered', 'Adaptive'].map(badge => (
               <span key={badge} style={{
                 padding: '0.35rem 0.9rem', borderRadius: 9999,
-                background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)',
-                fontSize: '0.68rem', fontWeight: 700, color: C.textSecondary,
+                background: 'rgba(87,96,56,0.08)',
+                fontSize: '0.68rem', fontWeight: 700, color: '#576038',
                 letterSpacing: '0.04em', whiteSpace: 'nowrap' as const,
               }}>
                 {badge}
@@ -632,10 +617,10 @@ export const Onboarding: React.FC = () => {
         <div key="step-2" className="animate-slide-up">
           <StepHeader title="What's your primary goal?" subtitle="This shapes your calorie and macro targets." />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-            <BigSelectionCard emoji="🔥" title="Lose Fat" desc="Caloric deficit to reduce body fat while preserving muscle" selected={formData.goalType === 'fat_loss'} accentColor="#FF453A" onClick={() => set('goalType', 'fat_loss')} />
-            <BigSelectionCard emoji="💪" title="Build Muscle" desc="Caloric surplus to grow lean mass and get stronger" selected={formData.goalType === 'muscle_gain'} accentColor="#0A84FF" onClick={() => set('goalType', 'muscle_gain')} />
-            <BigSelectionCard emoji="⚖️" title="Maintain" desc="Sustain your current weight and body composition" selected={formData.goalType === 'maintenance'} accentColor="#32D74B" onClick={() => set('goalType', 'maintenance')} />
-            <BigSelectionCard emoji="🔄" title="Recomposition" desc="Lose fat and build muscle at the same time" selected={formData.goalType === 'recomposition'} accentColor="#BF5AF2" onClick={() => set('goalType', 'recomposition')} />
+            <BigSelectionCard emoji="🔥" title="Lose Fat" desc="Caloric deficit to reduce body fat while preserving muscle" selected={formData.goalType === 'fat_loss'} onClick={() => set('goalType', 'fat_loss')} />
+            <BigSelectionCard emoji="💪" title="Build Muscle" desc="Caloric surplus to grow lean mass and get stronger" selected={formData.goalType === 'muscle_gain'} onClick={() => set('goalType', 'muscle_gain')} />
+            <BigSelectionCard emoji="⚖️" title="Maintain" desc="Sustain your current weight and body composition" selected={formData.goalType === 'maintenance'} onClick={() => set('goalType', 'maintenance')} />
+            <BigSelectionCard emoji="🔄" title="Recomposition" desc="Lose fat and build muscle at the same time" selected={formData.goalType === 'recomposition'} onClick={() => set('goalType', 'recomposition')} />
           </div>
         </div>
       );
@@ -649,15 +634,16 @@ export const Onboarding: React.FC = () => {
               onClick={() => set('sex', 'male')}
               style={{
                 padding: '1.375rem 1.25rem',
-                borderRadius: 'var(--radius-lg)',
-                border: formData.sex === 'male' ? `1.5px solid ${C.accentBlue}` : `1px solid ${C.border}`,
+                borderRadius: 20,
                 background: formData.sex === 'male'
-                  ? 'linear-gradient(135deg, rgba(59,130,246,0.09) 0%, rgba(79,70,229,0.06) 100%)'
+                  ? 'rgba(87,96,56,0.08)'
                   : C.bgCard,
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 transition: 'all 0.15s ease',
-                boxShadow: formData.sex === 'male' ? `0 0 0 3px rgba(59,130,246,0.1)` : '0 1px 4px rgba(0,0,0,0.05)',
+                boxShadow: formData.sex === 'male'
+                  ? '0 0 0 2px #576038, 0 8px 24px rgba(87,96,56,0.12)'
+                  : '0 2px 12px rgba(27,28,26,0.05)',
               }}
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -670,15 +656,16 @@ export const Onboarding: React.FC = () => {
               onClick={() => set('sex', 'female')}
               style={{
                 padding: '1.375rem 1.25rem',
-                borderRadius: 'var(--radius-lg)',
-                border: formData.sex === 'female' ? '1.5px solid #BF5AF2' : `1px solid ${C.border}`,
+                borderRadius: 20,
                 background: formData.sex === 'female'
-                  ? 'linear-gradient(135deg, rgba(124,58,237,0.09) 0%, rgba(219,39,119,0.06) 100%)'
+                  ? 'rgba(151,68,0,0.07)'
                   : C.bgCard,
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 transition: 'all 0.15s ease',
-                boxShadow: formData.sex === 'female' ? '0 0 0 3px rgba(124,58,237,0.10)' : '0 1px 4px rgba(0,0,0,0.05)',
+                boxShadow: formData.sex === 'female'
+                  ? '0 0 0 2px #974400, 0 8px 24px rgba(151,68,0,0.10)'
+                  : '0 2px 12px rgba(27,28,26,0.05)',
               }}
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -789,9 +776,8 @@ export const Onboarding: React.FC = () => {
               {deltaLabel && (
                 <div style={{
                   padding: '0.875rem 1rem',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'rgba(0,0,0,0.03)',
-                  border: `1px solid ${C.border}`,
+                  borderRadius: 16,
+                  background: 'rgba(87,96,56,0.06)',
                   display: 'flex', alignItems: 'center', gap: '0.625rem',
                 }}>
                   <span style={{ fontSize: '1.125rem' }}>
@@ -805,13 +791,12 @@ export const Onboarding: React.FC = () => {
               {timeline && (
                 <div style={{
                   padding: '0.75rem 1rem',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'rgba(59,130,246,0.07)',
-                  border: '1px solid rgba(59,130,246,0.18)',
+                  borderRadius: 16,
+                  background: 'rgba(151,68,0,0.07)',
                   display: 'flex', alignItems: 'center', gap: '0.625rem',
                 }}>
                   <span style={{ fontSize: '1rem' }}>📅</span>
-                  <span style={{ fontSize: '0.825rem', color: 'rgba(59,130,246,0.9)', fontWeight: 600 }}>
+                  <span style={{ fontSize: '0.825rem', color: '#974400', fontWeight: 600 }}>
                     {timeline}
                   </span>
                 </div>
@@ -844,7 +829,6 @@ export const Onboarding: React.FC = () => {
               title="Sustainable"
               desc={formData.goalType === 'muscle_gain' ? '+150 kcal/day · ~0.25 kg/week' : '–250 kcal/day · ~0.25 kg/week'}
               selected={formData.preferredDietSpeed === 'sustainable'}
-              accentColor={C.accentGreen}
               onClick={() => set('preferredDietSpeed', 'sustainable')}
             />
             <BigSelectionCard
@@ -852,7 +836,6 @@ export const Onboarding: React.FC = () => {
               title="Moderate"
               desc={formData.goalType === 'muscle_gain' ? '+300 kcal/day · ~0.5 kg/week' : '–500 kcal/day · ~0.5 kg/week'}
               selected={formData.preferredDietSpeed === 'moderate'}
-              accentColor={C.accentOrange}
               onClick={() => set('preferredDietSpeed', 'moderate')}
             />
             <BigSelectionCard
@@ -860,7 +843,6 @@ export const Onboarding: React.FC = () => {
               title="Aggressive"
               desc={formData.goalType === 'muscle_gain' ? '+500 kcal/day · ~0.75 kg/week' : '–750 kcal/day · ~0.75 kg/week'}
               selected={formData.preferredDietSpeed === 'aggressive'}
-              accentColor={C.accentRed}
               onClick={() => set('preferredDietSpeed', 'aggressive')}
             />
           </div>
@@ -874,49 +856,49 @@ export const Onboarding: React.FC = () => {
           className="animate-fade-in"
           style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '2rem 1.5rem', textAlign: 'center' }}
         >
-          {/* Spinning orb */}
-          <div style={{ position: 'relative', width: 80, height: 80 }}>
+          {/* Olive spinning ring */}
+          <div style={{ position: 'relative', width: 88, height: 88 }}>
             <div style={{
               position: 'absolute', inset: 0,
               borderRadius: '50%',
-              background: 'conic-gradient(from 0deg, #3B82F6, #7C3AED, #16A34A, #3B82F6)',
-              animation: 'spin 1.2s linear infinite',
+              background: 'conic-gradient(from 0deg, #576038, #C2CB9A, #974400, #576038)',
+              animation: 'spin 1.4s linear infinite',
               opacity: 0.9,
             }} />
             <div style={{
-              position: 'absolute', inset: 4,
+              position: 'absolute', inset: 5,
               borderRadius: '50%',
               background: C.bgPrimary,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '1.5rem',
+              fontSize: '1.6rem',
             }}>
-              🧮
+              🌿
             </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <h2 style={{
-              fontFamily: 'var(--font-display)',
+              fontFamily: 'var(--font-sans)',
               fontSize: '1.375rem',
               fontWeight: 800,
               letterSpacing: '-0.02em',
               color: C.textPrimary,
               margin: 0,
             }}>
-              Calculating your plan...
+              Building your blueprint...
             </h2>
-            <p style={{ fontSize: '0.875rem', color: C.textSecondary, margin: 0 }}>
+            <p style={{ fontSize: '0.875rem', color: 'rgba(87,96,56,0.65)', margin: 0 }}>
               Running metabolic calculations
             </p>
           </div>
 
-          {/* Progress bar */}
+          {/* Progress bar — olive */}
           <div style={{ width: '100%', maxWidth: 280 }}>
-            <div style={{ height: 4, background: 'rgba(0,0,0,0.06)', borderRadius: 9999, overflow: 'hidden' }}>
+            <div style={{ height: 5, background: 'rgba(87,96,56,0.10)', borderRadius: 9999, overflow: 'hidden' }}>
               <div style={{
                 height: '100%',
                 width: `${calcProgress * 100}%`,
-                background: `linear-gradient(90deg, ${C.accentBlue}, #BF5AF2)`,
+                background: 'linear-gradient(90deg, #576038, #C2CB9A)',
                 borderRadius: 9999,
                 transition: 'width 0.1s linear',
               }} />
@@ -934,10 +916,10 @@ export const Onboarding: React.FC = () => {
         >
           {/* Heading */}
           <div style={{ marginBottom: '1.5rem' }}>
-            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: C.textTertiary, marginBottom: '0.375rem', margin: 0 }}>
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const, color: 'rgba(87,96,56,0.55)', marginBottom: '0.375rem', margin: 0 }}>
               Your Blueprint
             </p>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.025em', lineHeight: 1.1, color: C.textPrimary, marginTop: 4 }}>
+            <h1 style={{ fontFamily: 'var(--font-sans)', fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.1, color: C.textPrimary, marginTop: 6 }}>
               {formData.name ? `Ready, ${formData.name}.` : 'Your plan is ready.'}
             </h1>
             {calcError && (
@@ -947,57 +929,52 @@ export const Onboarding: React.FC = () => {
             )}
           </div>
 
-          {/* Calories HERO — blue gradient text */}
+          {/* Calories HERO — terracotta gradient card */}
           <div style={{
             padding: '1.5rem',
-            borderRadius: 'var(--radius-xl)',
-            background: 'linear-gradient(135deg, rgba(59,130,246,0.09) 0%, rgba(79,70,229,0.06) 100%)',
-            border: '1px solid rgba(59,130,246,0.18)',
+            borderRadius: 24,
+            background: 'linear-gradient(135deg, #974400 0%, #B85200 100%)',
             marginBottom: '1rem',
             textAlign: 'center' as const,
-            boxShadow: '0 0 32px rgba(59,130,246,0.06)',
+            boxShadow: '0 12px 40px rgba(151,68,0,0.22)',
           }}>
-            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'rgba(59,130,246,0.85)', margin: '0 0 0.375rem' }}>
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'rgba(250,249,246,0.7)', margin: '0 0 0.375rem' }}>
               Daily Calorie Target
             </p>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.375rem' }}>
               <span style={{
-                fontFamily: 'var(--font-display)',
+                fontFamily: 'var(--font-sans)',
                 fontSize: '3.5rem',
                 fontWeight: 900,
                 letterSpacing: '-0.04em',
                 lineHeight: 1,
-                background: `linear-gradient(135deg, ${C.accentBlue}, #60a5fa)`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
+                color: '#FAF9F6',
                 fontVariantNumeric: 'tabular-nums',
               }}>
                 {targets?.calories?.toLocaleString() ?? '—'}
               </span>
-              <span style={{ fontSize: '1rem', color: C.textSecondary, fontWeight: 600 }}>kcal/day</span>
+              <span style={{ fontSize: '1rem', color: 'rgba(250,249,246,0.75)', fontWeight: 600 }}>kcal</span>
             </div>
           </div>
 
-          {/* 3 macro pills */}
+          {/* 3 macro pills — olive tinted */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.625rem', marginBottom: '1rem' }}>
             {[
-              { label: 'Protein', value: targets?.protein, unit: 'g', color: C.accentOrange, bg: 'rgba(234,140,58,0.09)', border: 'rgba(234,140,58,0.18)' },
-              { label: 'Carbs',   value: targets?.carbs,   unit: 'g', color: C.accentBlue,   bg: 'rgba(59,130,246,0.09)', border: 'rgba(59,130,246,0.18)' },
-              { label: 'Fats',    value: targets?.fats,    unit: 'g', color: C.accentGreen,  bg: 'rgba(22,163,74,0.09)',  border: 'rgba(22,163,74,0.18)' },
+              { label: 'Protein', value: targets?.protein, unit: 'g', color: '#974400', bg: 'rgba(151,68,0,0.08)' },
+              { label: 'Carbs',   value: targets?.carbs,   unit: 'g', color: '#576038', bg: 'rgba(87,96,56,0.08)' },
+              { label: 'Fats',    value: targets?.fats,    unit: 'g', color: '#46483d', bg: 'rgba(70,72,61,0.07)' },
             ].map(macro => (
               <div key={macro.label} style={{
                 padding: '0.875rem 0.625rem',
-                borderRadius: 'var(--radius-md)',
+                borderRadius: 16,
                 background: macro.bg,
-                border: `1px solid ${macro.border}`,
                 textAlign: 'center' as const,
                 display: 'flex', flexDirection: 'column', gap: '0.2rem',
               }}>
                 <span style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: macro.color, opacity: 0.8 }}>
                   {macro.label}
                 </span>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 800, color: C.textPrimary, lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '1.5rem', fontWeight: 800, color: C.textPrimary, lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
                   {macro.value ?? '—'}
                 </span>
                 <span style={{ fontSize: '0.7rem', color: C.textTertiary, fontWeight: 600 }}>{macro.unit}</span>
@@ -1005,15 +982,14 @@ export const Onboarding: React.FC = () => {
             ))}
           </div>
 
-          {/* Coaching paragraph */}
+          {/* Coaching paragraph — olive tint */}
           <div style={{
             padding: '1rem 1.125rem',
-            borderRadius: 'var(--radius-md)',
-            background: 'rgba(0,0,0,0.02)',
-            border: `1px solid ${C.border}`,
+            borderRadius: 16,
+            background: 'rgba(87,96,56,0.06)',
             display: 'flex', gap: '0.75rem', alignItems: 'flex-start',
           }}>
-            <span style={{ fontSize: '1.125rem', flexShrink: 0, marginTop: 1 }}>💡</span>
+            <span style={{ fontSize: '1.125rem', flexShrink: 0, marginTop: 1 }}>🌿</span>
             <p style={{ fontSize: '0.8375rem', color: C.textSecondary, lineHeight: 1.55, fontWeight: 400, margin: 0 }}>
               {coachingCopy()}
             </p>
@@ -1046,7 +1022,7 @@ export const Onboarding: React.FC = () => {
         width: 400,
         height: 400,
         borderRadius: '50%',
-        background: 'radial-gradient(ellipse, rgba(234,140,58,0.07) 0%, transparent 70%)',
+        background: 'radial-gradient(ellipse, rgba(87,96,56,0.08) 0%, rgba(151,68,0,0.04) 50%, transparent 70%)',
         pointerEvents: 'none',
         zIndex: 0,
       }} />
@@ -1060,26 +1036,25 @@ export const Onboarding: React.FC = () => {
               style={{
                 background: 'none',
                 border: 'none',
-                color: C.textPrimary,
+                color: '#576038',
                 padding: '0.5rem',
                 display: 'flex',
                 cursor: 'pointer',
                 marginLeft: '-0.5rem',
-                opacity: 0.7,
+                opacity: 0.8,
               }}
             >
               <ArrowLeft size={20} />
             </button>
           </div>
-          {/* Progress line — thin 4px, blue fill */}
-          <div style={{ height: 4, background: 'rgba(0,0,0,0.06)', borderRadius: 9999, overflow: 'hidden' }}>
+          {/* Progress line — olive fill */}
+          <div style={{ height: 4, background: 'rgba(87,96,56,0.10)', borderRadius: 9999, overflow: 'hidden' }}>
             <div style={{
               height: '100%',
               width: `${((step - 1) / (FORM_STEPS - 1)) * 100}%`,
-              background: C.accentBlue,
+              background: 'linear-gradient(90deg, #576038, #8B9467)',
               borderRadius: 9999,
               transition: 'width 0.3s ease',
-              boxShadow: `0 0 8px ${C.accentBlue}60`,
             }} />
           </div>
         </div>
@@ -1118,17 +1093,17 @@ export const Onboarding: React.FC = () => {
               alignItems: 'center',
               gap: '0.5rem',
               padding: '1rem',
-              background: canProceed() ? C.accentBlue : 'rgba(10,132,255,0.3)',
-              color: '#FFFFFF',
+              background: canProceed() ? 'linear-gradient(135deg, #576038, #3E4528)' : 'rgba(87,96,56,0.25)',
+              color: '#FAF9F6',
               border: 'none',
-              borderRadius: 'var(--radius-full)',
+              borderRadius: 9999,
               fontWeight: 800,
               fontSize: '0.9375rem',
               letterSpacing: '-0.01em',
               opacity: canProceed() ? 1 : 0.6,
               cursor: canProceed() ? 'pointer' : 'not-allowed',
-              transition: 'transform 0.12s ease, opacity 0.15s ease, background 0.15s ease',
-              boxShadow: canProceed() ? `0 0 20px ${C.accentBlue}40` : 'none',
+              transition: 'transform 0.12s ease, opacity 0.15s ease',
+              boxShadow: canProceed() ? '0 8px 24px rgba(87,96,56,0.25)' : 'none',
             }}
             onMouseDown={e => { if (canProceed()) (e.currentTarget.style.transform = 'scale(0.97)'); }}
             onMouseUp={e => { (e.currentTarget.style.transform = 'scale(1)'); }}
@@ -1169,15 +1144,15 @@ export const Onboarding: React.FC = () => {
               alignItems: 'center',
               gap: '0.5rem',
               padding: '1rem',
-              background: C.accentBlue,
-              color: '#FFFFFF',
+              background: 'linear-gradient(135deg, #576038, #3E4528)',
+              color: '#FAF9F6',
               border: 'none',
-              borderRadius: 'var(--radius-full)',
+              borderRadius: 9999,
               fontWeight: 800,
               fontSize: '1rem',
               letterSpacing: '-0.01em',
               cursor: 'pointer',
-              boxShadow: `0 0 24px ${C.accentBlue}40`,
+              boxShadow: '0 8px 32px rgba(87,96,56,0.28)',
             }}
             onMouseDown={e => { (e.currentTarget.style.transform = 'scale(0.97)'); }}
             onMouseUp={e => { (e.currentTarget.style.transform = 'scale(1)'); }}

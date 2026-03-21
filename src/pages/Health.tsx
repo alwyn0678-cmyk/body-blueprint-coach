@@ -6,18 +6,18 @@ import { getLocalISOString } from '../utils/dateUtils';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
-  bgPrimary: '#080810',
-  bgCard: '#0f0f1a',
-  bgElevated: '#161625',
-  accentBlue: '#0A84FF',
-  accentGreen: '#32D74B',
-  accentOrange: '#FF9F0A',
-  accentRed: '#FF453A',
-  textPrimary: '#F2F2F7',
-  textSecondary: 'rgba(242,242,247,0.6)',
-  textTertiary: 'rgba(242,242,247,0.35)',
-  border: 'rgba(0,0,0,0.05)',
-  borderMd: 'rgba(0,0,0,0.07)',
+  bgPrimary: '#FAF9F6',
+  bgCard: '#FFFFFF',
+  bgElevated: '#F4F3F1',
+  accentBlue: '#576038',
+  accentGreen: '#8B9467',
+  accentOrange: '#974400',
+  accentRed: '#DC2626',
+  textPrimary: '#1A1A1A',
+  textSecondary: 'rgba(26,26,26,0.6)',
+  textTertiary: 'rgba(26,26,26,0.35)',
+  border: 'rgba(0,0,0,0.06)',
+  borderMd: 'rgba(0,0,0,0.10)',
 };
 
 // ── Recovery Algorithm ────────────────────────────────────────────────────────
@@ -62,10 +62,10 @@ const calculateRecovery = (inputs: RecoveryInputs): { score: number; sleepScore:
 };
 
 const recoveryLabel = (score: number) => {
-  if (score >= 85) return { label: 'Peak', color: '#4ade80', advice: 'Physiological markers are optimal. You are primed for high-intensity training today.' };
-  if (score >= 70) return { label: 'Good', color: '#60a5fa', advice: 'Recovery is solid. Follow your scheduled training volume without major modifications.' };
-  if (score >= 50) return { label: 'Moderate', color: '#fb923c', advice: 'Moderate recovery. Consider reducing intensity by 10–15% or substituting with moderate cardio.' };
-  return { label: 'Low', color: '#f87171', advice: 'Recovery is low. Prioritise sleep, active recovery, and adequate nutrition. Avoid high-strain sessions.' };
+  if (score >= 85) return { label: 'Peak', color: '#576038', advice: 'Physiological markers are optimal. You are primed for high-intensity training today.' };
+  if (score >= 70) return { label: 'Good', color: '#8B9467', advice: 'Recovery is solid. Follow your scheduled training volume without major modifications.' };
+  if (score >= 50) return { label: 'Moderate', color: '#974400', advice: 'Moderate recovery. Consider reducing intensity by 10–15% or substituting with moderate cardio.' };
+  return { label: 'Low', color: '#DC2626', advice: 'Recovery is low. Prioritise sleep, active recovery, and adequate nutrition. Avoid high-strain sessions.' };
 };
 
 const getTrend = (current: number, prev: number | undefined): 'up' | 'down' | 'flat' => {
@@ -97,7 +97,7 @@ const ReadinessArc: React.FC<{ score: number; color: string }> = ({ score, color
   const endAngle = startAngle + sweepAngle * pct;
   return (
     <svg width="140" height="140" viewBox="0 0 140 140">
-      <path d={arcPath(startAngle, startAngle + sweepAngle)} stroke="rgba(0,0,0,0.05)" strokeWidth="10" fill="none" strokeLinecap="round" />
+      <path d={arcPath(startAngle, startAngle + sweepAngle)} stroke="rgba(87,96,56,0.12)" strokeWidth="10" fill="none" strokeLinecap="round" />
       {score > 0 && (
         <path d={arcPath(startAngle, endAngle)} stroke={color} strokeWidth="10" fill="none" strokeLinecap="round"
           style={{ filter: `drop-shadow(0 0 8px ${color}80)` }} />
@@ -312,8 +312,8 @@ export const Health: React.FC = () => {
           gap: '1rem',
           textAlign: 'center',
         }}>
-          <div style={{ padding: '1rem', borderRadius: '50%', background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)' }}>
-            <HeartPulse size={28} color="#60a5fa" />
+          <div style={{ padding: '1rem', borderRadius: '50%', background: 'rgba(87,96,56,0.10)', border: '1px solid rgba(87,96,56,0.18)' }}>
+            <HeartPulse size={28} color="#576038" />
           </div>
           <div>
             <div style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 6, color: C.textPrimary }}>Log your morning vitals</div>
@@ -363,8 +363,8 @@ export const Health: React.FC = () => {
                   <span style={{ fontSize: '1.4rem', fontWeight: 800, color: recInfo.color, letterSpacing: '-0.01em' }}>{recInfo.label}</span>
                   {recoveryTrend !== 'flat' && (
                     recoveryTrend === 'up'
-                      ? <TrendingUp size={16} color="#4ade80" />
-                      : <TrendingDown size={16} color="#f87171" />
+                      ? <TrendingUp size={16} color="#576038" />
+                      : <TrendingDown size={16} color="#DC2626" />
                   )}
                 </div>
                 <p style={{ fontSize: '0.78rem', color: C.textSecondary, lineHeight: 1.5, margin: 0, maxWidth: 280 }}>{recInfo.advice}</p>
@@ -386,19 +386,19 @@ export const Health: React.FC = () => {
               {
                 label: 'Sleep',
                 value: sleepHours || '—',
-                color: '#60a5fa',
+                color: '#576038',
                 dot: health.sleepDurationMinutes != null,
               },
               {
                 label: 'HRV',
                 value: (health.hrv != null && !isNaN(health.hrv)) ? `${health.hrv} ms` : '—',
-                color: '#4ade80',
+                color: '#8B9467',
                 dot: health.hrv != null,
               },
               {
                 label: 'Rest HR',
                 value: (health.restingHR != null && !isNaN(health.restingHR)) ? `${health.restingHR} bpm` : '—',
-                color: '#fb923c',
+                color: '#974400',
                 dot: health.restingHR != null,
               },
             ].map(chip => (
@@ -474,14 +474,14 @@ export const Health: React.FC = () => {
             position: 'relative',
             overflow: 'hidden',
           }}>
-            <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: 2, background: 'linear-gradient(90deg, transparent, rgba(74,222,128,0.5), transparent)' }} />
+            <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: 2, background: 'linear-gradient(90deg, transparent, rgba(87,96,56,0.4), transparent)' }} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 8, height: 3, background: '#4ade80', borderRadius: 2 }} />
+                <div style={{ width: 8, height: 3, background: '#576038', borderRadius: 2 }} />
                 <span style={{ fontSize: '0.62rem', color: C.textTertiary, fontWeight: 600 }}>Recovery</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <div style={{ width: 8, height: 2, background: '#60a5fa', borderRadius: 2, opacity: 0.7 }} />
+                <div style={{ width: 8, height: 2, background: '#8B9467', borderRadius: 2, opacity: 0.7 }} />
                 <span style={{ fontSize: '0.62rem', color: C.textTertiary, fontWeight: 600 }}>HRV</span>
               </div>
             </div>
@@ -491,11 +491,11 @@ export const Health: React.FC = () => {
                 <LineChart data={trendData} margin={{ top: 5, right: 8, left: -22, bottom: 0 }}>
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'rgba(0,0,0,0.20)', fontWeight: 700 }} interval={1} />
                   <Tooltip
-                    contentStyle={{ borderRadius: 12, border: `1px solid ${C.border}`, background: '#1a1a2e', padding: '8px 12px', fontSize: '0.78rem' }}
+                    contentStyle={{ borderRadius: 12, border: `1px solid ${C.border}`, background: '#FFFFFF', padding: '8px 12px', fontSize: '0.78rem', color: C.textPrimary }}
                     cursor={{ stroke: 'rgba(0,0,0,0.05)', strokeWidth: 1 }}
                   />
-                  <Line type="monotone" dataKey="recovery" stroke="#4ade80" strokeWidth={2.5} dot={{ r: 3, fill: '#4ade80', strokeWidth: 0 }} connectNulls name="Recovery %" />
-                  <Line type="monotone" dataKey="hrv" stroke="#60a5fa" strokeWidth={1.5} dot={false} strokeDasharray="4 3" connectNulls name="HRV ms" />
+                  <Line type="monotone" dataKey="recovery" stroke="#576038" strokeWidth={2.5} dot={{ r: 3, fill: '#576038', strokeWidth: 0 }} connectNulls name="Recovery %" />
+                  <Line type="monotone" dataKey="hrv" stroke="#8B9467" strokeWidth={1.5} dot={false} strokeDasharray="4 3" connectNulls name="HRV ms" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -513,9 +513,9 @@ export const Health: React.FC = () => {
         });
         const hasHrv = hrvScore !== null;
         const items = [
-          { label: 'Sleep Quality', value: Math.min(100, Math.max(0, sleepScore)), weight: hasHrv ? '40%' : '65%', color: '#60a5fa' },
-          ...(hasHrv ? [{ label: 'HRV', value: Math.min(100, Math.max(0, hrvScore!)), weight: '40%', color: '#4ade80' }] : []),
-          { label: 'Training Load', value: Math.min(100, Math.max(0, loadScore)), weight: hasHrv ? '20%' : '35%', color: '#fb923c' },
+          { label: 'Sleep Quality', value: Math.min(100, Math.max(0, sleepScore)), weight: hasHrv ? '40%' : '65%', color: '#576038' },
+          ...(hasHrv ? [{ label: 'HRV', value: Math.min(100, Math.max(0, hrvScore!)), weight: '40%', color: '#8B9467' }] : []),
+          { label: 'Training Load', value: Math.min(100, Math.max(0, loadScore)), weight: hasHrv ? '20%' : '35%', color: '#974400' },
         ];
         return (
           <div style={{ background: C.bgCard, borderRadius: 20, border: `1px solid ${C.border}`, padding: '16px 18px' }}>
@@ -575,17 +575,17 @@ export const Health: React.FC = () => {
                     </span>
                     <div style={{ display: 'flex', gap: 6, flex: 1, flexWrap: 'wrap' as const, justifyContent: 'flex-end' }}>
                       {sh && (
-                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#60a5fa', background: 'rgba(96,165,250,0.1)', borderRadius: 6, padding: '2px 7px' }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#576038', background: 'rgba(87,96,56,0.10)', borderRadius: 6, padding: '2px 7px' }}>
                           {sh}
                         </span>
                       )}
                       {entry.health.hrv != null && (
-                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#4ade80', background: 'rgba(74,222,128,0.1)', borderRadius: 6, padding: '2px 7px' }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#8B9467', background: 'rgba(139,148,103,0.12)', borderRadius: 6, padding: '2px 7px' }}>
                           {entry.health.hrv} ms
                         </span>
                       )}
                       {entry.health.restingHR != null && (
-                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#fb923c', background: 'rgba(251,146,60,0.1)', borderRadius: 6, padding: '2px 7px' }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#974400', background: 'rgba(151,68,0,0.10)', borderRadius: 6, padding: '2px 7px' }}>
                           {entry.health.restingHR} bpm
                         </span>
                       )}
@@ -610,7 +610,7 @@ export const Health: React.FC = () => {
                 <p style={{ fontSize: '0.78rem', color: C.textTertiary, fontWeight: 600, marginTop: 2 }}>Log today's recovery data</p>
               </div>
               <button onClick={() => setIsLoggingVitals(false)} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                <X size={16} color="rgba(255,255,255,0.7)" />
+                <X size={16} color="rgba(26,26,26,0.5)" />
               </button>
             </div>
 
@@ -619,8 +619,8 @@ export const Health: React.FC = () => {
               {/* Sleep card */}
               <div style={{ background: C.bgCard, borderRadius: 20, padding: '1.25rem', border: `1px solid ${C.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                  <div style={{ padding: 6, borderRadius: 9, background: 'rgba(96,165,250,0.12)' }}>
-                    <Moon size={15} color="#60a5fa" />
+                  <div style={{ padding: 6, borderRadius: 9, background: 'rgba(87,96,56,0.10)' }}>
+                    <Moon size={15} color="#576038" />
                   </div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: C.textSecondary }}>Sleep Duration</label>
                 </div>
@@ -653,8 +653,8 @@ export const Health: React.FC = () => {
               {/* HRV card */}
               <div style={{ background: C.bgCard, borderRadius: 20, padding: '1.25rem', border: `1px solid ${hrvError ? 'rgba(248,113,113,0.4)' : C.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                  <div style={{ padding: 6, borderRadius: 9, background: 'rgba(74,222,128,0.12)' }}>
-                    <Activity size={15} color="#4ade80" />
+                  <div style={{ padding: 6, borderRadius: 9, background: 'rgba(139,148,103,0.12)' }}>
+                    <Activity size={15} color="#8B9467" />
                   </div>
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: C.textSecondary }}>Morning HRV</label>
@@ -678,8 +678,8 @@ export const Health: React.FC = () => {
               {/* RHR card */}
               <div style={{ background: C.bgCard, borderRadius: 20, padding: '1.25rem', border: `1px solid ${rhrError ? 'rgba(248,113,113,0.4)' : C.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                  <div style={{ padding: 6, borderRadius: 9, background: 'rgba(251,146,60,0.12)' }}>
-                    <Zap size={15} color="#fb923c" />
+                  <div style={{ padding: 6, borderRadius: 9, background: 'rgba(151,68,0,0.10)' }}>
+                    <Zap size={15} color="#974400" />
                   </div>
                   <label style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: C.textSecondary }}>Resting Heart Rate</label>
                 </div>

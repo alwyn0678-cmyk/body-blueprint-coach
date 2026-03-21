@@ -2,137 +2,68 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Flame, Dumbbell, Droplets, Footprints, TrendingUp, TrendingDown,
-  Minus, ChevronRight, Brain, Zap, Target, Activity, X,
+  Flame, Dumbbell, Droplets, Footprints, TrendingUp,
+  Brain, Activity,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import {
-  calculateWeightTrend, calculateStreak, computeWeeklyStats,
-  calculateWorkoutStreak, computeEarnedBadges, getWeeklyWorkoutNudge, computeConsistencyScore,
-  detectPlateau, detectTrainingStall, computeRecoveryInsight,
+  calculateStreak, computeWeeklyStats,
 } from '../utils/aiCoachingEngine';
 import { coachService } from '../services/aiCoach';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const todayStr = () => new Date().toISOString().split('T')[0];
-
-const getGreeting = (name: string): string => {
-  const h = new Date().getHours();
-  const part = h < 5 ? 'Night' : h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
-  return `Good ${part}`;
-};
 
 const fmtNum = (n: number, dp = 0): string =>
   n.toLocaleString('en-AU', { maximumFractionDigits: dp, minimumFractionDigits: dp });
 
-// ─── Calorie Arc SVG ──────────────────────────────────────────────────────────
+// ─── Vitality Ring ────────────────────────────────────────────────────────────
 
-const CalorieArc: React.FC<{
-  calories: number; target: number;
-  protein: number; proteinTarget: number;
-  carbs: number; carbsTarget: number;
-  fats: number; fatsTarget: number;
-}> = ({ calories, target, protein, proteinTarget, carbs, carbsTarget, fats, fatsTarget }) => {
-  const R = 58;
+const VitalityRing: React.FC<{ score: number }> = ({ score }) => {
+  const R = 120;
   const circ = 2 * Math.PI * R;
-  const calPct = Math.min(calories / Math.max(target, 1), 1);
-  const calOffset = circ * (1 - calPct);
-  const over = calories > target;
-  const remaining = Math.max(target - calories, 0);
-
-  // Inner ring: 3 equal segments (protein / carbs / fats), each 120° of arc
-  const innerR = 44;
-  const innerCirc = 2 * Math.PI * innerR;
-  const oneThird = innerCirc / 3;
-  const proPct = Math.min(protein / Math.max(proteinTarget, 1), 1);
-  const carPct = Math.min(carbs / Math.max(carbsTarget, 1), 1);
-  const fatPct = Math.min(fats / Math.max(fatsTarget, 1), 1);
+  const pct = Math.min(score / 100, 1);
+  const offset = circ * (1 - pct);
 
   return (
-    <div style={{ position: 'relative', width: 152, height: 152, flexShrink: 0 }}>
-      <svg width={152} height={152} style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
-        {/* Outer calorie track */}
-        <circle cx={76} cy={76} r={R} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth={9} />
-        {/* Outer calorie fill */}
-        <circle cx={76} cy={76} r={R} fill="none" stroke={over ? '#EF4444' : '#22C55E'}
-          strokeWidth={9} strokeLinecap="round"
-          strokeDasharray={circ} strokeDashoffset={calOffset}
-          style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.25,1,0.5,1), stroke 0.3s ease', filter: over ? 'drop-shadow(0 0 6px #EF4444)' : 'drop-shadow(0 0 6px #22C55E)' }} />
-
-        {/* Inner macro ring track */}
-        <circle cx={76} cy={76} r={innerR} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={7} />
-
-        {/* Protein segment — first 120° (top third) */}
-        <circle cx={76} cy={76} r={innerR} fill="none" stroke="#F59E0B"
-          strokeWidth={7} strokeLinecap="butt"
-          strokeDasharray={`${proPct * oneThird} ${innerCirc}`}
-          style={{
-            transform: 'rotate(0deg)', transformOrigin: '76px 76px',
-            transition: 'stroke-dasharray 1s cubic-bezier(0.25,1,0.5,1)',
-            filter: 'drop-shadow(0 0 4px rgba(245,158,11,0.5))',
-          }} />
-
-        {/* Carbs segment — second 120° (right third) */}
-        <circle cx={76} cy={76} r={innerR} fill="none" stroke="#3B82F6"
-          strokeWidth={7} strokeLinecap="butt"
-          strokeDasharray={`${carPct * oneThird} ${innerCirc}`}
-          style={{
-            transform: 'rotate(120deg)', transformOrigin: '76px 76px',
-            transition: 'stroke-dasharray 1s cubic-bezier(0.25,1,0.5,1)',
-            filter: 'drop-shadow(0 0 4px rgba(59,130,246,0.5))',
-          }} />
-
-        {/* Fats segment — third 120° (left third) */}
-        <circle cx={76} cy={76} r={innerR} fill="none" stroke="#22C55E"
-          strokeWidth={7} strokeLinecap="butt"
-          strokeDasharray={`${fatPct * oneThird} ${innerCirc}`}
-          style={{
-            transform: 'rotate(240deg)', transformOrigin: '76px 76px',
-            transition: 'stroke-dasharray 1s cubic-bezier(0.25,1,0.5,1)',
-            filter: 'drop-shadow(0 0 4px rgba(34,197,94,0.4))',
-          }} />
+    <div style={{ position: 'relative', width: 264, height: 264, margin: '0 auto' }}>
+      <svg width="264" height="264" style={{ transform: 'rotate(-90deg)' }}>
+        {/* Track */}
+        <circle cx="132" cy="132" r={R} fill="transparent" stroke="#E3E2E0" strokeWidth="11" />
+        {/* Progress */}
+        <circle
+          cx="132" cy="132" r={R} fill="transparent"
+          stroke="#C2CB9A" strokeWidth="11"
+          strokeLinecap="round"
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
+          style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.25,1,0.5,1)' }}
+        />
       </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-        <motion.div
-          key={Math.round(calories)}
-          animate={{ scale: [1, 1.06, 1] }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
-          style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums', lineHeight: 1, color: over ? '#EF4444' : '#FFFFFF' }}
-        >
-          {fmtNum(calories)}
-        </motion.div>
-        <div style={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.45)' }}>
-          {over ? `+${fmtNum(calories - target)} over` : `${fmtNum(remaining)} left`}
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{
+          fontSize: '4.5rem', fontWeight: 800,
+          letterSpacing: '-0.04em', lineHeight: 1,
+          color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums',
+        }}>
+          {score}
         </div>
-        <div style={{ fontSize: '0.52rem', fontWeight: 600, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
-          / {fmtNum(target)} kcal
+        <div style={{
+          fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.2em',
+          textTransform: 'uppercase', color: 'var(--text-tertiary)', marginTop: 6,
+        }}>
+          Daily Vitality
         </div>
       </div>
     </div>
   );
 };
 
-// ─── Macro chip (pill format on dark hero card) ───────────────────────────────
-
-const MacroChip: React.FC<{ label: string; className: string; value: number; target: number; color: string }> = ({ label, className, value, target, color }) => {
-  const pct = Math.min((value / Math.max(target, 1)) * 100, 100);
-  const over = value > target;
-  return (
-    <div className={`macro-chip ${className}`}>
-      <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.45)' }}>{label}</div>
-      <div style={{ fontSize: '0.88rem', fontWeight: 900, fontVariantNumeric: 'tabular-nums', color: over ? '#EF4444' : color, lineHeight: 1 }}>
-        {fmtNum(value)}<span style={{ fontSize: '0.52rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', marginLeft: 1 }}>/{target}g</span>
-      </div>
-      <div style={{ width: '100%', height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginTop: 2 }}>
-        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: over ? '#EF4444' : color, boxShadow: `0 0 6px ${color}80`, transition: 'width 0.7s cubic-bezier(0.25,1,0.5,1)' }} />
-      </div>
-    </div>
-  );
-};
-
-// ─── Log sheet ────────────────────────────────────────────────────────────────
+// ─── Log Sheet ────────────────────────────────────────────────────────────────
 
 const LogSheet: React.FC<{
   type: 'water' | 'steps' | 'weight';
@@ -145,20 +76,25 @@ const LogSheet: React.FC<{
   const labels: Record<string, string> = { water: 'Glasses of water', steps: 'Steps today', weight: 'Body weight' };
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 900, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)' }} />
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }} />
       <motion.div
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-        style={{ position: 'relative', background: 'var(--bg-sheet)', borderRadius: '28px 28px 0 0', padding: '24px 20px', paddingBottom: 'calc(28px + env(safe-area-inset-bottom))', border: '1px solid var(--border-default)', borderBottom: 'none', boxShadow: '0 -8px 40px rgba(0,0,0,0.5)' }}
+        style={{
+          position: 'relative', background: 'var(--bg-sheet)',
+          borderRadius: '32px 32px 0 0', padding: '24px 20px',
+          paddingBottom: 'calc(28px + env(safe-area-inset-bottom))',
+          boxShadow: '0 -8px 40px rgba(0,0,0,0.12)',
+        }}
       >
         <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border-strong)', margin: '0 auto 20px' }} />
-        <div style={{ fontSize: '1.1rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 16 }}>{labels[type]}</div>
+        <div style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 16 }}>{labels[type]}</div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <input
             className="input-field" type="number" inputMode="decimal"
             value={val} onChange={e => setVal(e.target.value)}
             placeholder="0"
-            style={{ flex: 1, fontSize: '1.6rem', fontWeight: 900, fontFamily: 'var(--font-display)', textAlign: 'center', padding: '14px' }}
+            style={{ flex: 1, fontSize: '1.6rem', fontWeight: 900, textAlign: 'center', padding: '14px' }}
             autoFocus
           />
           <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-tertiary)', minWidth: 60 }}>{unit}</span>
@@ -175,10 +111,18 @@ const LogSheet: React.FC<{
   );
 };
 
+// ─── Quick Start workouts ─────────────────────────────────────────────────────
+
+const QUICK_START = [
+  { title: 'Strength Training', category: 'Hypertrophy', bg: '#576038', route: '/training' },
+  { title: 'HIIT Cardio', category: 'Cardio', bg: '#974400', route: '/training' },
+  { title: 'Mobility Flow', category: 'Recovery', bg: '#695a3e', route: '/training' },
+];
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export const Dashboard: React.FC = () => {
-  const { state, updateDailyLog, updateWeight, getNutritionTotals, showToast, lastSavedAt } = useApp();
+  const { state, updateDailyLog, updateWeight, getNutritionTotals, showToast } = useApp();
   const navigate = useNavigate();
   const [activeSheet, setActiveSheet] = useState<'water' | 'steps' | 'weight' | null>(null);
 
@@ -188,43 +132,35 @@ export const Dashboard: React.FC = () => {
 
   const totals = useMemo(() => getNutritionTotals(dateStr), [state.logs, dateStr]);
   const streak = useMemo(() => calculateStreak(state.logs), [state.logs]);
-  const workoutStreak = useMemo(() => calculateWorkoutStreak(state.logs), [state.logs]);
   const weeklyStats = useMemo(() => computeWeeklyStats(state.logs, user.targets), [state.logs, user.targets]);
-  const earnedBadges = useMemo(() => computeEarnedBadges(state.logs, user), [state.logs, user]);
-  const weeklyNudge = useMemo(() => getWeeklyWorkoutNudge(weeklyStats.workoutsCompleted, user.trainingFrequency), [weeklyStats.workoutsCompleted, user.trainingFrequency]);
-  const consistencyScore = useMemo(() => computeConsistencyScore(weeklyStats.calorieAdherence, weeklyStats.proteinAdherence, weeklyStats.workoutsCompleted, user.trainingFrequency), [weeklyStats, user.trainingFrequency]);
-  const isPlateauing = useMemo(() => user.weight ? detectPlateau(state.logs, user.weight) : false, [state.logs, user.weight]);
-  const isTrainingStalled = useMemo(() => detectTrainingStall(state.logs), [state.logs]);
-  const recoveryInsight = useMemo(() => computeRecoveryInsight(state.logs), [state.logs]);
-  const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(new Set());
-
-  const weightTrendData = useMemo(() => {
-    const data = calculateWeightTrend(state.logs, user.weight);
-    return data.filter(d => d.trend !== null).slice(-14);
-  }, [state.logs, user.weight]);
-
-  const currentEma = weightTrendData[weightTrendData.length - 1]?.trend ?? null;
-  const prevEma = weightTrendData.length >= 7 ? weightTrendData[Math.max(0, weightTrendData.length - 8)]?.trend ?? null : null;
-  const weightDelta = currentEma !== null && prevEma !== null ? currentEma - prevEma : 0;
-
   const coachInsight = useMemo(() => coachService.getDailyInsight({
     user, todayLog: log, weeklyStats,
     recentWorkouts: Object.values(state.logs).flatMap(l => l.workouts)
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 3),
-    weightTrend: weightDelta < -0.1 ? 'losing' : weightDelta > 0.1 ? 'gaining' : 'maintaining',
-    weightDelta7d: weightDelta,
-    currentEma: currentEma ?? undefined,
-  }), [user, weeklyStats, weightDelta]);
+    weightTrend: 'maintaining',
+    weightDelta7d: 0,
+  }), [user, weeklyStats, log, state.logs]);
 
-  const recentWorkout = useMemo(() =>
-    Object.values(state.logs).flatMap(l => l.workouts)
-      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0] ?? null
+  const recentWorkouts = useMemo(() =>
+    Object.entries(state.logs)
+      .flatMap(([date, log]) => log.workouts.map(w => ({ ...w, date })))
+      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+      .slice(0, 3)
   , [state.logs]);
 
   const steps = log?.steps ?? 0;
   const water = log?.waterGlasses ?? 0;
   const stepsTarget = user.stepsTarget ?? 8000;
   const units = state.settings.units;
+
+  // Vitality score: weighted average of adherence metrics (0–100)
+  const vitalityScore = useMemo(() => {
+    const calAdherence = Math.min(totals.calories / Math.max(user.targets.calories, 1), 1);
+    const proAdherence = Math.min(totals.protein / Math.max(user.targets.protein, 1), 1);
+    const stepsAdherence = Math.min(steps / Math.max(stepsTarget, 1), 1);
+    const trained = (log?.workouts?.length ?? 0) > 0 ? 1 : 0;
+    return Math.round(calAdherence * 25 + proAdherence * 25 + stepsAdherence * 25 + trained * 25);
+  }, [totals, user.targets, steps, stepsTarget, log]);
 
   const handleSave = (type: 'water' | 'steps' | 'weight') => (value: number) => {
     if (type === 'weight') {
@@ -237,454 +173,278 @@ export const Dashboard: React.FC = () => {
     setActiveSheet(null);
   };
 
-  const insightColor = coachInsight.priority === 'high' ? '#EF4444'
-    : coachInsight.priority === 'medium' ? '#F59E0B' : '#6366F1';
-
-  const savedLabel = lastSavedAt
-    ? (() => {
-        const diff = Math.floor((Date.now() - new Date(lastSavedAt).getTime()) / 1000);
-        if (diff < 10) return 'Saved';
-        if (diff < 60) return `Saved ${diff}s ago`;
-        return `Saved ${Math.floor(diff / 60)}m ago`;
-      })()
-    : null;
-
-  const calPct = Math.round(Math.min((totals.calories / user.targets.calories) * 100, 100));
+  const caloriesRemaining = Math.max(user.targets.calories - totals.calories, 0);
+  const caloriesOver = totals.calories > user.targets.calories;
+  const stepsPercent = Math.round(Math.min((steps / stepsTarget) * 100, 100));
+  const workoutMinutesToday = (log?.workouts ?? []).reduce((acc, w) => acc + (w.durationMinutes ?? 0), 0);
 
   return (
-    <div className="page page-top-pad safe-bottom" style={{ gap: 14 }}>
+    <>
+      {/* ── Page ── */}
+      <div style={{
+        minHeight: '100dvh',
+        background: 'var(--bg-primary)',
+        paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))',
+        paddingLeft: 24, paddingRight: 24,
+      }}>
 
-      {/* ── Header ── */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 2 }}>
-          <div>
-            <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-tertiary)', marginBottom: 3 }}>
-              {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.65rem', fontWeight: 900, letterSpacing: '-0.035em', lineHeight: 1.1, color: 'var(--text-primary)' }}>
-              {getGreeting(user.name)},{' '}
-              <span style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #A855F7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                {user.name.split(' ')[0]}
-              </span>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
-            {workoutStreak > 0 && (
-              <div className="streak-trophy" style={{
-                background: 'rgba(59,130,246,0.12)',
-                border: '1px solid rgba(59,130,246,0.30)',
-                boxShadow: workoutStreak >= 7 ? '0 0 16px rgba(59,130,246,0.25)' : 'none',
-              }}>
-                <Dumbbell size={13} color="#3B82F6" style={{ filter: 'drop-shadow(0 0 4px rgba(59,130,246,0.6))' }} />
-                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#3B82F6', letterSpacing: '-0.01em' }}>{workoutStreak}</span>
-                  <span style={{ fontSize: '0.48rem', fontWeight: 700, color: 'rgba(59,130,246,0.6)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>days</span>
-                </div>
-              </div>
-            )}
+        {/* ── Vitality Ring Hero ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+          style={{ paddingTop: 32, paddingBottom: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+        >
+          <VitalityRing score={vitalityScore} />
+
+          {/* Streaks below ring */}
+          <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
             {streak > 0 && (
-              <div className="streak-trophy" style={{
-                background: 'rgba(245,158,11,0.13)',
-                border: '1px solid rgba(245,158,11,0.32)',
-                boxShadow: streak >= 7 ? '0 0 18px rgba(245,158,11,0.28)' : 'none',
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '6px 14px', borderRadius: 9999,
+                background: '#F4F3F1', fontSize: '0.75rem', fontWeight: 700, color: '#576038',
               }}>
-                <Flame size={14} color="#F59E0B" style={{ animation: 'flamePulse 2s ease-in-out infinite' }} />
-                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#F59E0B', letterSpacing: '-0.01em' }}>{streak}</span>
-                  <span style={{ fontSize: '0.48rem', fontWeight: 700, color: 'rgba(245,158,11,0.6)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>days</span>
-                </div>
+                <Flame size={13} color="#974400" />
+                {streak} day streak
               </div>
             )}
-            <button
-              onClick={() => navigate('/settings')}
-              style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #6366F1, #A855F7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', fontWeight: 900, color: 'white', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99,102,241,0.4)' }}>
-              {user.name.charAt(0).toUpperCase()}
-            </button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* ── Nutrition Hero Card ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07, duration: 0.4 }}
-        onClick={() => navigate('/log')} style={{ cursor: 'pointer' }}
-      >
-        <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.11em', color: 'var(--text-tertiary)', marginBottom: 6 }}>
-          NUTRITION · Today
-        </div>
-        <div className="card-nutrition" style={{ padding: '18px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <CalorieArc
-              calories={Math.round(totals.calories)} target={user.targets.calories}
-              protein={Math.round(totals.protein)} proteinTarget={user.targets.protein}
-              carbs={Math.round(totals.carbs)} carbsTarget={user.targets.carbs}
-              fats={Math.round(totals.fats)} fatsTarget={user.targets.fats}
-            />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.55)' }}>Today's Nutrition</div>
-                <div style={{ fontSize: '0.65rem', fontWeight: 800, padding: '2px 8px', borderRadius: 8, background: calPct >= 90 ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.1)', color: calPct >= 90 ? '#EF4444' : 'rgba(255,255,255,0.7)' }}>
-                  {calPct}%
-                </div>
-              </div>
-              {/* Macro chips */}
-              <div style={{ display: 'flex', gap: 6 }}>
-                <MacroChip label="Protein" className="protein" value={Math.round(totals.protein)} target={user.targets.protein} color="#F59E0B" />
-                <MacroChip label="Carbs" className="carbs" value={Math.round(totals.carbs)} target={user.targets.carbs} color="#3B82F6" />
-                <MacroChip label="Fats" className="fats" value={Math.round(totals.fats)} target={user.targets.fats} color="#22C55E" />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ fontSize: '0.62rem', fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}>Tap to log food</span>
-                <ChevronRight size={10} color="rgba(255,255,255,0.3)" />
-              </div>
+            <div style={{
+              padding: '6px 14px', borderRadius: 9999,
+              background: '#F4F3F1', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(86,67,56,0.55)',
+            }}>
+              Goal: 100
             </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.section>
 
-      {/* ── Quick log row ── */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.11, duration: 0.38 }}
-        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-        {[
-          { icon: <Droplets size={16} color="#06B6D4" />, label: 'Water', value: `${water} gl`, color: '#06B6D4', onClick: () => setActiveSheet('water') },
-          { icon: <Footprints size={16} color="#22C55E" />, label: 'Steps', value: steps >= 1000 ? `${(steps / 1000).toFixed(1)}k` : String(steps), color: '#22C55E', onClick: () => setActiveSheet('steps') },
-          { icon: <Activity size={16} color="#6366F1" />, label: 'Weight', value: log?.weight ? String(log.weight) : String(user.weight), color: '#6366F1', onClick: () => setActiveSheet('weight') },
-        ].map(({ icon, label, value, color, onClick }) => (
-          <button key={label} onClick={onClick} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-            padding: '14px 8px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
-            borderRadius: 18, cursor: 'pointer', transition: 'transform 0.12s, background 0.12s',
-            boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.04)',
-          }}
-            onTouchStart={e => (e.currentTarget.style.transform = 'scale(0.95)')}
-            onTouchEnd={e => (e.currentTarget.style.transform = '')}
+        {/* ── Bento Stats Grid ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.4 }}
+          style={{ marginTop: 28, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}
+        >
+          {/* Calories — full width, terracotta */}
+          <div
+            onClick={() => navigate('/log')}
+            style={{
+              gridColumn: '1 / -1', borderRadius: 24, padding: '22px 22px',
+              background: '#FC9A77', position: 'relative', overflow: 'hidden', cursor: 'pointer',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+              boxShadow: '0 12px 40px rgba(149,72,43,0.12)',
+            }}
           >
-            <div style={{ width: 34, height: 34, borderRadius: 11, background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${color}20` }}>
-              {icon}
-            </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9rem', fontWeight: 900, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</div>
-            <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)' }}>{label}</div>
-          </button>
-        ))}
-      </motion.div>
-
-      {/* ── Coach Insight ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.38 }}
-        onClick={() => navigate('/coach')} style={{ cursor: 'pointer' }}
-      >
-        <div style={{ borderRadius: 18, padding: '14px 16px', background: `${insightColor}08`, border: `1px solid ${insightColor}22`, borderLeft: `3px solid ${insightColor}`, boxShadow: `0 0 24px ${insightColor}10` }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: `${insightColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-              <Brain size={15} color={insightColor} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: insightColor, marginBottom: 3 }}>
-                Coach · {coachInsight.type}
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{ fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(118,48,21,0.7)', marginBottom: 4 }}>Calories</div>
+              <div style={{ fontSize: '2.8rem', fontWeight: 800, color: '#763015', letterSpacing: '-0.04em', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                {fmtNum(Math.round(totals.calories))}
               </div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, lineHeight: 1.35 }}>
-                {coachInsight.title}
-              </div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.5 }} className="truncate-2">
-                {coachInsight.message}
+              <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'rgba(118,48,21,0.65)', marginTop: 4 }}>
+                {caloriesOver ? `${fmtNum(Math.round(totals.calories - user.targets.calories))} kcal over` : `${fmtNum(caloriesRemaining)} kcal remaining`}
               </div>
             </div>
-            <ChevronRight size={14} color="var(--text-tertiary)" style={{ flexShrink: 0, marginTop: 4 }} />
+            <Flame size={80} style={{ color: 'rgba(118,48,21,0.08)', position: 'absolute', right: -8, top: -8 }} />
           </div>
-        </div>
-      </motion.div>
 
-      {/* ── Training snapshot ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.19, duration: 0.38 }}
-        onClick={() => navigate('/training')} style={{ cursor: 'pointer' }}
-      >
-        <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.11em', color: 'var(--text-tertiary)', marginBottom: 6 }}>
-          TRAINING · This Week
-        </div>
-        <div className="card-training" style={{ padding: '16px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 9, background: 'rgba(59,130,246,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Dumbbell size={14} color="#3B82F6" />
-              </div>
-              <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#3B82F6' }}>Training</span>
+          {/* Protein */}
+          <div style={{ borderRadius: 24, padding: '20px', background: '#FFFFFF', boxShadow: '0 12px 40px rgba(26,28,26,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <Dumbbell size={20} style={{ color: '#576038' }} strokeWidth={1.8} />
+              <span style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(86,67,56,0.5)' }}>Protein</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>
+            <div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
+                {Math.round(totals.protein)}<span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-tertiary)', marginLeft: 3 }}>g</span>
+              </div>
+              <div style={{ marginTop: 8, height: 5, borderRadius: 999, background: '#E3E2E0', overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 999, background: '#576038', width: `${Math.min((totals.protein / user.targets.protein) * 100, 100)}%`, transition: 'width 0.7s ease' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Exercise */}
+          <div style={{ borderRadius: 24, padding: '20px', background: '#FFFFFF', boxShadow: '0 12px 40px rgba(26,28,26,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <Activity size={20} style={{ color: '#576038' }} strokeWidth={1.8} />
+              <span style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(86,67,56,0.5)' }}>Exercise</span>
+            </div>
+            <div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
+                {workoutMinutesToday > 0 ? workoutMinutesToday : '--'}<span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-tertiary)', marginLeft: 3 }}>{workoutMinutesToday > 0 ? 'min' : ''}</span>
+              </div>
+              <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#576038', marginTop: 4 }}>
                 {weeklyStats.workoutsCompleted}/{user.trainingFrequency} this week
-              </span>
-              <ChevronRight size={13} color="var(--text-tertiary)" />
+              </div>
             </div>
           </div>
-          {recentWorkout ? (
-            <>
-              <div style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: 4 }}>{recentWorkout.name}</div>
-              <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{recentWorkout.exercises.length} exercises</span>
-                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{recentWorkout.durationMinutes}min</span>
-                {recentWorkout.sessionRPE && <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>RPE {recentWorkout.sessionRPE}</span>}
+
+          {/* Steps — full width */}
+          <div
+            onClick={() => setActiveSheet('steps')}
+            style={{
+              gridColumn: '1 / -1', borderRadius: 24, padding: '18px 22px',
+              background: '#FFFFFF', boxShadow: '0 12px 40px rgba(26,28,26,0.06)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#DEE8B4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Footprints size={22} style={{ color: '#576038' }} strokeWidth={1.8} />
               </div>
-              <div style={{ display: 'flex', gap: 4, marginBottom: weeklyNudge ? 8 : 0 }}>
-                {Array.from({ length: Math.max(user.trainingFrequency, 1) }).map((_, i) => (
-                  <div key={i} style={{ height: 4, flex: 1, borderRadius: 2, background: i < weeklyStats.workoutsCompleted ? '#3B82F6' : 'var(--border-default)', transition: 'background 0.3s', boxShadow: i < weeklyStats.workoutsCompleted ? '0 0 6px rgba(59,130,246,0.5)' : 'none' }} />
-                ))}
-              </div>
-              {weeklyNudge && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  marginTop: 2, padding: '6px 10px', borderRadius: 10,
-                  background: weeklyStats.workoutsCompleted >= user.trainingFrequency
-                    ? 'rgba(34,197,94,0.08)' : 'rgba(59,130,246,0.07)',
-                  border: `1px solid ${weeklyStats.workoutsCompleted >= user.trainingFrequency ? 'rgba(34,197,94,0.2)' : 'rgba(59,130,246,0.15)'}`,
-                }}>
-                  <Target size={10} color={weeklyStats.workoutsCompleted >= user.trainingFrequency ? '#22C55E' : '#3B82F6'} />
-                  <span style={{
-                    fontSize: '0.68rem', fontWeight: 700,
-                    color: weeklyStats.workoutsCompleted >= user.trainingFrequency ? '#22C55E' : '#3B82F6',
-                  }}>{weeklyNudge}</span>
+              <div>
+                <div style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
+                  {fmtNum(steps)}
                 </div>
-              )}
-            </>
-          ) : (
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>No sessions yet — start your first workout</div>
-          )}
-        </div>
-      </motion.div>
-
-      {/* ── Weight + Stats row ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23, duration: 0.38 }}
-      >
-        <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.11em', color: 'var(--text-tertiary)', marginBottom: 6 }}>
-          PROGRESS · 2 Weeks
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-
-        {/* Weight EMA mini chart */}
-        <div style={{ flex: 3, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 18, padding: '14px 14px 10px', overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.04)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>Weight</span>
-            {weightDelta !== 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 7px', borderRadius: 20, background: weightDelta < 0 ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)' }}>
-                {weightDelta < -0.1 ? <TrendingDown size={9} color="#22C55E" /> : weightDelta > 0.1 ? <TrendingUp size={9} color="#F59E0B" /> : <Minus size={9} color="#6366F1" />}
-                <span style={{ fontSize: '0.6rem', fontWeight: 800, color: weightDelta < -0.1 ? '#22C55E' : '#F59E0B', fontVariantNumeric: 'tabular-nums' }}>
-                  {weightDelta > 0 ? '+' : ''}{weightDelta.toFixed(2)}
-                </span>
+                <div style={{ fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(86,67,56,0.5)', marginTop: 2 }}>Steps Walked</div>
               </div>
-            )}
-          </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.35rem', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: 4 }}>
-            {currentEma ? currentEma.toFixed(1) : (log?.weight ?? user.weight)}
-            <span style={{ fontSize: '0.62rem', fontWeight: 600, color: 'var(--text-tertiary)', marginLeft: 4 }}>{units === 'imperial' ? 'lbs' : 'kg'}</span>
-          </div>
-          {weightTrendData.length > 3 ? (
-            <div style={{ height: 46, marginTop: 4 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={weightTrendData} margin={{ top: 2, bottom: 2, left: 0, right: 0 }}>
-                  <defs>
-                    <linearGradient id="wGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6366F1" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="#6366F1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="trend" stroke="#6366F1" strokeWidth={2} fill="url(#wGrad)" dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
             </div>
-          ) : (
-            <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', fontWeight: 600, marginTop: 6 }}>Log weight for trend</div>
-          )}
-        </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(86,67,56,0.5)' }}>
+                Goal {fmtNum(stepsTarget)}
+              </div>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#576038', marginTop: 2 }}>{stepsPercent}%</div>
+            </div>
+          </div>
 
-        {/* Stats mini tiles */}
-        <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {[
-            {
-              label: 'Consistency',
-              value: `${consistencyScore}%`,
-              sub: 'nutrition + training',
-              color: consistencyScore >= 80 ? '#22C55E' : consistencyScore >= 60 ? '#F59E0B' : '#EF4444',
-            },
-            {
-              label: 'Avg protein',
-              value: `${weeklyStats.avgProtein}g`,
-              sub: `vs ${user.targets.protein}g`,
-              color: weeklyStats.proteinAdherence >= 80 ? '#22C55E' : '#F59E0B',
-            },
-          ].map(({ label, value, sub, color }) => (
-            <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '12px 12px', flex: 1, boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.03)' }}>
-              <div style={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: 3 }}>{label}</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', fontWeight: 900, letterSpacing: '-0.03em', color }}>{value}</div>
-              <div style={{ fontSize: '0.58rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{sub}</div>
+          {/* Water */}
+          {([
+            { key: 'water' as const, Icon: Droplets, label: 'Water', value: water, unit: 'gl' },
+            { key: 'weight' as const, Icon: TrendingUp, label: 'Weight', value: log?.weight ?? user.weight, unit: units === 'imperial' ? 'lbs' : 'kg' },
+          ]).map(({ key, Icon, label, value, unit }) => (
+            <div key={key} onClick={() => setActiveSheet(key)}
+              style={{ borderRadius: 24, padding: '18px 20px', background: '#F4F3F1', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon size={18} style={{ color: '#576038' }} strokeWidth={1.8} />
+              </div>
+              <div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-0.03em' }}>
+                  {value}<span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-tertiary)', marginLeft: 3 }}>{unit}</span>
+                </div>
+                <div style={{ fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(86,67,56,0.5)' }}>{label}</div>
+              </div>
             </div>
           ))}
-        </div>
-        </div>
-      </motion.div>
+        </motion.section>
 
-      {/* ── Badges row ── */}
-      {earnedBadges.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27, duration: 0.38 }}>
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, msOverflowStyle: 'none' }}>
-            {earnedBadges.slice(-5).map(badge => (
-              <div key={badge.id} style={{
-                display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
-                padding: '6px 10px', borderRadius: 99,
-                background: `${badge.color}10`,
-                border: `1px solid ${badge.color}28`,
-              }}>
-                <span style={{ fontSize: '0.72rem' }}>{badge.icon}</span>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: badge.color, whiteSpace: 'nowrap' }}>{badge.label}</span>
+        {/* ── Quick Start ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }}
+          style={{ marginTop: 36 }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.025em', color: '#576038' }}>Quick Start</h2>
+            <button onClick={() => navigate('/training')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(86,67,56,0.5)' }}>
+              See All
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 14, overflowX: 'auto', marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24, paddingBottom: 4 }}
+            className="hide-scrollbar">
+            {QUICK_START.map(({ title, category, bg, route }) => (
+              <div
+                key={title}
+                onClick={() => navigate(route)}
+                style={{
+                  flexShrink: 0, width: 200, height: 260, borderRadius: 24,
+                  background: bg, cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+                  padding: '20px 18px', position: 'relative', overflow: 'hidden',
+                  boxShadow: `0 12px 32px ${bg}40`,
+                }}
+              >
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 60%)', borderRadius: 24 }} />
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <div style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>{category}</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>{title}</div>
+                </div>
               </div>
             ))}
           </div>
-        </motion.div>
-      )}
+        </motion.section>
 
-      {/* ── Proactive coaching insights ── */}
-      {isPlateauing && !dismissedInsights.has('plateau') && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        {/* ── Coach Insight ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.4 }}
+          style={{ marginTop: 36 }}
+          onClick={() => navigate('/coach')}
+        >
           <div style={{
-            background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)',
-            borderRadius: 18, padding: '13px 15px',
-            display: 'flex', alignItems: 'flex-start', gap: 12,
+            borderRadius: 24, padding: '28px 24px',
+            background: '#576038', position: 'relative', overflow: 'hidden',
+            cursor: 'pointer',
           }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-              background: 'rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Target size={15} color="#F59E0B" />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F59E0B', marginBottom: 3 }}>Plateau detected</div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.5, fontWeight: 600 }}>
-                Your weight trend has moved less than 0.3kg in 14 days. Your weekly check-in will suggest a 100 kcal reduction. Consider a high-carb refeed day to reset leptin.
+            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at top right, rgba(255,255,255,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+              <Brain size={32} style={{ color: '#C2CB9A', marginBottom: 12 }} strokeWidth={1.5} />
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#FCFFE2', letterSpacing: '-0.02em', lineHeight: 1.35, fontStyle: 'italic', marginBottom: 16 }}>
+                "{coachInsight.title}"
               </div>
-            </div>
-            <button
-              onClick={() => setDismissedInsights(prev => new Set([...prev, 'plateau']))}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
-            ><X size={14} style={{ color: 'var(--text-muted)' }} /></button>
-          </div>
-        </motion.div>
-      )}
-
-      {recoveryInsight && !dismissedInsights.has(`recovery_${recoveryInsight.type}`) && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-          <div style={{
-            background: recoveryInsight.type === 'fatigue' ? 'rgba(239,68,68,0.07)' : 'rgba(34,197,94,0.06)',
-            border: `1px solid ${recoveryInsight.type === 'fatigue' ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.18)'}`,
-            borderRadius: 18, padding: '13px 15px',
-            display: 'flex', alignItems: 'flex-start', gap: 12,
-          }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-              background: recoveryInsight.type === 'fatigue' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.1)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Activity size={15} color={recoveryInsight.type === 'fatigue' ? '#EF4444' : '#22C55E'} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontSize: '0.78rem', fontWeight: 800, marginBottom: 3,
-                color: recoveryInsight.type === 'fatigue' ? '#EF4444' : '#22C55E',
-              }}>
-                {recoveryInsight.type === 'fatigue' ? 'Fatigue signal' : 'Ready to push'}
+              <div style={{ height: 1.5, width: 40, background: '#C2CB9A', borderRadius: 999, margin: '0 auto 12px' }} />
+              <div style={{ fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#C2CB9A' }}>
+                Daily Insight · Tap to open
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.5, fontWeight: 600 }}>
-                {recoveryInsight.message}
-              </div>
-            </div>
-            <button
-              onClick={() => setDismissedInsights(prev => new Set([...prev, `recovery_${recoveryInsight.type}`]))}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
-            ><X size={14} style={{ color: 'var(--text-muted)' }} /></button>
-          </div>
-        </motion.div>
-      )}
-
-      {isTrainingStalled && !dismissedInsights.has('stall') && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-          <div style={{
-            background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)',
-            borderRadius: 18, padding: '13px 15px',
-            display: 'flex', alignItems: 'flex-start', gap: 12,
-          }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-              background: 'rgba(99,102,241,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Dumbbell size={15} color="#6366F1" />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#6366F1', marginBottom: 3 }}>4+ days without training</div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.5, fontWeight: 600 }}>
-                No workouts logged in 4+ days. The training stimulus is the driver of adaptation — even a 30-minute session beats skipping.
-              </div>
-            </div>
-            <button
-              onClick={() => setDismissedInsights(prev => new Set([...prev, 'stall']))}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
-            ><X size={14} style={{ color: 'var(--text-muted)' }} /></button>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ── Steps bar (visible when logged) ── */}
-      {steps > 0 && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27, duration: 0.38 }}
-          onClick={() => setActiveSheet('steps')} style={{ cursor: 'pointer' }}>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 18, padding: '13px 15px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Footprints size={13} color="#22C55E" />
-                <span style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>Steps</span>
-              </div>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '0.92rem', fontWeight: 900, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-                {fmtNum(steps)} <span style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>/ {fmtNum(stepsTarget)}</span>
-              </span>
-            </div>
-            <div className="progress-track">
-              <div className="progress-fill" style={{ width: `${Math.min((steps / stepsTarget) * 100, 100)}%`, background: 'linear-gradient(90deg, #22C55E, #06B6D4)', boxShadow: '0 0 8px rgba(34,197,94,0.4)' }} />
             </div>
           </div>
-        </motion.div>
-      )}
+        </motion.section>
 
-      {/* ── CTA Row ── */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.31, duration: 0.38 }}
-        style={{ display: 'flex', gap: 10 }}>
-        <button className="btn btn-green" style={{ flex: 1, fontSize: '0.88rem', padding: '14px', gap: 8, borderRadius: 18 }} onClick={() => navigate('/log')}>
-          <Zap size={15} /> Log Food
-        </button>
-        <button className="btn btn-coach" style={{ flex: 1, fontSize: '0.88rem', padding: '14px', gap: 8, borderRadius: 18 }} onClick={() => navigate('/coach')}>
-          <Brain size={15} /> AI Coach
-        </button>
-      </motion.div>
+        {/* ── Recent Activity ── */}
+        {recentWorkouts.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }}
+            style={{ marginTop: 36 }}
+          >
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.025em', color: '#576038', marginBottom: 16 }}>
+              Recent Activity
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {recentWorkouts.map((w, i) => (
+                <div
+                  key={i}
+                  onClick={() => navigate('/training')}
+                  style={{
+                    borderRadius: 20, padding: '16px 18px',
+                    background: '#F4F3F1',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ width: 42, height: 42, borderRadius: '50%', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Dumbbell size={18} style={{ color: '#576038' }} strokeWidth={1.8} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>{w.name}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: 2 }}>
+                        {new Date(w.date).toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{w.durationMinutes ?? '--'}m</div>
+                    <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#576038', marginTop: 2 }}>
+                      {w.exercises.length} ex
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.section>
+        )}
 
-      {/* ── Sync status ── */}
-      {savedLabel && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, paddingBottom: 4 }}>
-          <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 4px #22C55E' }} />
-          <span style={{ fontSize: '0.58rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-            {savedLabel} · data stored locally
-          </span>
-        </div>
-      )}
+      </div>
 
-      {/* ── Log sheets ── */}
+      {/* ── Log Sheets ── */}
       <AnimatePresence>
-        {activeSheet && (
-          <LogSheet
-            type={activeSheet}
-            currentValue={activeSheet === 'water' ? water : activeSheet === 'steps' ? steps : (log?.weight ?? user.weight)}
-            unit={activeSheet === 'water' ? 'glasses' : activeSheet === 'steps' ? 'steps' : (units === 'imperial' ? 'lbs' : 'kg')}
-            onSave={handleSave(activeSheet)}
-            onClose={() => setActiveSheet(null)}
-          />
+        {activeSheet === 'water' && (
+          <LogSheet type="water" currentValue={water} unit="glasses"
+            onSave={handleSave('water')} onClose={() => setActiveSheet(null)} />
+        )}
+        {activeSheet === 'steps' && (
+          <LogSheet type="steps" currentValue={steps} unit="steps"
+            onSave={handleSave('steps')} onClose={() => setActiveSheet(null)} />
+        )}
+        {activeSheet === 'weight' && (
+          <LogSheet type="weight" currentValue={log?.weight ?? user.weight} unit={units === 'imperial' ? 'lbs' : 'kg'}
+            onSave={handleSave('weight')} onClose={() => setActiveSheet(null)} />
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 };

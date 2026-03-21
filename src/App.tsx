@@ -45,7 +45,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 import { AppProvider, useApp } from './context/AppContext';
-import { Header } from './components/Header';
+import { Header, TopBar } from './components/Header';
 import { Dashboard } from './pages/Dashboard';
 import { LogFood } from './pages/LogFood';
 import { Progress } from './pages/Progress';
@@ -71,7 +71,8 @@ const AppRoutes: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
-      <main style={{ flex: 1, backgroundColor: 'var(--bg-primary)' }}>
+      <TopBar />
+      <main style={{ flex: 1, backgroundColor: 'var(--bg-primary)', paddingTop: 64 }}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/log" element={<LogFood />} />

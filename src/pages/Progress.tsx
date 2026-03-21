@@ -3,10 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
-import {
-  TrendingDown, TrendingUp, Minus, Plus, Camera, Ruler, Scale, ChevronRight,
-  CheckCircle2, BarChart2, Trash2,
-} from 'lucide-react';
+import { Plus, Ruler, Trash2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { calculateWeightTrend, computeWeeklyStats } from '../utils/aiCoachingEngine';
 import { BodyMeasurement } from '../types';
@@ -133,7 +130,7 @@ const MeasurementCard: React.FC<{
     if (!curr || !p) return 'var(--text-tertiary)';
     const d = curr - p;
     // For weight/fat: down is good (fat_loss); for measurements like arm: up might be good
-    return d < 0 ? '#22C55E' : d > 0 ? '#F59E0B' : 'var(--text-tertiary)';
+    return d < 0 ? '#576038' : d > 0 ? '#974400' : 'var(--text-tertiary)';
   };
 
   return (
@@ -267,9 +264,9 @@ export const Progress: React.FC = () => {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}
         style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
         {[
-          { label: 'Current', value: lastWeight ? `${lastWeight.toFixed(1)}` : `${user.weight}`, unit: 'kg', color: '#6366F1' },
-          { label: `${timeframe} change`, value: weightChange !== null ? `${weightChange > 0 ? '+' : ''}${weightChange.toFixed(2)}` : '—', unit: 'kg', color: weightChange !== null ? (weightChange < 0 && user.goalType === 'fat_loss' ? '#22C55E' : weightChange > 0 && user.goalType === 'muscle_gain' ? '#22C55E' : '#F59E0B') : 'var(--text-tertiary)' },
-          { label: 'Weekly rate', value: weeklyRate !== null ? `${weeklyRate > 0 ? '+' : ''}${weeklyRate.toFixed(2)}` : '—', unit: 'kg/wk', color: '#3B82F6' },
+          { label: 'Current', value: lastWeight ? `${lastWeight.toFixed(1)}` : `${user.weight}`, unit: 'kg', color: '#576038' },
+          { label: `${timeframe} change`, value: weightChange !== null ? `${weightChange > 0 ? '+' : ''}${weightChange.toFixed(2)}` : '—', unit: 'kg', color: weightChange !== null ? (weightChange < 0 && user.goalType === 'fat_loss' ? '#576038' : weightChange > 0 && user.goalType === 'muscle_gain' ? '#576038' : '#974400') : 'var(--text-tertiary)' },
+          { label: 'Weekly rate', value: weeklyRate !== null ? `${weeklyRate > 0 ? '+' : ''}${weeklyRate.toFixed(2)}` : '—', unit: 'kg/wk', color: '#576038' },
         ].map(({ label, value, unit, color }) => (
           <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '12px 12px' }}>
             <div style={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)', marginBottom: 3 }}>{label}</div>
@@ -299,7 +296,7 @@ export const Progress: React.FC = () => {
             <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
               {(['2W', '1M', '3M', 'All'] as Timeframe[]).map(tf => (
                 <button key={tf} onClick={() => setTimeframe(tf)}
-                  style={{ flex: 1, padding: '6px', borderRadius: 8, border: 'none', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', background: timeframe === tf ? '#6366F1' : 'rgba(0,0,0,0.05)', color: timeframe === tf ? 'white' : 'var(--text-tertiary)', transition: 'all 0.15s' }}>
+                  style={{ flex: 1, padding: '6px', borderRadius: 8, border: 'none', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', background: timeframe === tf ? '#576038' : 'rgba(0,0,0,0.05)', color: timeframe === tf ? 'white' : 'var(--text-tertiary)', transition: 'all 0.15s' }}>
                   {tf}
                 </button>
               ))}
@@ -316,9 +313,9 @@ export const Progress: React.FC = () => {
                     <AreaChart data={trendData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                       <defs>
                         <linearGradient id="weightG" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#6366F1" stopOpacity={0.45} />
-                          <stop offset="70%" stopColor="#6366F1" stopOpacity={0.08} />
-                          <stop offset="100%" stopColor="#6366F1" stopOpacity={0} />
+                          <stop offset="0%" stopColor="#576038" stopOpacity={0.45} />
+                          <stop offset="70%" stopColor="#576038" stopOpacity={0.08} />
+                          <stop offset="100%" stopColor="#576038" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.24)', fontWeight: 600 }} tickLine={false} axisLine={false} interval={Math.max(1, Math.floor(trendData.length / 5))} />
@@ -327,9 +324,9 @@ export const Progress: React.FC = () => {
                       {user.goalWeight && (
                         <ReferenceLine y={user.goalWeight} stroke="#22C55E" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: 'Goal', fill: '#22C55E', fontSize: 9 }} />
                       )}
-                      <Area type="monotone" dataKey="weight" stroke="transparent" fill="none" dot={{ r: 2, fill: 'rgba(99,102,241,0.5)', strokeWidth: 0 }} name="Logged" />
-                      <Area type="monotone" dataKey="trend" stroke="#6366F1" strokeWidth={2.5} fill="url(#weightG)"
-                        dot={(props: any) => <GlowDot {...props} data={trendData} color="#6366F1" />}
+                      <Area type="monotone" dataKey="weight" stroke="transparent" fill="none" dot={{ r: 2, fill: 'rgba(87,96,56,0.5)', strokeWidth: 0 }} name="Logged" />
+                      <Area type="monotone" dataKey="trend" stroke="#576038" strokeWidth={2.5} fill="url(#weightG)"
+                        dot={(props: any) => <GlowDot {...props} data={trendData} color="#576038" />}
                         name="EMA" />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -359,8 +356,8 @@ export const Progress: React.FC = () => {
                     <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.24)', fontWeight: 600 }} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.24)', fontWeight: 600 }} tickLine={false} axisLine={false} />
                     <Tooltip content={<CustomTooltip />} />
-                    <ReferenceLine y={user.targets.calories} stroke="rgba(239,68,68,0.4)" strokeDasharray="3 3" strokeWidth={1.5} />
-                    <Bar dataKey="calories" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Calories" />
+                    <ReferenceLine y={user.targets.calories} stroke="rgba(151,68,0,0.4)" strokeDasharray="3 3" strokeWidth={1.5} />
+                    <Bar dataKey="calories" fill="#974400" radius={[4, 4, 0, 0]} name="Calories" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -374,8 +371,8 @@ export const Progress: React.FC = () => {
                     <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.24)', fontWeight: 600 }} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.24)', fontWeight: 600 }} tickLine={false} axisLine={false} />
                     <Tooltip content={<CustomTooltip />} />
-                    <ReferenceLine y={user.targets.protein} stroke="rgba(245,158,11,0.4)" strokeDasharray="3 3" strokeWidth={1.5} />
-                    <Bar dataKey="protein" fill="#F59E0B" radius={[4, 4, 0, 0]} name="Protein" />
+                    <ReferenceLine y={user.targets.protein} stroke="rgba(87,96,56,0.4)" strokeDasharray="3 3" strokeWidth={1.5} />
+                    <Bar dataKey="protein" fill="#576038" radius={[4, 4, 0, 0]} name="Protein" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -384,9 +381,9 @@ export const Progress: React.FC = () => {
             {/* Weekly summary */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {[
-                { label: 'Cal adherence', value: `${weeklyStats.calorieAdherence}%`, color: weeklyStats.calorieAdherence >= 80 ? '#22C55E' : '#F59E0B' },
-                { label: 'Protein adherence', value: `${weeklyStats.proteinAdherence}%`, color: weeklyStats.proteinAdherence >= 80 ? '#22C55E' : '#F59E0B' },
-                { label: 'Avg calories', value: `${weeklyStats.avgCalories}`, color: '#3B82F6' },
+                { label: 'Cal adherence', value: `${weeklyStats.calorieAdherence}%`, color: weeklyStats.calorieAdherence >= 80 ? '#576038' : '#974400' },
+                { label: 'Protein adherence', value: `${weeklyStats.proteinAdherence}%`, color: weeklyStats.proteinAdherence >= 80 ? '#576038' : '#974400' },
+                { label: 'Avg calories', value: `${weeklyStats.avgCalories}`, color: '#974400' },
                 { label: 'Days logged', value: `${weeklyStats.daysLogged}/7`, color: 'var(--text-primary)' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '12px 14px' }}>
@@ -404,15 +401,15 @@ export const Progress: React.FC = () => {
 
             {/* Add measurement CTA */}
             <button onClick={() => setShowMeasure(true)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 16, background: 'rgba(99,102,241,0.08)', border: '1px dashed rgba(99,102,241,0.3)', cursor: 'pointer', marginBottom: 12 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Ruler size={16} color="#6366F1" />
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 16, background: 'rgba(87,96,56,0.08)', border: '1px dashed rgba(87,96,56,0.25)', cursor: 'pointer', marginBottom: 12 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(87,96,56,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Ruler size={16} color="#576038" />
               </div>
               <div style={{ flex: 1, textAlign: 'left' }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#A5B4FC' }}>Log measurements</div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#576038' }}>Log measurements</div>
                 <div style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>Weight, BF%, circumferences</div>
               </div>
-              <Plus size={16} color="#6366F1" />
+              <Plus size={16} color="#576038" />
             </button>
 
             {/* Measurements history */}

@@ -147,10 +147,10 @@ const HealthMetricsCard: React.FC = () => {
   };
 
   const metrics = [
-    { key: 'sleepDurationMinutes', label: 'Sleep', value: health.sleepDurationMinutes ? `${Math.floor(health.sleepDurationMinutes / 60)}h ${health.sleepDurationMinutes % 60}m` : '—', icon: <Moon size={13} color="#A855F7" />, color: '#A855F7', inputType: 'number', placeholder: 'mins (e.g. 450)', suffix: 'min' },
-    { key: 'sleepScore', label: 'Sleep score', value: health.sleepScore ? `${health.sleepScore}/100` : '—', icon: <Moon size={13} color="#8B5CF6" />, color: '#8B5CF6', inputType: 'number', placeholder: '0–100', suffix: '/100' },
-    { key: 'recoveryScore', label: 'Recovery', value: health.recoveryScore ? `${health.recoveryScore}/100` : '—', icon: <Activity size={13} color="#22C55E" />, color: '#22C55E', inputType: 'number', placeholder: '0–100', suffix: '/100' },
-    { key: 'hrv', label: 'HRV', value: health.hrv ? `${health.hrv}ms` : '—', icon: <Activity size={13} color="#3B82F6" />, color: '#3B82F6', inputType: 'number', placeholder: 'ms', suffix: 'ms' },
+    { key: 'sleepDurationMinutes', label: 'Sleep', value: health.sleepDurationMinutes ? `${Math.floor(health.sleepDurationMinutes / 60)}h ${health.sleepDurationMinutes % 60}m` : '—', icon: <Moon size={13} color="#576038" />, color: '#576038', inputType: 'number', placeholder: 'mins (e.g. 450)', suffix: 'min' },
+    { key: 'sleepScore', label: 'Sleep score', value: health.sleepScore ? `${health.sleepScore}/100` : '—', icon: <Moon size={13} color="#8B9467" />, color: '#8B9467', inputType: 'number', placeholder: '0–100', suffix: '/100' },
+    { key: 'recoveryScore', label: 'Recovery', value: health.recoveryScore ? `${health.recoveryScore}/100` : '—', icon: <Activity size={13} color="#576038" />, color: '#576038', inputType: 'number', placeholder: '0–100', suffix: '/100' },
+    { key: 'hrv', label: 'HRV', value: health.hrv ? `${health.hrv}ms` : '—', icon: <Activity size={13} color="#8B9467" />, color: '#8B9467', inputType: 'number', placeholder: 'ms', suffix: 'ms' },
     { key: 'restingHR', label: 'Resting HR', value: health.restingHR ? `${health.restingHR} bpm` : '—', icon: <Activity size={13} color="#EF4444" />, color: '#EF4444', inputType: 'number', placeholder: 'bpm', suffix: 'bpm' },
     { key: 'stressLevel', label: 'Stress', value: health.stressLevel ? `${health.stressLevel}/10` : '—', icon: <Smile size={13} color="#F59E0B" />, color: '#F59E0B', inputType: 'number', placeholder: '1–10', suffix: '/10' },
     { key: 'mood', label: 'Mood', value: health.mood ? `${health.mood}/5` : '—', icon: <Smile size={13} color="#06B6D4" />, color: '#06B6D4', inputType: 'number', placeholder: '1–5', suffix: '/5' },
@@ -161,7 +161,7 @@ const HealthMetricsCard: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>Today's Health Metrics</div>
         <button onClick={() => setEditing(e => !e)}
-          style={{ border: 'none', padding: '4px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, color: editing ? '#EF4444' : '#6366F1', cursor: 'pointer', background: editing ? 'rgba(239,68,68,0.1)' : 'rgba(99,102,241,0.1)' } as any}>
+          style={{ border: 'none', padding: '4px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, color: editing ? '#EF4444' : '#576038', cursor: 'pointer', background: editing ? 'rgba(239,68,68,0.1)' : 'rgba(87,96,56,0.10)' } as any}>
           {editing ? 'Cancel' : 'Edit'}
         </button>
       </div>
@@ -259,7 +259,7 @@ export const Habits: React.FC = () => {
       id: `h_custom_${Date.now()}`,
       name: newName.trim(),
       icon: '✓',
-      color: '#6366F1',
+      color: '#576038',
       category: newCat,
     });
     setNewName('');
@@ -286,11 +286,11 @@ export const Habits: React.FC = () => {
 
       {/* ── Today's progress ── */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
-        <div style={{ borderRadius: 20, background: streakScore >= 80 ? 'linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(6,182,212,0.06) 100%)' : 'var(--bg-card)', border: `1px solid ${streakScore >= 80 ? 'rgba(34,197,94,0.25)' : 'var(--border-color)'}`, padding: '18px 18px' }}>
+        <div style={{ borderRadius: 20, background: streakScore >= 80 ? 'linear-gradient(135deg, rgba(87,96,56,0.10) 0%, rgba(194,203,154,0.06) 100%)' : 'var(--bg-card)', border: `1px solid ${streakScore >= 80 ? 'rgba(87,96,56,0.25)' : 'var(--border-color)'}`, padding: '18px 18px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div>
               <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>Today</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 900, letterSpacing: '-0.04em', color: streakScore >= 80 ? '#22C55E' : 'var(--text-primary)' }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', fontWeight: 900, letterSpacing: '-0.04em', color: streakScore >= 80 ? '#576038' : 'var(--text-primary)' }}>
                 {completedToday}/{total}
               </div>
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>habits complete</div>
@@ -299,7 +299,7 @@ export const Habits: React.FC = () => {
               <svg width={72} height={72} style={{ transform: 'rotate(-90deg)' }}>
                 <circle cx={36} cy={36} r={30} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={6} />
                 <circle cx={36} cy={36} r={30} fill="none"
-                  stroke={streakScore >= 80 ? '#22C55E' : streakScore >= 50 ? '#F59E0B' : '#6366F1'}
+                  stroke={streakScore >= 80 ? '#576038' : streakScore >= 50 ? '#F59E0B' : '#576038'}
                   strokeWidth={6} strokeLinecap="round"
                   strokeDasharray={2 * Math.PI * 30}
                   strokeDashoffset={2 * Math.PI * 30 * (1 - streakScore / 100)}
@@ -319,8 +319,8 @@ export const Habits: React.FC = () => {
               const isToday = date === dateStr;
               return (
                 <div key={date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                  <div style={{ height: 28, width: '100%', borderRadius: 6, background: dayPct >= 0.8 ? '#22C55E' : dayPct >= 0.5 ? '#F59E0B' : 'rgba(0,0,0,0.05)', border: isToday ? '1px solid rgba(0,0,0,0.13)' : 'none', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${dayPct * 100}%`, background: dayPct >= 0.8 ? '#22C55E' : dayPct >= 0.5 ? '#F59E0B' : '#6366F1', opacity: 0.5 }} />
+                  <div style={{ height: 28, width: '100%', borderRadius: 6, background: dayPct >= 0.8 ? '#576038' : dayPct >= 0.5 ? '#F59E0B' : 'rgba(0,0,0,0.05)', border: isToday ? '1px solid rgba(0,0,0,0.13)' : 'none', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${dayPct * 100}%`, background: dayPct >= 0.8 ? '#576038' : dayPct >= 0.5 ? '#F59E0B' : '#576038', opacity: 0.5 }} />
                   </div>
                   <span style={{ fontSize: '0.55rem', fontWeight: 700, color: isToday ? 'var(--text-secondary)' : 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     {['M','T','W','T','F','S','S'][new Date(date).getDay() === 0 ? 6 : new Date(date).getDay() - 1]}
@@ -336,15 +336,15 @@ export const Habits: React.FC = () => {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
         <div style={{
           margin: '0 0 20px 0',
-          background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%)',
-          border: `1px solid ${affirmationDone ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.2)'}`,
+          background: 'linear-gradient(135deg, rgba(87,96,56,0.10) 0%, rgba(194,203,154,0.08) 100%)',
+          border: `1px solid ${affirmationDone ? 'rgba(87,96,56,0.30)' : 'rgba(87,96,56,0.20)'}`,
           borderRadius: 20, padding: '16px',
           transition: 'all 0.3s',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Sparkles size={13} color={affirmationDone ? '#22C55E' : '#8B5CF6'} />
-              <span style={{ fontSize: '0.6rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: affirmationDone ? '#22C55E' : 'rgba(139,92,246,0.8)' }}>
+              <Sparkles size={13} color={affirmationDone ? '#576038' : '#8B9467'} />
+              <span style={{ fontSize: '0.6rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: affirmationDone ? '#576038' : 'rgba(87,96,56,0.8)' }}>
                 Daily Affirmation
               </span>
             </div>
@@ -372,8 +372,8 @@ export const Habits: React.FC = () => {
             }}
             style={{
               width: '100%', padding: '10px', borderRadius: 12, border: 'none', cursor: 'pointer',
-              background: affirmationDone ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
-              color: affirmationDone ? '#22C55E' : 'rgba(139,92,246,0.9)',
+              background: affirmationDone ? 'rgba(87,96,56,0.12)' : 'rgba(87,96,56,0.12)',
+              color: affirmationDone ? '#576038' : 'rgba(87,96,56,0.9)',
               fontWeight: 800, fontSize: '0.82rem',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               transition: 'all 0.2s',
@@ -397,7 +397,7 @@ export const Habits: React.FC = () => {
             <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
               {(['nutrition', 'training', 'sleep', 'wellness'] as const).map(cat => (
                 <button key={cat} onClick={() => setNewCat(cat)}
-                  style={{ flex: 1, padding: '6px 4px', borderRadius: 8, border: 'none', fontSize: '0.62rem', fontWeight: 700, textTransform: 'capitalize', cursor: 'pointer', background: newCat === cat ? '#6366F1' : 'rgba(0,0,0,0.05)', color: newCat === cat ? 'white' : 'var(--text-tertiary)' }}>
+                  style={{ flex: 1, padding: '6px 4px', borderRadius: 8, border: 'none', fontSize: '0.62rem', fontWeight: 700, textTransform: 'capitalize', cursor: 'pointer', background: newCat === cat ? '#576038' : 'rgba(0,0,0,0.05)', color: newCat === cat ? 'white' : 'var(--text-tertiary)' }}>
                   {cat}
                 </button>
               ))}

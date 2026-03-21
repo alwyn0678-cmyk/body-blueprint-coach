@@ -22,7 +22,7 @@ const C = {
   bgPrimary:    'var(--bg-primary)',
   bgCard:       'var(--bg-card)',
   bgElevated:   'var(--bg-elevated)',
-  accentBlue:   '#3B82F6',
+  accentBlue:   '#576038',
   accentGreen:  '#16A34A',
   accentOrange: '#EA8C3A',
   accentRed:    '#DC2626',
@@ -751,9 +751,9 @@ export const Settings: React.FC = () => {
                 }}
                 style={{
                   padding: '10px 16px', borderRadius: 12,
-                  background: claudeKeySaved ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)',
-                  border: `1px solid ${claudeKeySaved ? 'rgba(34,197,94,0.3)' : 'rgba(99,102,241,0.3)'}`,
-                  color: claudeKeySaved ? '#22C55E' : '#6366F1',
+                  background: claudeKeySaved ? 'rgba(87,96,56,0.15)' : 'rgba(87,96,56,0.10)',
+                  border: `1px solid ${claudeKeySaved ? 'rgba(87,96,56,0.35)' : 'rgba(87,96,56,0.25)'}`,
+                  color: claudeKeySaved ? '#576038' : '#576038',
                   fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0,
                 }}
               >
@@ -1296,7 +1296,7 @@ const ProfileEditSheet: React.FC<{
             style={{
               width: '100%',
               padding: '0.9rem',
-              background: saveState === 'saved' ? '#22C55E' : isValid ? '#4F46E5' : 'var(--bg-elevated)',
+              background: saveState === 'saved' ? '#576038' : isValid ? '#576038' : 'var(--bg-elevated)',
               color: saveState === 'saved' ? '#fff' : isValid ? '#fff' : 'var(--text-muted)',
               border: 'none',
               borderRadius: 14,
