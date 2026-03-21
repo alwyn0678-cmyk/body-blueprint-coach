@@ -582,30 +582,30 @@ button:focus:not(:focus-visible) { outline: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   NAVIGATION — Floating pill bar
+   NAVIGATION — Floating glass pill bar (iOS 18 style)
    ═══════════════════════════════════════════════════════════════════ */
 .nav-bar {
   position: fixed; bottom: 0;
   left: 50%; transform: translateX(-50%);
   width: 100%; max-width: 480px;
-  padding: 0 1rem;
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding: 0 0.875rem;
+  padding-bottom: max(1.1rem, env(safe-area-inset-bottom));
   z-index: 45; pointer-events: none;
 }
 
 .nav-pill {
-  background: rgba(255,255,255,0.98);
-  backdrop-filter: blur(40px) saturate(2);
-  -webkit-backdrop-filter: blur(40px) saturate(2);
-  border: 1px solid rgba(0,0,0,0.09);
-  border-radius: 26px;
-  padding: 5px;
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(48px) saturate(2.2) brightness(1.08);
+  -webkit-backdrop-filter: blur(48px) saturate(2.2) brightness(1.08);
+  border: 1px solid rgba(255,255,255,0.9);
+  border-radius: 28px;
+  padding: 5px 4px;
   display: flex; justify-content: space-around; align-items: center;
   box-shadow:
-    0 8px 32px rgba(0,0,0,0.14),
-    0 2px 8px rgba(0,0,0,0.08),
-    0 0 0 1px rgba(0,0,0,0.04),
-    inset 0 1px 0 rgba(255,255,255,0.9);
+    0 12px 40px rgba(0,0,0,0.18),
+    0 4px 12px rgba(0,0,0,0.10),
+    0 1px 0 rgba(255,255,255,0.95) inset,
+    0 -1px 0 rgba(0,0,0,0.06) inset;
   pointer-events: auto;
 }
 
@@ -617,29 +617,38 @@ button:focus:not(:focus-visible) { outline: none; }
 .nav-item-inner {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 3px; padding: 7px 6px;
-  border-radius: 16px;
-  min-width: 44px; position: relative;
-  transition: background var(--transition-micro), transform 120ms ease;
+  gap: 3px; padding: 8px 6px;
+  border-radius: 18px;
+  min-width: 46px; position: relative;
+  transition: background 150ms ease, transform 120ms ease, box-shadow 150ms ease;
 }
 .nav-item-inner.active {
-  background: rgba(0,0,0,0.06);
+  background: rgba(255,255,255,0.92);
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.12),
+    0 1px 0 rgba(255,255,255,1) inset;
 }
-.nav-item-inner:active { transform: scale(0.92); }
+.nav-item-inner:active { transform: scale(0.90); }
 
 .nav-item-icon-wrap {
-  width: 34px; height: 30px; border-radius: 10px;
+  width: 34px; height: 28px; border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
-  position: relative; transition: transform var(--transition-micro);
+  position: relative; transition: transform 150ms ease;
 }
-.nav-item-inner.active .nav-item-icon-wrap { transform: scale(1.05); }
+.nav-item-inner.active .nav-item-icon-wrap { transform: scale(1.08); }
 
 .nav-item-icon {
-  transition: color var(--transition-micro), opacity var(--transition-micro);
+  transition: color 150ms ease, opacity 150ms ease;
+  filter: drop-shadow(0 0 0 transparent);
+}
+.nav-item-inner.active .nav-item-icon {
+  filter: drop-shadow(0 0 6px currentColor);
+  opacity: 0.9;
 }
 .nav-label {
-  font-size: 9px; letter-spacing: 0.02em; line-height: 1;
-  transition: color var(--transition-micro), opacity var(--transition-micro);
+  font-size: 9.5px; letter-spacing: 0.01em; line-height: 1;
+  font-weight: 600;
+  transition: color 150ms ease, opacity 150ms ease;
 }
 
 /* ═══════════════════════════════════════════════════════════════════

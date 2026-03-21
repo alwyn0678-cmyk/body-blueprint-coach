@@ -3,12 +3,12 @@ import { NavLink } from 'react-router-dom';
 import { Home, PlusCircle, BarChart2, Dumbbell, Brain, CheckSquare, Settings } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { to: '/',         Icon: Home,        label: 'Home',     activeColor: '#22C55E' },
-  { to: '/log',      Icon: PlusCircle,  label: 'Log',      activeColor: '#22C55E' },
+  { to: '/',         Icon: Home,        label: 'Home',     activeColor: '#16A34A' },
+  { to: '/log',      Icon: PlusCircle,  label: 'Log',      activeColor: '#16A34A' },
   { to: '/training', Icon: Dumbbell,    label: 'Train',    activeColor: '#3B82F6' },
-  { to: '/coach',    Icon: Brain,       label: 'Coach',    activeColor: '#6366F1' },
-  { to: '/habits',   Icon: CheckSquare, label: 'Habits',   activeColor: '#A855F7' },
-  { to: '/progress', Icon: BarChart2,   label: 'Progress', activeColor: '#F59E0B' },
+  { to: '/coach',    Icon: Brain,       label: 'Coach',    activeColor: '#4F46E5' },
+  { to: '/habits',   Icon: CheckSquare, label: 'Habits',   activeColor: '#7C3AED' },
+  { to: '/progress', Icon: BarChart2,   label: 'Progress', activeColor: '#D97706' },
 ];
 
 export const Header: React.FC = () => {
@@ -20,18 +20,19 @@ export const Header: React.FC = () => {
             {({ isActive }) => (
               <div className={`nav-item-inner${isActive ? ' active' : ''}`}>
                 <div className="nav-item-icon-wrap" style={{
-                  background: isActive ? `${activeColor}18` : 'transparent',
+                  background: isActive ? `${activeColor}15` : 'transparent',
                 }}>
                   <Icon
-                    size={19}
-                    strokeWidth={isActive ? 2.2 : 1.7}
-                    color={isActive ? activeColor : 'rgba(0,0,0,0.24)'}
+                    size={20}
+                    strokeWidth={isActive ? 2.3 : 1.6}
+                    color={isActive ? activeColor : 'rgba(0,0,0,0.22)'}
                     className="nav-item-icon"
                   />
                 </div>
                 <span className="nav-label" style={{
                   fontWeight: isActive ? 800 : 500,
-                  color: isActive ? activeColor : 'rgba(0,0,0,0.20)',
+                  color: isActive ? activeColor : 'rgba(0,0,0,0.22)',
+                  letterSpacing: isActive ? '-0.01em' : '0.01em',
                 }}>
                   {label}
                 </span>
