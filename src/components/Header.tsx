@@ -3,12 +3,12 @@ import { NavLink } from 'react-router-dom';
 import { Home, PlusCircle, BarChart2, Dumbbell, Brain, CheckSquare, Settings } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { to: '/',         Icon: Home,        label: 'Home',     activeColor: '#16A34A' },
-  { to: '/log',      Icon: PlusCircle,  label: 'Log',      activeColor: '#16A34A' },
-  { to: '/training', Icon: Dumbbell,    label: 'Train',    activeColor: '#3B82F6' },
-  { to: '/coach',    Icon: Brain,       label: 'Coach',    activeColor: '#4F46E5' },
-  { to: '/habits',   Icon: CheckSquare, label: 'Habits',   activeColor: '#7C3AED' },
-  { to: '/progress', Icon: BarChart2,   label: 'Progress', activeColor: '#D97706' },
+  { to: '/',         Icon: Home,        label: 'Home',     activeColor: '#576038' },
+  { to: '/log',      Icon: PlusCircle,  label: 'Log',      activeColor: '#576038' },
+  { to: '/training', Icon: Dumbbell,    label: 'Train',    activeColor: '#974400' },
+  { to: '/coach',    Icon: Brain,       label: 'Coach',    activeColor: '#3E4528' },
+  { to: '/habits',   Icon: CheckSquare, label: 'Habits',   activeColor: '#974400' },
+  { to: '/progress', Icon: BarChart2,   label: 'Progress', activeColor: '#8B9467' },
 ];
 
 export const Header: React.FC = () => {
