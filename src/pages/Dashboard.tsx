@@ -18,9 +18,9 @@ const todayStr = () => new Date().toISOString().split('T')[0];
 const fmtNum = (n: number, dp = 0): string =>
   n.toLocaleString('en-AU', { maximumFractionDigits: dp, minimumFractionDigits: dp });
 
-// ─── Vitality Ring ────────────────────────────────────────────────────────────
+// ─── Evolved Ring ────────────────────────────────────────────────────────────
 
-const VitalityRing: React.FC<{ score: number }> = ({ score }) => {
+const EvolvedRing: React.FC<{ score: number }> = ({ score }) => {
   const R = 120;
   const circ = 2 * Math.PI * R;
   const pct = Math.min(score / 100, 1);
@@ -56,7 +56,7 @@ const VitalityRing: React.FC<{ score: number }> = ({ score }) => {
           fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.2em',
           textTransform: 'uppercase', color: 'var(--text-tertiary)', marginTop: 6,
         }}>
-          Daily Vitality
+          Daily Evolved
         </div>
       </div>
     </div>
@@ -170,8 +170,8 @@ export const Dashboard: React.FC = () => {
   const stepsTarget = user.stepsTarget ?? 8000;
   const units = state.settings.units;
 
-  // Vitality score: weighted average of adherence metrics (0–100)
-  const vitalityScore = useMemo(() => {
+  // Evolved score: weighted average of adherence metrics (0–100)
+  const evolvedScore = useMemo(() => {
     const calAdherence = Math.min(totals.calories / Math.max(user.targets.calories, 1), 1);
     const proAdherence = Math.min(totals.protein / Math.max(user.targets.protein, 1), 1);
     const stepsAdherence = Math.min(steps / Math.max(stepsTarget, 1), 1);
@@ -205,12 +205,12 @@ export const Dashboard: React.FC = () => {
         paddingLeft: 24, paddingRight: 24,
       }}>
 
-        {/* ── Vitality Ring Hero ── */}
+        {/* ── Evolved Ring Hero ── */}
         <motion.section
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
           style={{ paddingTop: 32, paddingBottom: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
         >
-          <VitalityRing score={vitalityScore} />
+          <EvolvedRing score={evolvedScore} />
 
           {/* Streaks below ring */}
           <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
