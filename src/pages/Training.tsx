@@ -2186,6 +2186,39 @@ export const Training: React.FC = () => {
           </div>
         </div>
 
+        {/* AI Coach card */}
+        <button
+          onClick={() => setShowAIBuilder(true)}
+          style={{
+            width: '100%', padding: '16px 20px',
+            background: 'var(--bg-card)',
+            border: '1px solid rgba(87,96,56,0.18)', borderRadius: 20,
+            cursor: 'pointer', textAlign: 'left',
+            display: 'flex', alignItems: 'center', gap: 14,
+          }}
+          onPointerDown={e => (e.currentTarget.style.transform = 'scale(0.99)')}
+          onPointerUp={e => (e.currentTarget.style.transform = 'scale(1)')}
+          onPointerLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+        >
+          <div style={{
+            width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+            background: 'linear-gradient(135deg, rgba(87,96,56,0.14), rgba(87,96,56,0.08))',
+            border: '1px solid rgba(87,96,56,0.22)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Sparkles size={20} color="#576038" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1rem', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              AI Coach
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.35)', fontWeight: 600, marginTop: 2 }}>
+              Build a custom workout based on your goals
+            </div>
+          </div>
+          <ChevronDown size={16} color="rgba(0,0,0,0.20)" style={{ transform: 'rotate(-90deg)' }} />
+        </button>
+
         {/* Week progress */}
         <div style={{
           background: 'var(--bg-card)',
