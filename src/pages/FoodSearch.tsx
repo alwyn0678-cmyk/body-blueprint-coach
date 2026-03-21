@@ -19,30 +19,30 @@ const SkeletonFoodRow: React.FC = () => (
   <div style={{
     display: 'flex', alignItems: 'center',
     padding: '0.85rem 0.75rem',
-    borderBottom: '1px solid rgba(255,255,255,0.04)',
+    borderBottom: '1px solid rgba(0,0,0,0.04)',
     gap: '12px',
   }}>
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '7px' }}>
       <div style={{
         height: '13px', borderRadius: '7px', width: '62%',
-        backgroundColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: 'rgba(0,0,0,0.08)',
         animation: 'fsSkPulse 1.4s ease-in-out infinite',
       }} />
       <div style={{
         height: '10px', borderRadius: '5px', width: '38%',
-        backgroundColor: 'rgba(255,255,255,0.05)',
+        backgroundColor: 'rgba(0,0,0,0.05)',
         animation: 'fsSkPulse 1.4s ease-in-out infinite 0.2s',
       }} />
     </div>
     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
       <div style={{
         height: '20px', width: '36px', borderRadius: '6px',
-        backgroundColor: 'rgba(255,255,255,0.06)',
+        backgroundColor: 'rgba(0,0,0,0.06)',
         animation: 'fsSkPulse 1.4s ease-in-out infinite 0.15s',
       }} />
       <div style={{
         height: '28px', width: '28px', borderRadius: '50%',
-        backgroundColor: 'rgba(255,255,255,0.06)',
+        backgroundColor: 'rgba(0,0,0,0.06)',
         animation: 'fsSkPulse 1.4s ease-in-out infinite 0.1s',
       }} />
     </div>
@@ -55,7 +55,7 @@ const sectionLabelStyle: React.CSSProperties = {
   fontWeight: 800,
   textTransform: 'uppercase',
   letterSpacing: '0.1em',
-  color: 'rgba(255,255,255,0.3)',
+  color: 'rgba(0,0,0,0.28)',
 };
 
 export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCancel }) => {
@@ -302,8 +302,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
     width: '100%',
     padding: '0.85rem 1rem',
     borderRadius: '14px',
-    border: '1px solid rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(0,0,0,0.10)',
+    backgroundColor: 'rgba(0,0,0,0.05)',
     color: 'var(--text-primary)',
     fontSize: '0.95rem',
     fontWeight: 500,
@@ -327,7 +327,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0.85rem 0.75rem',
-          borderBottom: '1px solid rgba(255,255,255,0.04)',
+          borderBottom: '1px solid rgba(0,0,0,0.04)',
           cursor: 'pointer',
           transition: 'background 0.15s',
         }}
@@ -344,14 +344,14 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             {f.source === 'custom' && (
               <span style={{
                 fontSize: '0.55rem', fontWeight: 800, color: '#a78bfa',
-                backgroundColor: 'rgba(167,139,250,0.12)',
+                backgroundColor: 'rgba(87,96,56,0.10)',
                 padding: '1px 5px', borderRadius: '4px', flexShrink: 0,
               }}>CUSTOM</span>
             )}
           </div>
           <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 600, display: 'block', marginTop: '2px' }}>
             {f.brand ? `${f.brand} · ` : ''}{f.servingSize}{f.servingUnit}
-            {isApi && <span style={{ color: 'rgba(10,132,255,0.65)', marginLeft: '4px' }}>· online</span>}
+            {isApi && <span style={{ color: 'rgba(87,96,56,0.60)', marginLeft: '4px' }}>· online</span>}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
@@ -359,7 +359,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             <span style={{ fontVariantNumeric: 'tabular-nums', fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', display: 'block' }}>
               {Math.round(f.calories)}
             </span>
-            <span style={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.28)', fontWeight: 700, letterSpacing: '0.04em' }}>KCAL</span>
+            <span style={{ fontSize: '0.52rem', color: 'rgba(0,0,0,0.30)', fontWeight: 700, letterSpacing: '0.04em' }}>KCAL</span>
           </div>
           {f.protein > 0 && (
             <span style={{
@@ -377,7 +377,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             onClick={e => { e.stopPropagation(); toggleFavoriteFood(f); }}
             style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex' }}
           >
-            <Heart size={14} color={isFav ? 'var(--accent-red)' : 'rgba(255,255,255,0.2)'} fill={isFav ? 'var(--accent-red)' : 'none'} />
+            <Heart size={14} color={isFav ? 'var(--accent-red)' : 'rgba(0,0,0,0.20)'} fill={isFav ? 'var(--accent-red)' : 'none'} />
           </button>
           <button
             onClick={e => handleQuickAdd(f, e)}
@@ -410,15 +410,15 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '1rem 1.25rem',
           paddingTop: 'calc(1rem + env(safe-area-inset-top))',
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          borderBottom: '1px solid rgba(0,0,0,0.07)',
           flexShrink: 0,
         }}>
           <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>Create Food</span>
           <button
             onClick={() => { setShowCustomForm(false); resetCustomForm(); }}
             style={{
-              background: 'rgba(255,255,255,0.07)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(0,0,0,0.07)',
+              border: '1px solid rgba(0,0,0,0.10)',
               borderRadius: '50%', width: 32, height: 32,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#fff', cursor: 'pointer',
@@ -444,7 +444,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             />
           </div>
           <div>
-            <label style={formLabelStyle}>Brand <span style={{ color: 'rgba(255,255,255,0.2)', fontWeight: 400, textTransform: 'none' }}>(optional)</span></label>
+            <label style={formLabelStyle}>Brand <span style={{ color: 'rgba(0,0,0,0.20)', fontWeight: 400, textTransform: 'none' }}>(optional)</span></label>
             <input
               type="text" placeholder="e.g. Homemade"
               value={customBrand} onChange={e => setCustomBrand(e.target.value)}
@@ -506,7 +506,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
           padding: '1rem 1.25rem',
           paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
           backgroundColor: 'rgba(8,8,16,0.92)', backdropFilter: 'blur(12px)',
-          borderTop: '1px solid rgba(255,255,255,0.07)', zIndex: 9006,
+          borderTop: '1px solid rgba(0,0,0,0.07)', zIndex: 9006,
         }}>
           <button
             onClick={handleSaveCustomFood}
@@ -543,9 +543,9 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
           <button
             onClick={() => setSelectedFood(null)}
             style={{
-              background: 'rgba(255,255,255,0.07)', border: 'none', borderRadius: '10px',
+              background: 'rgba(0,0,0,0.07)', border: 'none', borderRadius: '10px',
               display: 'flex', alignItems: 'center', gap: '6px',
-              color: 'rgba(255,255,255,0.6)', padding: '0.5rem 0.85rem',
+              color: 'rgba(0,0,0,0.45)', padding: '0.5rem 0.85rem',
               fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
             }}
           >
@@ -555,7 +555,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             onClick={() => toggleFavoriteFood(selectedFood)}
             style={{ background: 'none', border: 'none', display: 'flex', padding: '0.4rem', cursor: 'pointer' }}
           >
-            <Heart size={22} color={isFav ? 'var(--accent-red)' : 'rgba(255,255,255,0.3)'} fill={isFav ? 'var(--accent-red)' : 'none'} />
+            <Heart size={22} color={isFav ? 'var(--accent-red)' : 'rgba(0,0,0,0.28)'} fill={isFav ? 'var(--accent-red)' : 'none'} />
           </button>
         </div>
 
@@ -573,14 +573,14 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         <div style={{
           background: 'var(--bg-card)',
           borderRadius: '20px',
-          border: '1px solid rgba(255,255,255,0.07)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+          border: '1px solid rgba(0,0,0,0.07)',
+          boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.04)',
           padding: '1.25rem',
           marginBottom: '1.25rem',
         }}>
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
-            borderBottom: '1px solid rgba(255,255,255,0.07)', paddingBottom: '1rem', marginBottom: '1rem',
+            borderBottom: '1px solid rgba(0,0,0,0.07)', paddingBottom: '1rem', marginBottom: '1rem',
           }}>
             <span style={{
               fontSize: '3.5rem', fontWeight: 900, color: 'var(--text-primary)',
@@ -588,7 +588,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             }}>
               {Math.round(selectedFood.calories * mult)}
             </span>
-            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Calories</span>
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'rgba(0,0,0,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Calories</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             {[
@@ -600,22 +600,22 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
                 <span style={{ color: m.color, fontVariantNumeric: 'tabular-nums', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
                   {Math.round(m.value)}g
                 </span>
-                <span style={{ color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginTop: '2px', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.06em' }}>
+                <span style={{ color: 'rgba(0,0,0,0.35)', textTransform: 'uppercase', marginTop: '2px', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.06em' }}>
                   {m.label}
                 </span>
               </div>
             ))}
           </div>
           {(selectedFood.fiber !== undefined || selectedFood.sodium !== undefined) && (
-            <div style={{ display: 'flex', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'flex', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
               {selectedFood.fiber !== undefined && (
-                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
-                  Fiber: <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{Math.round(selectedFood.fiber * mult)}g</strong>
+                <span style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.35)' }}>
+                  Fiber: <strong style={{ color: 'rgba(0,0,0,0.60)' }}>{Math.round(selectedFood.fiber * mult)}g</strong>
                 </span>
               )}
               {selectedFood.sodium !== undefined && (
-                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
-                  Sodium: <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{Math.round(selectedFood.sodium * mult)}mg</strong>
+                <span style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.35)' }}>
+                  Sodium: <strong style={{ color: 'rgba(0,0,0,0.60)' }}>{Math.round(selectedFood.sodium * mult)}mg</strong>
                 </span>
               )}
             </div>
@@ -631,9 +631,9 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             onChange={e => setMeasurementValue(e.target.value)}
             style={{
               width: '100%', padding: '1rem 1.25rem', borderRadius: '14px',
-              border: '1px solid rgba(255,255,255,0.12)',
+              border: '1px solid rgba(0,0,0,0.08)',
               fontSize: '1.6rem', fontWeight: 700, textAlign: 'center',
-              backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff',
+              backgroundColor: 'rgba(0,0,0,0.05)', color: '#fff',
               fontVariantNumeric: 'tabular-nums', outline: 'none', boxSizing: 'border-box',
             }}
           />
@@ -650,9 +650,9 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
                 style={{
                   flex: 1, padding: '0.65rem 0',
                   borderRadius: '12px',
-                  border: `1.5px solid ${measurementUnit === u.val ? 'rgba(59,130,246,0.55)' : 'rgba(255,255,255,0.1)'}`,
-                  backgroundColor: measurementUnit === u.val ? 'rgba(59,130,246,0.14)' : 'rgba(255,255,255,0.04)',
-                  color: measurementUnit === u.val ? '#60A5FA' : 'rgba(255,255,255,0.4)',
+                  border: `1.5px solid ${measurementUnit === u.val ? 'rgba(87,96,56,0.50)' : 'rgba(0,0,0,0.10)'}`,
+                  backgroundColor: measurementUnit === u.val ? 'rgba(87,96,56,0.10)' : 'rgba(0,0,0,0.04)',
+                  color: measurementUnit === u.val ? '#576038' : 'rgba(0,0,0,0.35)',
                   fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
@@ -669,7 +669,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             marginTop: 'auto', padding: '1.25rem', width: '100%',
             fontSize: '1rem', fontWeight: 800, borderRadius: '20px',
             backgroundColor: 'var(--accent-blue)', color: '#fff',
-            boxShadow: '0 8px 24px rgba(10,132,255,0.3)', border: 'none',
+            boxShadow: '0 8px 24px rgba(87,96,56,0.30)', border: 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
             cursor: 'pointer',
           }}
@@ -692,14 +692,14 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         }}>
           <div style={{
             width: 64, height: 64, borderRadius: '50%',
-            backgroundColor: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            backgroundColor: 'rgba(0,0,0,0.05)',
+            border: '1px solid rgba(0,0,0,0.10)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem',
           }}>
-            <Camera size={28} color="rgba(255,255,255,0.3)" />
+            <Camera size={28} color="rgba(0,0,0,0.28)" />
           </div>
           <h3 style={{ fontSize: '1rem', fontWeight: 800, textAlign: 'center', marginBottom: '0.5rem' }}>Camera not available on this device</h3>
-          <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '0.82rem', color: 'rgba(0,0,0,0.38)', textAlign: 'center', marginBottom: '1.5rem', lineHeight: 1.5 }}>
             Enter the barcode number manually below
           </p>
           <div style={{ width: '100%', maxWidth: '360px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -712,8 +712,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
               className="input-field"
               style={{
                 padding: '0.85rem 1rem',
-                backgroundColor: 'rgba(255,255,255,0.07)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                backgroundColor: 'rgba(0,0,0,0.07)',
+                border: '1px solid rgba(0,0,0,0.08)',
                 borderRadius: '14px', color: '#fff',
                 fontSize: '1rem', fontWeight: 600, outline: 'none',
               }}
@@ -734,7 +734,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
           </div>
           <button
             onClick={closeScanner}
-            style={{ marginTop: '1.5rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}
+            style={{ marginTop: '1.5rem', background: 'none', border: 'none', color: 'rgba(0,0,0,0.35)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer' }}
           >
             Cancel
           </button>
@@ -759,7 +759,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             <Camera size={28} color="var(--accent-orange)" />
           </div>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 800, textAlign: 'center', marginBottom: '0.5rem' }}>Camera access required</h3>
-          <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginBottom: '1.75rem', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '0.82rem', color: 'rgba(0,0,0,0.38)', textAlign: 'center', marginBottom: '1.75rem', lineHeight: 1.5 }}>
             Allow camera permission in Settings, then tap retry
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '320px' }}>
@@ -777,7 +777,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
               onClick={() => setShowManualBarcode(true)}
               style={{
                 background: 'none', border: 'none',
-                color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem', fontWeight: 600,
+                color: 'rgba(0,0,0,0.40)', fontSize: '0.82rem', fontWeight: 600,
                 cursor: 'pointer', padding: '0.5rem',
               }}
             >
@@ -796,8 +796,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
                 className="input-field"
                 style={{
                   padding: '0.75rem 1rem',
-                  backgroundColor: 'rgba(255,255,255,0.07)',
-                  border: '1px solid rgba(255,255,255,0.12)',
+                  backgroundColor: 'rgba(0,0,0,0.07)',
+                  border: '1px solid rgba(0,0,0,0.08)',
                   borderRadius: '12px', color: '#fff',
                   fontSize: '0.95rem', fontWeight: 600, outline: 'none',
                 }}
@@ -807,8 +807,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
                 disabled={!manualBarcodeInput.trim() || manualBarcodeLookingUp}
                 style={{
                   padding: '0.75rem',
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  border: '1px solid rgba(255,255,255,0.12)',
+                  backgroundColor: 'rgba(0,0,0,0.10)',
+                  border: '1px solid rgba(0,0,0,0.08)',
                   borderRadius: '12px', color: '#fff', fontWeight: 700, fontSize: '0.85rem',
                   opacity: manualBarcodeInput.trim() && !manualBarcodeLookingUp ? 1 : 0.4,
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
@@ -820,7 +820,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
           )}
           <button
             onClick={closeScanner}
-            style={{ marginTop: '1.5rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
+            style={{ marginTop: '1.5rem', background: 'none', border: 'none', color: 'rgba(0,0,0,0.28)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
           >
             Cancel
           </button>
@@ -850,8 +850,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
           <button
             onClick={closeScanner}
             style={{
-              background: 'rgba(255,255,255,0.08)',
-              borderRadius: '50%', border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(0,0,0,0.08)',
+              borderRadius: '50%', border: '1px solid rgba(0,0,0,0.08)',
               width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#fff', cursor: 'pointer',
             }}
@@ -894,7 +894,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
               </span>
             )}
             {(scanStatus === 'scanning' || scanStatus === 'idle') && (
-              <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600, backgroundColor: 'rgba(0,0,0,0.65)', padding: '0.4rem 1rem', borderRadius: '20px' }}>
+              <span style={{ fontSize: '0.8rem', color: 'rgba(0,0,0,0.70)', fontWeight: 600, backgroundColor: 'rgba(0,0,0,0.65)', padding: '0.4rem 1rem', borderRadius: '20px' }}>
                 Point camera at barcode
               </span>
             )}
@@ -905,9 +905,9 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         <div style={{
           padding: '1rem 1.25rem',
           paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
-          borderTop: '1px solid rgba(255,255,255,0.07)',
+          borderTop: '1px solid rgba(0,0,0,0.07)',
         }}>
-          <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, marginBottom: '8px', textAlign: 'center', letterSpacing: '0.04em' }}>
+          <p style={{ fontSize: '0.68rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600, marginBottom: '8px', textAlign: 'center', letterSpacing: '0.04em' }}>
             Or enter barcode manually
           </p>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -920,8 +920,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
               className="input-field"
               style={{
                 flex: 1, padding: '0.75rem 1rem',
-                backgroundColor: 'rgba(255,255,255,0.07)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                backgroundColor: 'rgba(0,0,0,0.07)',
+                border: '1px solid rgba(0,0,0,0.08)',
                 borderRadius: '12px', color: '#fff',
                 fontSize: '0.95rem', fontWeight: 600, outline: 'none',
               }}
@@ -970,17 +970,17 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '1rem 1rem 0.75rem',
         paddingTop: 'calc(0.75rem + env(safe-area-inset-top))',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        borderBottom: '1px solid rgba(0,0,0,0.06)',
         flexShrink: 0,
       }}>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Search Food</h2>
         <button
           onClick={onCancel}
           style={{
-            background: 'rgba(255,255,255,0.07)', border: 'none',
+            background: 'rgba(0,0,0,0.07)', border: 'none',
             borderRadius: '50%', width: 32, height: 32,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 700,
+            color: 'rgba(0,0,0,0.45)', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 700,
           }}
         >
           <X size={16} />
@@ -1003,8 +1003,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
               padding: '6px 14px',
               borderRadius: '99px',
               border: 'none',
-              backgroundColor: tab === t.id ? '#ffffff' : 'rgba(255,255,255,0.07)',
-              color: tab === t.id ? '#000' : 'rgba(255,255,255,0.5)',
+              backgroundColor: tab === t.id ? '#ffffff' : 'rgba(0,0,0,0.07)',
+              color: tab === t.id ? '#000' : 'rgba(0,0,0,0.40)',
               fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
               whiteSpace: 'nowrap', flexShrink: 0,
               transition: 'background 0.15s, color 0.15s',
@@ -1021,7 +1021,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
           <div style={{ position: 'relative' }}>
             <Search
               size={16}
-              style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.35)', pointerEvents: 'none' }}
+              style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(0,0,0,0.30)', pointerEvents: 'none' }}
             />
             <input
               type="text"
@@ -1032,8 +1032,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
               style={{
                 width: '100%', padding: '0.9rem 2.8rem 0.9rem 2.75rem',
                 borderRadius: '14px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                backgroundColor: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(0,0,0,0.10)',
+                backgroundColor: 'rgba(0,0,0,0.05)',
                 color: '#fff', fontSize: '0.95rem', fontWeight: 500,
                 outline: 'none', boxSizing: 'border-box',
               }}
@@ -1060,7 +1060,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
             <AlertTriangle size={13} color="var(--accent-orange)" style={{ flexShrink: 0 }} />
-            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'rgba(255,255,255,0.65)', lineHeight: 1.35 }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'rgba(0,0,0,0.50)', lineHeight: 1.35 }}>
               Live search unavailable — showing local results only.
             </span>
           </div>
@@ -1086,7 +1086,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         {/* ── RECENT TAB ── */}
         {tab === 'recent' && (
           recentFoodItems.length === 0 ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.25)' }}>
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(0,0,0,0.25)' }}>
               <Clock size={28} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
               <p style={{ fontSize: '0.85rem' }}>No recent foods yet. Log some food to see them here.</p>
             </div>
@@ -1094,12 +1094,12 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px 6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Clock size={12} color="rgba(255,255,255,0.3)" />
+                  <Clock size={12} color="rgba(0,0,0,0.28)" />
                   <span style={sectionLabelStyle}>Recently Logged</span>
                 </div>
                 {showClearConfirm ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)' }}>Clear recent foods?</span>
+                    <span style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.40)' }}>Clear recent foods?</span>
                     <button
                       onClick={() => { clearRecentFoods(); setShowClearConfirm(false); }}
                       style={{ background: 'rgba(255,69,58,0.15)', border: '1px solid rgba(255,69,58,0.3)', borderRadius: '6px', color: 'var(--accent-red)', fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', cursor: 'pointer' }}
@@ -1108,7 +1108,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
                     </button>
                     <button
                       onClick={() => setShowClearConfirm(false)}
-                      style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', cursor: 'pointer' }}
+                      style={{ background: 'none', border: 'none', color: 'rgba(0,0,0,0.28)', fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', cursor: 'pointer' }}
                     >
                       Cancel
                     </button>
@@ -1116,7 +1116,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
                 ) : (
                   <button
                     onClick={() => setShowClearConfirm(true)}
-                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', cursor: 'pointer', textDecoration: 'underline' }}
+                    style={{ background: 'none', border: 'none', color: 'rgba(0,0,0,0.28)', fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', cursor: 'pointer', textDecoration: 'underline' }}
                   >
                     Clear recent
                   </button>
@@ -1130,7 +1130,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         {/* ── FAVOURITES TAB ── */}
         {tab === 'favorites' && (
           favoriteFoodItems.length === 0 ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.25)' }}>
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(0,0,0,0.25)' }}>
               <Heart size={28} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
               <p style={{ fontSize: '0.85rem' }}>No saved foods yet. Tap the heart icon on any food to save it.</p>
             </div>
@@ -1155,10 +1155,10 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
                 display: 'flex', alignItems: 'center', gap: '10px',
                 width: 'calc(100% - 24px)', margin: '0 12px 8px',
                 padding: '0.75rem 0.875rem',
-                backgroundColor: 'rgba(255,255,255,0.03)',
-                border: '1px dashed rgba(255,255,255,0.1)',
+                backgroundColor: 'rgba(0,0,0,0.03)',
+                border: '1px dashed rgba(0,0,0,0.10)',
                 borderRadius: '12px',
-                color: 'rgba(255,255,255,0.4)', cursor: 'pointer',
+                color: 'rgba(0,0,0,0.35)', cursor: 'pointer',
                 fontSize: '0.82rem', fontWeight: 600,
                 boxSizing: 'border-box',
               }}
@@ -1180,7 +1180,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             {localResults.length > 0 && (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px 4px' }}>
-                  <Database size={11} color="rgba(255,255,255,0.3)" />
+                  <Database size={11} color="rgba(0,0,0,0.28)" />
                   <span style={sectionLabelStyle}>{query ? 'Local Database' : 'Frequently Logged'}</span>
                 </div>
                 {localResults.map(f => renderFoodRow(f, false))}
@@ -1192,7 +1192,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
               <div style={{ marginTop: localResults.length > 0 ? '12px' : 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px 4px' }}>
                   <Globe size={11} color={apiError ? 'var(--accent-orange)' : 'var(--accent-blue)'} />
-                  <span style={{ ...sectionLabelStyle, color: apiError ? 'var(--accent-orange)' : 'rgba(255,255,255,0.3)' }}>
+                  <span style={{ ...sectionLabelStyle, color: apiError ? 'var(--accent-orange)' : 'rgba(0,0,0,0.28)' }}>
                     {apiError ? 'Online Unavailable' : 'Online Database'}
                   </span>
                   {isApiLoading && (
@@ -1210,7 +1210,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
                 )}
 
                 {!isApiLoading && !apiError && deduplicatedApi.length === 0 && localResults.length === 0 && query.length >= 2 && (
-                  <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'rgba(255,255,255,0.3)' }}>
+                  <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'rgba(0,0,0,0.28)' }}>
                     <Search size={28} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
                     <p style={{ fontSize: '0.88rem', fontWeight: 600, marginBottom: '4px' }}>No results for "{query}"</p>
                     <p style={{ fontSize: '0.75rem', opacity: 0.7 }}>Try a shorter search or scan the barcode</p>
@@ -1218,7 +1218,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
                 )}
 
                 {!isApiLoading && !apiError && deduplicatedApi.length === 0 && localResults.length > 0 && query.length >= 2 && (
-                  <div style={{ padding: '1rem', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '0.8rem' }}>
+                  <div style={{ padding: '1rem', textAlign: 'center', color: 'rgba(0,0,0,0.25)', fontSize: '0.8rem' }}>
                     No additional online results
                   </div>
                 )}
@@ -1229,7 +1229,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
 
             {/* Empty state */}
             {query.length >= 2 && !isApiLoading && localResults.length === 0 && deduplicatedApi.length === 0 && !apiError && (
-              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'rgba(255,255,255,0.3)' }}>
+              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'rgba(0,0,0,0.28)' }}>
                 <Search size={28} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
                 <p style={{ fontSize: '0.88rem', fontWeight: 600, marginBottom: '4px' }}>No results for "{query}"</p>
                 <p style={{ fontSize: '0.75rem', opacity: 0.7 }}>Try a shorter search or scan the barcode</p>

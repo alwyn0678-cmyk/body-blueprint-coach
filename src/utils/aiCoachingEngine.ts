@@ -160,7 +160,7 @@ export const computeEarnedBadges = (
     }
     pd.setDate(pd.getDate() - 1);
   }
-  if (proteinStreak >= 7) badges.push({ id: 'protein_7', label: 'Protein Locked', description: '7 days hitting protein target', icon: '🥩', color: '#F59E0B' });
+  if (proteinStreak >= 7) badges.push({ id: 'protein_7', label: 'Protein Locked', description: '7 days hitting protein target', icon: '🥩', color: '#974400' });
 
   return badges;
 };

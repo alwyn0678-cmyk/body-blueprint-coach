@@ -643,7 +643,7 @@ export const Coach: React.FC = () => {
 
                   {/* Stalled exercises */}
                   {progressionSuggestions.filter(s => s.type === 'deload').length > 0 && (
-                    <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)', marginBottom: 8 }}>
+                    <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(87,96,56,0.06)', border: '1px solid rgba(87,96,56,0.15)', marginBottom: 8 }}>
                       <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#974400', marginBottom: 5 }}>Stalled — Consider Deload</div>
                       {progressionSuggestions.filter(s => s.type === 'deload').slice(0, 2).map(s => (
                         <div key={s.exerciseId} style={{ fontSize: '0.73rem', color: 'var(--text-primary)', marginBottom: 3 }}>

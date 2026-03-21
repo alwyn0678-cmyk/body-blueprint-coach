@@ -81,8 +81,8 @@ const HabitRow: React.FC<{
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {streak > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                <Flame size={10} color="#F59E0B" />
-                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#F59E0B' }}>{streak}d streak</span>
+                <Flame size={10} color="#974400" />
+                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#974400' }}>{streak}d streak</span>
               </div>
             )}
             <span style={{ fontSize: '0.62rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'capitalize' }}>
@@ -152,8 +152,8 @@ const HealthMetricsCard: React.FC = () => {
     { key: 'recoveryScore', label: 'Recovery', value: health.recoveryScore ? `${health.recoveryScore}/100` : '—', icon: <Activity size={13} color="#576038" />, color: '#576038', inputType: 'number', placeholder: '0–100', suffix: '/100' },
     { key: 'hrv', label: 'HRV', value: health.hrv ? `${health.hrv}ms` : '—', icon: <Activity size={13} color="#8B9467" />, color: '#8B9467', inputType: 'number', placeholder: 'ms', suffix: 'ms' },
     { key: 'restingHR', label: 'Resting HR', value: health.restingHR ? `${health.restingHR} bpm` : '—', icon: <Activity size={13} color="#EF4444" />, color: '#EF4444', inputType: 'number', placeholder: 'bpm', suffix: 'bpm' },
-    { key: 'stressLevel', label: 'Stress', value: health.stressLevel ? `${health.stressLevel}/10` : '—', icon: <Smile size={13} color="#F59E0B" />, color: '#F59E0B', inputType: 'number', placeholder: '1–10', suffix: '/10' },
-    { key: 'mood', label: 'Mood', value: health.mood ? `${health.mood}/5` : '—', icon: <Smile size={13} color="#06B6D4" />, color: '#06B6D4', inputType: 'number', placeholder: '1–5', suffix: '/5' },
+    { key: 'stressLevel', label: 'Stress', value: health.stressLevel ? `${health.stressLevel}/10` : '—', icon: <Smile size={13} color="#974400" />, color: '#974400', inputType: 'number', placeholder: '1–10', suffix: '/10' },
+    { key: 'mood', label: 'Mood', value: health.mood ? `${health.mood}/5` : '—', icon: <Smile size={13} color="#8B9467" />, color: '#8B9467', inputType: 'number', placeholder: '1–5', suffix: '/5' },
   ];
 
   return (
@@ -299,7 +299,7 @@ export const Habits: React.FC = () => {
               <svg width={72} height={72} style={{ transform: 'rotate(-90deg)' }}>
                 <circle cx={36} cy={36} r={30} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={6} />
                 <circle cx={36} cy={36} r={30} fill="none"
-                  stroke={streakScore >= 80 ? '#576038' : streakScore >= 50 ? '#F59E0B' : '#576038'}
+                  stroke={streakScore >= 80 ? '#576038' : streakScore >= 50 ? '#974400' : '#576038'}
                   strokeWidth={6} strokeLinecap="round"
                   strokeDasharray={2 * Math.PI * 30}
                   strokeDashoffset={2 * Math.PI * 30 * (1 - streakScore / 100)}
@@ -319,8 +319,8 @@ export const Habits: React.FC = () => {
               const isToday = date === dateStr;
               return (
                 <div key={date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                  <div style={{ height: 28, width: '100%', borderRadius: 6, background: dayPct >= 0.8 ? '#576038' : dayPct >= 0.5 ? '#F59E0B' : 'rgba(0,0,0,0.05)', border: isToday ? '1px solid rgba(0,0,0,0.13)' : 'none', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${dayPct * 100}%`, background: dayPct >= 0.8 ? '#576038' : dayPct >= 0.5 ? '#F59E0B' : '#576038', opacity: 0.5 }} />
+                  <div style={{ height: 28, width: '100%', borderRadius: 6, background: dayPct >= 0.8 ? '#576038' : dayPct >= 0.5 ? '#974400' : 'rgba(0,0,0,0.05)', border: isToday ? '1px solid rgba(0,0,0,0.13)' : 'none', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${dayPct * 100}%`, background: dayPct >= 0.8 ? '#576038' : dayPct >= 0.5 ? '#974400' : '#576038', opacity: 0.5 }} />
                   </div>
                   <span style={{ fontSize: '0.55rem', fontWeight: 700, color: isToday ? 'var(--text-secondary)' : 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     {['M','T','W','T','F','S','S'][new Date(date).getDay() === 0 ? 6 : new Date(date).getDay() - 1]}

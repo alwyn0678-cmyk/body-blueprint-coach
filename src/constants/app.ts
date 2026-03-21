@@ -6,71 +6,71 @@ export const SCHEMA_VERSION = 4;
 // ─── Macro colors (matches index.css CSS variables) ───────────────────────────
 
 export const MACRO_COLORS = {
-  calories: '#FF375F',
-  protein: '#FF9F0A',
-  carbs: '#0A84FF',
-  fats: '#30D158',
+  calories: '#974400',
+  protein:  '#974400',
+  carbs:    '#8B9467',
+  fats:     '#576038',
 } as const;
 
 // ─── General accent palette ───────────────────────────────────────────────────
 
 export const ACCENT_COLORS = {
-  blue: '#0A84FF',
-  green: '#30D158',
-  orange: '#FF9F0A',
-  red: '#FF453A',
-  teal: '#64D2FF',
-  indigo: '#5E5CE6',
-  pink: '#FF375F',
+  blue:   '#576038',
+  green:  '#576038',
+  orange: '#974400',
+  red:    '#DC2626',
+  teal:   '#8B9467',
+  indigo: '#576038',
+  pink:   '#C05200',
 } as const;
 
 // ─── Movement pattern colors for training view ────────────────────────────────
 
 export const PATTERN_COLORS = {
-  push: '#60a5fa',
-  pull: '#4ade80',
-  legs: '#fb923c',
-  core: '#a78bfa',
-  all: '#ffffff',
+  push: '#576038',
+  pull: '#8B9467',
+  legs: '#974400',
+  core: '#3E4528',
+  all:  '#C2CB9A',
 } as const;
 
 // ─── Meal type configuration ──────────────────────────────────────────────────
 
 export const MEAL_CONFIG = {
   breakfast: { label: 'Breakfast', emoji: '🌅', order: 0 },
-  lunch: { label: 'Lunch', emoji: '☀️', order: 1 },
-  dinner: { label: 'Dinner', emoji: '🌙', order: 2 },
-  snacks: { label: 'Snacks', emoji: '🍎', order: 3 },
+  lunch:     { label: 'Lunch',     emoji: '☀️', order: 1 },
+  dinner:    { label: 'Dinner',    emoji: '🌙', order: 2 },
+  snacks:    { label: 'Snacks',    emoji: '🍎', order: 3 },
 } as const;
 
 // ─── Recovery score thresholds ────────────────────────────────────────────────
 
 export const RECOVERY_THRESHOLDS = {
-  peak: 80,
-  good: 60,
+  peak:     80,
+  good:     60,
   moderate: 40,
-  low: 0,
+  low:       0,
 } as const;
 
 // ─── Workout quick-start templates ────────────────────────────────────────────
 
 export const WORKOUT_TEMPLATES = [
-  { name: 'Push Day',         emoji: '💪', muscles: 'Chest · Shoulders · Triceps', color: '#60a5fa', pattern: 'push' as const },
-  { name: 'Pull Day',         emoji: '🔄', muscles: 'Back · Biceps',               color: '#4ade80', pattern: 'pull' as const },
-  { name: 'Leg Day',          emoji: '🦵', muscles: 'Quads · Glutes · Hamstrings', color: '#fb923c', pattern: 'legs' as const },
-  { name: 'Upper Body',       emoji: '🏋️', muscles: 'Push + Pull combined',        color: '#a78bfa', pattern: 'push' as const },
-  { name: 'Full Body',        emoji: '⚡', muscles: 'All muscle groups',            color: '#f9a8d4', pattern: 'all'  as const },
-  { name: 'Arms & Shoulders', emoji: '💥', muscles: 'Biceps · Triceps · Delts',    color: '#fbbf24', pattern: 'push' as const },
+  { name: 'Push Day',         emoji: '💪', muscles: 'Chest · Shoulders · Triceps', color: '#576038', pattern: 'push' as const },
+  { name: 'Pull Day',         emoji: '🔄', muscles: 'Back · Biceps',               color: '#8B9467', pattern: 'pull' as const },
+  { name: 'Leg Day',          emoji: '🦵', muscles: 'Quads · Glutes · Hamstrings', color: '#974400', pattern: 'legs' as const },
+  { name: 'Upper Body',       emoji: '🏋️', muscles: 'Push + Pull combined',        color: '#3E4528', pattern: 'push' as const },
+  { name: 'Full Body',        emoji: '⚡', muscles: 'All muscle groups',            color: '#C2CB9A', pattern: 'all'  as const },
+  { name: 'Arms & Shoulders', emoji: '💥', muscles: 'Biceps · Triceps · Delts',    color: '#C05200', pattern: 'push' as const },
 ] as const;
 
 // ─── Activity level multipliers (Mifflin-St Jeor / Harris-Benedict) ──────────
 
 export const ACTIVITY_MULTIPLIERS = {
-  sedentary: 1.2,
-  lightly_active: 1.375,
+  sedentary:        1.2,
+  lightly_active:   1.375,
   moderately_active: 1.55,
-  very_active: 1.725,
-  extra_active: 1.9,
+  very_active:      1.725,
+  extra_active:     1.9,
 } as const;
 
 // ─── App connected integrations ───────────────────────────────────────────────

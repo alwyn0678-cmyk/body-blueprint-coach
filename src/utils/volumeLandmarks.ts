@@ -162,9 +162,9 @@ export const getVolumeStatus = (current: number, mev: number, mav: number, mrv: 
 export const VOLUME_STATUS_LABELS: Record<VolumeStatus, { label: string; color: string; description: string }> = {
   below_mev:      { label: 'Below MEV', color: '#FF453A', description: 'Below minimum to drive growth' },
   in_mev:         { label: 'MEV',       color: '#FF9F0A', description: 'Minimum effective — growing slowly' },
-  in_mav:         { label: 'MAV',       color: '#32D74B', description: 'Maximum adaptive — optimal growth zone' },
-  approaching_mrv: { label: 'Near MRV', color: '#5AC8FA', description: 'High volume — monitor recovery' },
-  at_mrv:         { label: 'MRV',       color: '#BF5AF2', description: 'Max recoverable — deload soon' },
+  in_mav:         { label: 'MAV',       color: '#576038', description: 'Maximum adaptive — optimal growth zone' },
+  approaching_mrv: { label: 'Near MRV', color: '#8B9467', description: 'High volume — monitor recovery' },
+  at_mrv:         { label: 'MRV',       color: '#974400', description: 'Max recoverable — deload soon' },
 };
 
 // ─── Auto-progression calculator ─────────────────────────────────────────────

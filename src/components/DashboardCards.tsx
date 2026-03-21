@@ -50,9 +50,9 @@ export const HeroRingCard: React.FC<HeroRingCardProps> = ({
   const isOver = safeCalories > safeTarget;
 
   const macros = [
-    { label: 'P', name: 'Protein', value: safeProtein, target: Math.max(1, safeNum(targets?.protein, 150)), color: '#FF9F0A' },
-    { label: 'C', name: 'Carbs',   value: safeCarbs,   target: Math.max(1, safeNum(targets?.carbs,   200)), color: '#0A84FF' },
-    { label: 'F', name: 'Fats',    value: safeFats,     target: Math.max(1, safeNum(targets?.fats,    60)),  color: '#32D74B' },
+    { label: 'P', name: 'Protein', value: safeProtein, target: Math.max(1, safeNum(targets?.protein, 150)), color: '#974400' },
+    { label: 'C', name: 'Carbs',   value: safeCarbs,   target: Math.max(1, safeNum(targets?.carbs,   200)), color: '#8B9467' },
+    { label: 'F', name: 'Fats',    value: safeFats,     target: Math.max(1, safeNum(targets?.fats,    60)),  color: '#576038' },
   ];
 
   return (
@@ -73,7 +73,7 @@ export const HeroRingCard: React.FC<HeroRingCardProps> = ({
         width: 280, height: 280,
         background: isOver
           ? 'radial-gradient(circle, rgba(255,69,58,0.09) 0%, transparent 70%)'
-          : 'radial-gradient(circle, rgba(10,132,255,0.08) 0%, transparent 70%)',
+          : 'radial-gradient(circle, rgba(87,96,56,0.07) 0%, transparent 70%)',
         pointerEvents: 'none',
       }} />
 
@@ -290,7 +290,7 @@ export const ProgramSnapshotCard: React.FC<ProgramSnapshotCardProps> = ({
       {/* Accent strip */}
       <div style={{
         height: 2,
-        background: 'linear-gradient(90deg, #0A84FF 0%, #30B0C7 100%)',
+        background: 'linear-gradient(90deg, #576038 0%, #8B9467 100%)',
       }} />
       <div style={{
         padding: '14px 16px',
@@ -349,17 +349,17 @@ export const CoachingInsightCard: React.FC<CoachingInsightCardProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
 
-  const borderColor = urgency === 'high'   ? '#FF453A'
-    : urgency === 'medium' ? '#FF9F0A'
-    : '#30D158';
+  const borderColor = urgency === 'high'   ? '#DC2626'
+    : urgency === 'medium' ? '#974400'
+    : '#576038';
 
-  const badgeBg = urgency === 'high'   ? 'rgba(255,69,58,0.15)'
-    : urgency === 'medium' ? 'rgba(255,159,10,0.15)'
-    : 'rgba(48,209,88,0.12)';
+  const badgeBg = urgency === 'high'   ? 'rgba(220,38,38,0.12)'
+    : urgency === 'medium' ? 'rgba(151,68,0,0.10)'
+    : 'rgba(87,96,56,0.08)';
 
-  const badgeColor = urgency === 'high'   ? '#FF453A'
-    : urgency === 'medium' ? '#FF9F0A'
-    : '#30D158';
+  const badgeColor = urgency === 'high'   ? '#DC2626'
+    : urgency === 'medium' ? '#974400'
+    : '#576038';
 
   const badgeLabel = urgency === 'high'   ? 'Action Required'
     : urgency === 'medium' ? 'Recommendation'
@@ -576,7 +576,7 @@ export const WeeklyChartCard: React.FC<WeeklyChartCardProps> = ({ data, weekAvg,
                       e.isFuture            ? 'rgba(0,0,0,0.03)'
                       : e.calories > e.target ? 'var(--accent-red)'
                       : e.isToday           ? 'var(--accent-blue)'
-                      : 'rgba(10,132,255,0.45)'
+                      : 'rgba(87,96,56,0.40)'
                     }
                     fillOpacity={e.isToday || e.isFuture ? 1 : 0.8}
                   />
@@ -668,7 +668,7 @@ export const RecoveryCard: React.FC<RecoveryCardProps> = ({
 
   const badgeBg = validScore
     ? validScore >= 85 ? 'rgba(48,209,88,0.15)'
-    : validScore >= 70 ? 'rgba(10,132,255,0.15)'
+    : validScore >= 70 ? 'rgba(87,96,56,0.12)'
     : validScore >= 50 ? 'rgba(255,159,10,0.15)'
     : 'rgba(255,69,58,0.15)'
     : 'transparent';
@@ -780,12 +780,12 @@ export const WeightCard: React.FC<WeightCardProps> = ({
     >
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-        background: 'linear-gradient(90deg, transparent, rgba(10,132,255,0.5), transparent)',
+        background: 'linear-gradient(90deg, transparent, rgba(87,96,56,0.45), transparent)',
       }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
         <div style={{
           width: 28, height: 28, borderRadius: 'var(--radius-sm)',
-          backgroundColor: 'rgba(10,132,255,0.1)',
+          backgroundColor: 'rgba(87,96,56,0.08)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -841,9 +841,9 @@ export const DailyHabitsCard: React.FC<DailyHabitsCardProps> = ({
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
       {/* Water */}
-      <div onClick={onWaterOpen} style={{ cursor: 'pointer', background: 'linear-gradient(145deg, rgba(10,132,255,0.08), rgba(10,132,255,0.03))', border: '1px solid rgba(10,132,255,0.18)', borderRadius: 'var(--radius-md)', padding: '0.875rem' }}>
+      <div onClick={onWaterOpen} style={{ cursor: 'pointer', background: 'linear-gradient(145deg, rgba(87,96,56,0.07), rgba(87,96,56,0.03))', border: '1px solid rgba(87,96,56,0.15)', borderRadius: 'var(--radius-md)', padding: '0.875rem' }}>
         <div style={{ fontSize: '1.625rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em', lineHeight: 1 }}>{Math.round(water)}</div>
-        <span style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'rgba(10,132,255,0.8)', display: 'block', marginTop: 4 }}>Hydration</span>
+        <span style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'rgba(87,96,56,0.70)', display: 'block', marginTop: 4 }}>Hydration</span>
       </div>
       {/* Steps */}
       <div onClick={onStepsOpen} style={{ cursor: 'pointer', background: 'linear-gradient(145deg, rgba(48,209,88,0.07), rgba(48,209,88,0.02))', border: '1px solid rgba(48,209,88,0.15)', borderRadius: 'var(--radius-md)', padding: '0.875rem' }}>

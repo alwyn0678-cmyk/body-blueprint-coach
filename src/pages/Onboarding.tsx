@@ -923,7 +923,7 @@ export const Onboarding: React.FC = () => {
               {formData.name ? `Ready, ${formData.name}.` : 'Your plan is ready.'}
             </h1>
             {calcError && (
-              <p style={{ fontSize: '0.78rem', color: 'rgba(251,191,36,0.8)', fontWeight: 600, marginTop: 6 }}>
+              <p style={{ fontSize: '0.78rem', color: 'rgba(151,68,0,0.80)', fontWeight: 600, marginTop: 6 }}>
                 Using estimated targets — update in Settings
               </p>
             )}

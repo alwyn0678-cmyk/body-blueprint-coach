@@ -33,13 +33,13 @@ interface WorkoutDraft {
 // ─── Default habit definitions ────────────────────────────────────────────────
 
 const DEFAULT_HABITS: HabitDefinition[] = [
-  { id: 'h_protein',  name: 'Hit protein target',   icon: '🥩', color: '#FF9F0A', category: 'nutrition' },
-  { id: 'h_calories', name: 'Log all meals',         icon: '📱', color: '#0A84FF', category: 'nutrition' },
-  { id: 'h_water',    name: 'Drink 2L+ water',       icon: '💧', color: '#5AC8FA', category: 'nutrition' },
-  { id: 'h_steps',    name: '8,000+ steps',          icon: '👟', color: '#32D74B', category: 'wellness' },
-  { id: 'h_sleep',    name: '7–9h sleep',            icon: '🌙', color: '#BF5AF2', category: 'sleep' },
-  { id: 'h_train',    name: 'Train today',           icon: '🏋️', color: '#FF375F', category: 'training' },
-  { id: 'h_stretch',  name: 'Stretch / mobility',    icon: '🧘', color: '#5E5CE6', category: 'wellness' },
+  { id: 'h_protein',  name: 'Hit protein target',   icon: '🥩', color: '#974400', category: 'nutrition' },
+  { id: 'h_calories', name: 'Log all meals',         icon: '📱', color: '#576038', category: 'nutrition' },
+  { id: 'h_water',    name: 'Drink 2L+ water',       icon: '💧', color: '#8B9467', category: 'nutrition' },
+  { id: 'h_steps',    name: '8,000+ steps',          icon: '👟', color: '#576038', category: 'wellness' },
+  { id: 'h_sleep',    name: '7–9h sleep',            icon: '🌙', color: '#3E4528', category: 'sleep' },
+  { id: 'h_train',    name: 'Train today',           icon: '🏋️', color: '#C05200', category: 'training' },
+  { id: 'h_stretch',  name: 'Stretch / mobility',    icon: '🧘', color: '#8B9467', category: 'wellness' },
 ];
 
 // ─── Context interface ────────────────────────────────────────────────────────

@@ -47,7 +47,7 @@ const T = {
   accent:   'var(--accent-primary, #576038)',
   green:    'var(--accent-green, #576038)',
   red:      '#EF4444',
-  amber:    '#F59E0B',
+  amber:    '#974400',
   radius:   {
     xs:  '6px',
     sm:  '10px',
@@ -842,7 +842,7 @@ export const FoodRow: React.FC<FoodRowProps> = ({
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
             color: T.accent,
-            backgroundColor: 'rgba(59,130,246,0.12)',
+            backgroundColor: 'rgba(87,96,56,0.10)',
             borderRadius: T.radius.full,
             padding: '1px 6px',
             flexShrink: 0,
@@ -931,7 +931,7 @@ interface StatusBadgeProps {
 
 const STATUS_CONFIG: Record<ConnectionStatus, { label: string; color: string; bg: string; pulse?: boolean }> = {
   disconnected: { label: 'Disconnected', color: 'rgba(0,0,0,0.30)', bg: 'rgba(0,0,0,0.06)' },
-  connecting:   { label: 'Connecting',   color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', pulse: true },
+  connecting:   { label: 'Connecting',   color: '#974400', bg: 'rgba(151,68,0,0.12)', pulse: true },
   connected:    { label: 'Connected',    color: '#576038', bg: 'rgba(87,96,56,0.12)' },
   failed:       { label: 'Failed',       color: '#EF4444', bg: 'rgba(239,68,68,0.15)' },
   disabled:     { label: 'Disabled',     color: 'rgba(0,0,0,0.16)', bg: 'rgba(0,0,0,0.03)' },

@@ -223,7 +223,7 @@ export const LogFood: React.FC = () => {
         key={mealType}
         style={{
           ...cardBase,
-          borderLeft: isExpanded && hasItems ? '3px solid rgba(10,132,255,0.35)' : undefined,
+          borderLeft: isExpanded && hasItems ? '3px solid rgba(87,96,56,0.35)' : undefined,
           transition: 'border 0.2s ease',
         }}
       >
@@ -443,8 +443,8 @@ export const LogFood: React.FC = () => {
                   style={{
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     gap: '6px', padding: '0.7rem',
-                    color: '#fff', background: 'rgba(10,132,255,0.15)',
-                    border: '1px solid rgba(10,132,255,0.25)',
+                    color: '#fff', background: 'rgba(87,96,56,0.12)',
+                    border: '1px solid rgba(87,96,56,0.22)',
                     borderRadius: '14px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer',
                   }}
                 >
@@ -567,7 +567,7 @@ export const LogFood: React.FC = () => {
 
       {/* ── DAILY SUMMARY HEADER ── */}
       <div style={{
-        background: 'linear-gradient(180deg, rgba(10,132,255,0.09) 0%, transparent 100%)',
+        background: 'linear-gradient(180deg, rgba(87,96,56,0.07) 0%, transparent 100%)',
         padding: '14px 16px 16px',
         borderBottom: '1px solid rgba(0,0,0,0.04)',
       }}>
@@ -592,7 +592,7 @@ export const LogFood: React.FC = () => {
             <button
               onClick={() => { if (canGoForward) setSelectedDate(d => offsetDate(d, 1)); }}
               disabled={!canGoForward}
-              style={{ background: canGoForward ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.02)', border: `1px solid ${canGoForward ? 'rgba(0,0,0,0.07)' : 'rgba(0,0,0,0.03)'}`, borderRadius: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: canGoForward ? 'pointer' : 'default', color: canGoForward ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.10)' }}
+              style={{ background: canGoForward ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.02)', border: `1px solid ${canGoForward ? 'rgba(0,0,0,0.07)' : 'rgba(0,0,0,0.03)'}`, borderRadius: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: canGoForward ? 'pointer' : 'default', color: canGoForward ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.10)' }}
             >
               <ChevronRight size={16} />
             </button>
@@ -600,11 +600,11 @@ export const LogFood: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{
               fontSize: '0.65rem', fontWeight: 800,
-              color: isOver ? 'var(--accent-red)' : calPct >= 90 ? '#fbbf24' : 'var(--accent-blue)',
+              color: isOver ? 'var(--accent-red)' : calPct >= 90 ? '#974400' : 'var(--accent-blue)',
               textTransform: 'uppercase', letterSpacing: '0.06em',
               padding: '3px 9px', borderRadius: '50px',
-              backgroundColor: isOver ? 'rgba(255,69,58,0.1)' : calPct >= 90 ? 'rgba(251,191,36,0.1)' : 'rgba(10,132,255,0.1)',
-              border: `1px solid ${isOver ? 'rgba(255,69,58,0.2)' : calPct >= 90 ? 'rgba(251,191,36,0.2)' : 'rgba(10,132,255,0.2)'}`,
+              backgroundColor: isOver ? 'rgba(255,69,58,0.1)' : calPct >= 90 ? 'rgba(151,68,0,0.10)' : 'rgba(87,96,56,0.09)',
+              border: `1px solid ${isOver ? 'rgba(255,69,58,0.2)' : calPct >= 90 ? 'rgba(151,68,0,0.20)' : 'rgba(87,96,56,0.18)'}`,
             }}>
               {isOver ? 'Over' : calPct >= 90 ? 'Nearly there' : `${Math.round(calPct)}% logged`}
             </span>
@@ -632,7 +632,7 @@ export const LogFood: React.FC = () => {
                 : calRemaining.toLocaleString()
               }
             </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.28)', fontWeight: 700, marginTop: '3px' }}>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.32)', fontWeight: 700, marginTop: '3px' }}>
               {isOver ? 'over' : 'remaining'} · {calTarget.toLocaleString()} goal
             </div>
           </div>
@@ -645,8 +645,8 @@ export const LogFood: React.FC = () => {
             background: isOver
               ? 'linear-gradient(90deg, #ef4444, var(--accent-red))'
               : calPct > 80
-                ? 'linear-gradient(90deg, var(--accent-blue), #fbbf24)'
-                : 'linear-gradient(90deg, var(--accent-blue), #5AC8FA)',
+                ? 'linear-gradient(90deg, var(--accent-primary), #974400)'
+                : 'linear-gradient(90deg, var(--accent-primary), #8B9467)',
             borderRadius: '3px', transition: 'width 0.5s ease',
           }} />
         </div>
@@ -656,7 +656,7 @@ export const LogFood: React.FC = () => {
           <div style={{ display: 'flex', gap: '8px' }}>
             {[
               { label: 'Protein', key: 'P', logged: Math.round(dayTotals.protein), target: proTarget, color: 'var(--color-protein)', bg: 'rgba(255,159,10,0.15)' },
-              { label: 'Carbs',   key: 'C', logged: Math.round(dayTotals.carbs),   target: carbTarget, color: 'var(--color-carbs)',   bg: 'rgba(48,209,88,0.12)' },
+              { label: 'Carbs',   key: 'C', logged: Math.round(dayTotals.carbs),   target: carbTarget, color: 'var(--color-carbs)',   bg: 'rgba(87,96,56,0.08)' },
               { label: 'Fats',    key: 'F', logged: Math.round(dayTotals.fats),    target: fatTarget,  color: 'var(--color-fats)',    bg: 'rgba(255,69,58,0.12)' },
             ].map(m => {
               const pct = Math.min(100, (m.logged / Math.max(1, m.target)) * 100);
@@ -749,15 +749,15 @@ export const LogFood: React.FC = () => {
           style={{
             width: '100%', display: 'flex', alignItems: 'center', gap: 12,
             padding: '13px 16px',
-            background: 'linear-gradient(135deg, rgba(10,132,255,0.12) 0%, rgba(90,200,250,0.06) 100%)',
-            border: '1px solid rgba(10,132,255,0.22)',
+            background: 'linear-gradient(135deg, rgba(87,96,56,0.10) 0%, rgba(90,200,250,0.06) 100%)',
+            border: '1px solid rgba(87,96,56,0.20)',
             borderRadius: '18px', cursor: 'pointer',
             textAlign: 'left',
           }}
         >
           <div style={{
             width: 38, height: 38, borderRadius: 12, flexShrink: 0,
-            background: 'rgba(10,132,255,0.15)', border: '1px solid rgba(10,132,255,0.25)',
+            background: 'rgba(87,96,56,0.12)', border: '1px solid rgba(87,96,56,0.22)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <Camera size={18} color="var(--accent-blue)" />
@@ -770,7 +770,7 @@ export const LogFood: React.FC = () => {
               Photo → AI estimates calories & macros
             </div>
           </div>
-          <ChevronRight size={15} color="rgba(10,132,255,0.5)" />
+          <ChevronRight size={15} color="rgba(87,96,56,0.45)" />
         </button>
 
         {/* ── MEAL SECTIONS ── */}
@@ -814,8 +814,8 @@ export const LogFood: React.FC = () => {
                       showToast(`${meal.name} added to ${activeMeal}`, 'success');
                     }}
                     style={{
-                      padding: '4px 0', background: 'rgba(10,132,255,0.12)',
-                      border: '1px solid rgba(10,132,255,0.2)',
+                      padding: '4px 0', background: 'rgba(87,96,56,0.10)',
+                      border: '1px solid rgba(87,96,56,0.18)',
                       borderRadius: '8px', color: 'var(--accent-blue)',
                       fontWeight: 800, fontSize: '0.7rem', cursor: 'pointer',
                     }}
@@ -833,8 +833,8 @@ export const LogFood: React.FC = () => {
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             height: '44px', paddingLeft: '14px', paddingRight: '8px',
-            backgroundColor: 'rgba(10,132,255,0.08)',
-            border: '1px solid rgba(10,132,255,0.15)',
+            backgroundColor: 'rgba(87,96,56,0.07)',
+            border: '1px solid rgba(87,96,56,0.12)',
             borderRadius: '14px',
           }}>
             <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(28,28,46,0.78)', display: 'flex', alignItems: 'center', gap: '6px' }}>

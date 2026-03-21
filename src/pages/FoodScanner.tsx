@@ -28,7 +28,7 @@ const MEAL_LABELS: Record<MealType, string> = {
 
 const CONFIDENCE_COLOR: Record<DetectedFood['confidence'], string> = {
   high: '#576038',
-  medium: '#F59E0B',
+  medium: '#974400',
   low: '#EF4444',
 };
 
@@ -240,11 +240,11 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
 
             {/* Disclaimer */}
             <div style={{
-              background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.15)',
+              background: 'rgba(151,68,0,0.05)', border: '1px solid rgba(151,68,0,0.12)',
               borderRadius: 14, padding: '10px 14px',
               display: 'flex', alignItems: 'flex-start', gap: 10,
             }}>
-              <AlertCircle size={14} color="#F59E0B" style={{ flexShrink: 0, marginTop: 1 }} />
+              <AlertCircle size={14} color="#974400" style={{ flexShrink: 0, marginTop: 1 }} />
               <p style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.30)', fontWeight: 600, margin: 0, lineHeight: 1.5 }}>
                 AI estimates are based on visual appearance. Values may vary by ±20–30%. Always review before logging.
               </p>
@@ -500,11 +500,11 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
 
             {/* Disclaimer */}
             <div style={{
-              background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.12)',
+              background: 'rgba(151,68,0,0.04)', border: '1px solid rgba(151,68,0,0.10)',
               borderRadius: 12, padding: '8px 12px',
               display: 'flex', alignItems: 'flex-start', gap: 8,
             }}>
-              <AlertCircle size={13} color="#F59E0B" style={{ flexShrink: 0, marginTop: 1 }} />
+              <AlertCircle size={13} color="#974400" style={{ flexShrink: 0, marginTop: 1 }} />
               <p style={{ fontSize: '0.68rem', color: 'rgba(0,0,0,0.24)', fontWeight: 600, margin: 0, lineHeight: 1.5 }}>
                 {disclaimer}
               </p>
