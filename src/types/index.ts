@@ -315,6 +315,7 @@ export interface AppSettings {
   weeklyCheckIn: boolean;
   notificationsEnabled: boolean;
   units: 'metric' | 'imperial';
+  theme?: 'light' | 'dark';
   connectedApps: {
     apple_health: ConnectionStatus;
     google_fit: ConnectionStatus;

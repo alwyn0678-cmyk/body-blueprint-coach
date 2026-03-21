@@ -54,7 +54,7 @@ const CalorieArc: React.FC<{
     <div style={{ position: 'relative', width: 152, height: 152, flexShrink: 0 }}>
       <svg width={152} height={152} style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
         {/* Outer calorie track */}
-        <circle cx={76} cy={76} r={R} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={9} />
+        <circle cx={76} cy={76} r={R} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth={9} />
         {/* Outer calorie fill */}
         <circle cx={76} cy={76} r={R} fill="none" stroke={over ? '#EF4444' : '#22C55E'}
           strokeWidth={9} strokeLinecap="round"
@@ -62,7 +62,7 @@ const CalorieArc: React.FC<{
           style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.25,1,0.5,1), stroke 0.3s ease', filter: over ? 'drop-shadow(0 0 6px #EF4444)' : 'drop-shadow(0 0 6px #22C55E)' }} />
 
         {/* Inner macro ring track */}
-        <circle cx={76} cy={76} r={innerR} fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth={7} />
+        <circle cx={76} cy={76} r={innerR} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={7} />
 
         {/* Protein segment — first 120° (top third) */}
         <circle cx={76} cy={76} r={innerR} fill="none" stroke="#F59E0B"
@@ -95,13 +95,18 @@ const CalorieArc: React.FC<{
           }} />
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums', lineHeight: 1, color: over ? '#EF4444' : 'var(--text-primary)' }}>
+        <motion.div
+          key={Math.round(calories)}
+          animate={{ scale: [1, 1.06, 1] }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums', lineHeight: 1, color: over ? '#EF4444' : '#FFFFFF' }}
+        >
           {fmtNum(calories)}
-        </div>
-        <div style={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>
+        </motion.div>
+        <div style={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.45)' }}>
           {over ? `+${fmtNum(calories - target)} over` : `${fmtNum(remaining)} left`}
         </div>
-        <div style={{ fontSize: '0.52rem', fontWeight: 600, color: 'var(--text-tertiary)', marginTop: 2 }}>
+        <div style={{ fontSize: '0.52rem', fontWeight: 600, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>
           / {fmtNum(target)} kcal
         </div>
       </div>
@@ -109,21 +114,19 @@ const CalorieArc: React.FC<{
   );
 };
 
-// ─── Macro stat bar ───────────────────────────────────────────────────────────
+// ─── Macro chip (pill format on dark hero card) ───────────────────────────────
 
-const MacroBar: React.FC<{ label: string; value: number; target: number; color: string }> = ({ label, value, target, color }) => {
+const MacroChip: React.FC<{ label: string; className: string; value: number; target: number; color: string }> = ({ label, className, value, target, color }) => {
   const pct = Math.min((value / Math.max(target, 1)) * 100, 100);
   const over = value > target;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <span style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-tertiary)' }}>{label}</span>
-        <span style={{ fontSize: '0.75rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: over ? '#EF4444' : color }}>
-          {fmtNum(value)}<span style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>/{target}g</span>
-        </span>
+    <div className={`macro-chip ${className}`}>
+      <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.45)' }}>{label}</div>
+      <div style={{ fontSize: '0.88rem', fontWeight: 900, fontVariantNumeric: 'tabular-nums', color: over ? '#EF4444' : color, lineHeight: 1 }}>
+        {fmtNum(value)}<span style={{ fontSize: '0.52rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', marginLeft: 1 }}>/{target}g</span>
       </div>
-      <div className="progress-track" style={{ height: 5 }}>
-        <div className="progress-fill" style={{ width: `${pct}%`, background: over ? '#EF4444' : color, boxShadow: `0 0 6px ${color}60` }} />
+      <div style={{ width: '100%', height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginTop: 2 }}>
+        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 2, background: over ? '#EF4444' : color, boxShadow: `0 0 6px ${color}80`, transition: 'width 0.7s cubic-bezier(0.25,1,0.5,1)' }} />
       </div>
     </div>
   );
@@ -258,24 +261,38 @@ export const Dashboard: React.FC = () => {
             <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-tertiary)', marginBottom: 3 }}>
               {new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
             </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.55rem', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.65rem', fontWeight: 900, letterSpacing: '-0.035em', lineHeight: 1.1, color: 'var(--text-primary)' }}>
               {getGreeting(user.name)},{' '}
-              <span style={{ background: 'linear-gradient(135deg, #fff 0%, rgba(165,180,252,0.8) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              <span style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #A855F7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                 {user.name.split(' ')[0]}
               </span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
             {workoutStreak > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 20 }}>
-                <Dumbbell size={11} color="#3B82F6" />
-                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#3B82F6' }}>{workoutStreak}d</span>
+              <div className="streak-trophy" style={{
+                background: 'rgba(59,130,246,0.12)',
+                border: '1px solid rgba(59,130,246,0.30)',
+                boxShadow: workoutStreak >= 7 ? '0 0 16px rgba(59,130,246,0.25)' : 'none',
+              }}>
+                <Dumbbell size={13} color="#3B82F6" style={{ filter: 'drop-shadow(0 0 4px rgba(59,130,246,0.6))' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#3B82F6', letterSpacing: '-0.01em' }}>{workoutStreak}</span>
+                  <span style={{ fontSize: '0.48rem', fontWeight: 700, color: 'rgba(59,130,246,0.6)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>days</span>
+                </div>
               </div>
             )}
             {streak > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.28)', borderRadius: 20 }}>
-                <Flame size={12} color="#F59E0B" />
-                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#F59E0B' }}>{streak}d</span>
+              <div className="streak-trophy" style={{
+                background: 'rgba(245,158,11,0.13)',
+                border: '1px solid rgba(245,158,11,0.32)',
+                boxShadow: streak >= 7 ? '0 0 18px rgba(245,158,11,0.28)' : 'none',
+              }}>
+                <Flame size={14} color="#F59E0B" style={{ animation: 'flamePulse 2s ease-in-out infinite' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#F59E0B', letterSpacing: '-0.01em' }}>{streak}</span>
+                  <span style={{ fontSize: '0.48rem', fontWeight: 700, color: 'rgba(245,158,11,0.6)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>days</span>
+                </div>
               </div>
             )}
             <button
@@ -292,6 +309,9 @@ export const Dashboard: React.FC = () => {
         initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07, duration: 0.4 }}
         onClick={() => navigate('/log')} style={{ cursor: 'pointer' }}
       >
+        <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.11em', color: 'var(--text-tertiary)', marginBottom: 6 }}>
+          NUTRITION · Today
+        </div>
         <div className="card-nutrition" style={{ padding: '18px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <CalorieArc
@@ -302,26 +322,20 @@ export const Dashboard: React.FC = () => {
             />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#22C55E' }}>Today's Nutrition</div>
-                  <div style={{ display: 'flex', gap: 3 }}>
-                    {[['#F59E0B', 'P'], ['#3B82F6', 'C'], ['#22C55E', 'F']].map(([color, label]) => (
-                      <span key={label} style={{ fontSize: '0.48rem', fontWeight: 800, color, opacity: 0.7 }}>{label}</span>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ fontSize: '0.65rem', fontWeight: 800, padding: '2px 8px', borderRadius: 8, background: calPct >= 90 ? 'rgba(239,68,68,0.15)' : 'rgba(0,0,0,0.06)', color: calPct >= 90 ? '#EF4444' : 'var(--text-secondary)' }}>
+                <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.55)' }}>Today's Nutrition</div>
+                <div style={{ fontSize: '0.65rem', fontWeight: 800, padding: '2px 8px', borderRadius: 8, background: calPct >= 90 ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.1)', color: calPct >= 90 ? '#EF4444' : 'rgba(255,255,255,0.7)' }}>
                   {calPct}%
                 </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <MacroBar label="Protein" value={Math.round(totals.protein)} target={user.targets.protein} color="#F59E0B" />
-                <MacroBar label="Carbs" value={Math.round(totals.carbs)} target={user.targets.carbs} color="#3B82F6" />
-                <MacroBar label="Fats" value={Math.round(totals.fats)} target={user.targets.fats} color="#22C55E" />
+              {/* Macro chips */}
+              <div style={{ display: 'flex', gap: 6 }}>
+                <MacroChip label="Protein" className="protein" value={Math.round(totals.protein)} target={user.targets.protein} color="#F59E0B" />
+                <MacroChip label="Carbs" className="carbs" value={Math.round(totals.carbs)} target={user.targets.carbs} color="#3B82F6" />
+                <MacroChip label="Fats" className="fats" value={Math.round(totals.fats)} target={user.targets.fats} color="#22C55E" />
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-tertiary)' }}>
-                <span style={{ fontSize: '0.62rem', fontWeight: 600 }}>Tap to log food</span>
-                <ChevronRight size={10} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ fontSize: '0.62rem', fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}>Tap to log food</span>
+                <ChevronRight size={10} color="rgba(255,255,255,0.3)" />
               </div>
             </div>
           </div>
@@ -385,6 +399,9 @@ export const Dashboard: React.FC = () => {
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.19, duration: 0.38 }}
         onClick={() => navigate('/training')} style={{ cursor: 'pointer' }}
       >
+        <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.11em', color: 'var(--text-tertiary)', marginBottom: 6 }}>
+          TRAINING · This Week
+        </div>
         <div className="card-training" style={{ padding: '16px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -438,7 +455,11 @@ export const Dashboard: React.FC = () => {
       {/* ── Weight + Stats row ── */}
       <motion.div
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23, duration: 0.38 }}
-        style={{ display: 'flex', gap: 10 }}>
+      >
+        <div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.11em', color: 'var(--text-tertiary)', marginBottom: 6 }}>
+          PROGRESS · 2 Weeks
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
 
         {/* Weight EMA mini chart */}
         <div style={{ flex: 3, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 18, padding: '14px 14px 10px', overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.04)' }}>
@@ -498,6 +519,7 @@ export const Dashboard: React.FC = () => {
               <div style={{ fontSize: '0.58rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{sub}</div>
             </div>
           ))}
+        </div>
         </div>
       </motion.div>
 

@@ -21,7 +21,7 @@ const todayStr = () => new Date().toISOString().split('T')[0];
 const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, padding: '8px 12px' }}>
+    <div style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, padding: '8px 12px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}>
       <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-tertiary)', marginBottom: 4 }}>{label}</div>
       {payload.map((p: any) => (
         <div key={p.name} style={{ fontSize: '0.78rem', fontWeight: 800, color: p.color }}>
@@ -29,6 +29,19 @@ const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
         </div>
       ))}
     </div>
+  );
+};
+
+// Glow dot on last chart data point
+const GlowDot: React.FC<any> = (props) => {
+  const { cx, cy, index, data, color } = props;
+  if (index !== (data?.length ?? 0) - 1) return null;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={8} fill={color} opacity={0.15} />
+      <circle cx={cx} cy={cy} r={4} fill={color} opacity={0.4} />
+      <circle cx={cx} cy={cy} r={2.5} fill={color} />
+    </g>
   );
 };
 
@@ -303,7 +316,8 @@ export const Progress: React.FC = () => {
                     <AreaChart data={trendData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                       <defs>
                         <linearGradient id="weightG" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#6366F1" stopOpacity={0.25} />
+                          <stop offset="0%" stopColor="#6366F1" stopOpacity={0.45} />
+                          <stop offset="70%" stopColor="#6366F1" stopOpacity={0.08} />
                           <stop offset="100%" stopColor="#6366F1" stopOpacity={0} />
                         </linearGradient>
                       </defs>
@@ -314,7 +328,9 @@ export const Progress: React.FC = () => {
                         <ReferenceLine y={user.goalWeight} stroke="#22C55E" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: 'Goal', fill: '#22C55E', fontSize: 9 }} />
                       )}
                       <Area type="monotone" dataKey="weight" stroke="transparent" fill="none" dot={{ r: 2, fill: 'rgba(99,102,241,0.5)', strokeWidth: 0 }} name="Logged" />
-                      <Area type="monotone" dataKey="trend" stroke="#6366F1" strokeWidth={2} fill="url(#weightG)" dot={false} name="EMA" />
+                      <Area type="monotone" dataKey="trend" stroke="#6366F1" strokeWidth={2.5} fill="url(#weightG)"
+                        dot={(props: any) => <GlowDot {...props} data={trendData} color="#6366F1" />}
+                        name="EMA" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>

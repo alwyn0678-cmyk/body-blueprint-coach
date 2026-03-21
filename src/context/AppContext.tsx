@@ -240,6 +240,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const lastSavedRef = useRef<string>('');
   const cloudSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Theme application ─────────────────────────────────────────────────────
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', state.settings.theme ?? 'light');
+  }, [state.settings.theme]);
+
   // ── Local persistence ──────────────────────────────────────────────────────
   useEffect(() => {
     const timer = setTimeout(() => {
