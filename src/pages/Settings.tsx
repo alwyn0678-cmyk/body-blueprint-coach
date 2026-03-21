@@ -19,18 +19,18 @@ import {
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
-  bgPrimary: '#080810',
-  bgCard: '#0f0f1a',
-  bgElevated: '#161625',
-  accentBlue: '#0A84FF',
-  accentGreen: '#32D74B',
-  accentOrange: '#FF9F0A',
-  accentRed: '#FF453A',
-  textPrimary: '#F2F2F7',
-  textSecondary: 'rgba(242,242,247,0.6)',
-  textTertiary: 'rgba(242,242,247,0.35)',
-  border: 'rgba(0,0,0,0.05)',
-  borderMd: 'rgba(0,0,0,0.07)',
+  bgPrimary: 'var(--bg-primary)',
+  bgCard: '#FFFFFF',
+  bgElevated: 'var(--bg-elevated)',
+  accentBlue: '#3B82F6',
+  accentGreen: '#16A34A',
+  accentOrange: '#EA8C3A',
+  accentRed: '#DC2626',
+  textPrimary: '#1C1C2E',
+  textSecondary: 'rgba(28,28,46,0.65)',
+  textTertiary: 'rgba(28,28,46,0.42)',
+  border: 'rgba(0,0,0,0.06)',
+  borderMd: 'rgba(0,0,0,0.09)',
 };
 
 // ── Local primitives ──────────────────────────────────────────────────────────
@@ -99,7 +99,7 @@ const PROGRAMS = [
     tag: 'Female · Phase 1',
     desc: 'Lower-body emphasis with upper accessory work. Designed for lean muscle, shape, and tone.',
     split: 'Lower · Upper · 4 days/week',
-    accent: '#FF9F0A',
+    accent: '#EA8C3A',
   },
   {
     id: 'male_phase2' as const,
@@ -108,7 +108,7 @@ const PROGRAMS = [
     tag: 'Male · Phase 2',
     desc: 'Push-Pull-Legs-Upper split focused on hypertrophy and progressive overload.',
     split: 'Push · Pull · Legs · Upper · 4 days/week',
-    accent: '#0A84FF',
+    accent: '#3B82F6',
   },
 ];
 
@@ -484,8 +484,8 @@ export const Settings: React.FC = () => {
                     { label: 'Target', value: `${tdee.targetCalories}`, sub: `${Math.abs(tdee.deficit)} ${tdee.deficit < 0 ? 'deficit' : 'surplus'}` },
                   ].map(item => (
                     <div key={item.label} style={{
-                      background: 'rgba(255,159,10,0.07)',
-                      border: '1px solid rgba(255,159,10,0.15)',
+                      background: 'rgba(234,140,58,0.07)',
+                      border: '1px solid rgba(234,140,58,0.15)',
                       borderRadius: 12,
                       padding: '8px',
                       textAlign: 'center' as const,
@@ -888,8 +888,8 @@ export const Settings: React.FC = () => {
               onClick={() => setResetStep('confirm2')}
               style={{
                 padding: '0.7rem 1.4rem',
-                background: 'rgba(255,69,58,0.1)',
-                border: '1px solid rgba(255,69,58,0.3)',
+                background: 'rgba(220,38,38,0.08)',
+                border: '1px solid rgba(220,38,38,0.25)',
                 borderRadius: 14,
                 color: C.accentRed,
                 fontWeight: 700,
@@ -904,10 +904,10 @@ export const Settings: React.FC = () => {
 
         {resetStep === 'confirm2' && (
           <div style={{
-            border: '1px solid rgba(255,69,58,0.25)',
+            border: '1px solid rgba(220,38,38,0.2)',
             borderRadius: 18,
             padding: '1.1rem',
-            background: 'rgba(255,69,58,0.05)',
+            background: 'rgba(220,38,38,0.04)',
             marginTop: 8,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, justifyContent: 'center' }}>
@@ -1047,7 +1047,7 @@ export const Settings: React.FC = () => {
                 </p>
               </div>
               <button onClick={() => setComingSoonApp(null)} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '50%', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                <X size={15} color="rgba(255,255,255,0.6)" />
+                <X size={15} color="rgba(28,28,46,0.45)" />
               </button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(0,0,0,0.03)', borderRadius: 14, border: `1px solid ${C.border}` }}>
@@ -1073,7 +1073,7 @@ export const Settings: React.FC = () => {
             </div>
             <button
               onClick={() => setComingSoonApp(null)}
-              style={{ marginTop: '1rem', width: '100%', padding: '0.8rem', background: 'rgba(0,0,0,0.06)', border: `1px solid ${C.borderMd}`, borderRadius: 14, color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+              style={{ marginTop: '1rem', width: '100%', padding: '0.8rem', background: 'rgba(0,0,0,0.06)', border: `1px solid ${C.borderMd}`, borderRadius: 14, color: C.textPrimary, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
             >
               Got it
             </button>
@@ -1143,7 +1143,7 @@ const ProfileEditSheet: React.FC<{
     borderRadius: 12,
     border: `1px solid ${C.borderMd}`,
     background: 'rgba(0,0,0,0.04)',
-    color: '#fff',
+    color: C.textPrimary,
     fontSize: '0.9rem',
     fontWeight: 600,
     outline: 'none',
@@ -1179,7 +1179,7 @@ const ProfileEditSheet: React.FC<{
             <p style={{ fontSize: '0.75rem', color: C.textTertiary, fontWeight: 600, marginTop: 2 }}>Changes recalculate your targets</p>
           </div>
           <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <X size={18} color="rgba(255,255,255,0.7)" />
+            <X size={18} color="rgba(28,28,46,0.45)" />
           </button>
         </div>
 
@@ -1297,7 +1297,7 @@ const ProgramPickerSheet: React.FC<{
           <p style={{ fontSize: '0.75rem', color: C.textTertiary, fontWeight: 600, marginTop: 2 }}>Your training split for the week</p>
         </div>
         <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-          <X size={18} color="rgba(255,255,255,0.7)" />
+          <X size={18} color="rgba(28,28,46,0.45)" />
         </button>
       </div>
 

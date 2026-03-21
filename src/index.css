@@ -6,11 +6,11 @@
 
 :root {
   /* ── Core Backgrounds ── */
-  --bg-primary:    #EDE8DF;
+  --bg-primary:    #D6D0C7;
   --bg-card:       #FFFFFF;
-  --bg-elevated:   #F5F1EB;
-  --bg-input:      rgba(0,0,0,0.04);
-  --bg-glass:      rgba(237,232,223,0.95);
+  --bg-elevated:   #E2DDD6;
+  --bg-input:      rgba(0,0,0,0.05);
+  --bg-glass:      rgba(214,208,199,0.96);
   --bg-sheet:      #FFFFFF;
   --bg-overlay:    rgba(0,0,0,0.45);
 
@@ -109,8 +109,8 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(234,140,58,0.09) 0%, transparent 100%),
-    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(59,130,246,0.06) 0%, transparent 100%);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(234,140,58,0.12) 0%, transparent 100%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(59,130,246,0.07) 0%, transparent 100%);
 }
 
 #root {
