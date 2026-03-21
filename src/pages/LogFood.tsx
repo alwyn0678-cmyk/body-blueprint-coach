@@ -6,6 +6,7 @@ import { FoodSearch } from './FoodSearch';
 import { FoodScanner } from './FoodScanner';
 import { getLocalISOString } from '../utils/dateUtils';
 import { SwipeReveal, SlideOver } from '../components/MotionUI';
+import { RecipeLibrary } from '../components/RecipeLibrary';
 import { getMacrosFromLog } from '../utils/aiCoachingEngine';
 
 const MEAL_ICONS: Record<MealType, string> = {
@@ -776,6 +777,15 @@ export const LogFood: React.FC = () => {
         {/* ── MEAL SECTIONS ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {(['breakfast', 'lunch', 'dinner', 'snacks'] as MealType[]).map(renderMealCard)}
+        </div>
+
+        {/* ── RECIPE LIBRARY ── */}
+        <div style={{ marginTop: '4px' }}>
+          <RecipeLibrary
+            activeMeal={activeMeal}
+            selectedDate={selectedDate}
+            onAdd={handleAddFood}
+          />
         </div>
 
         {/* ── SAVED MEALS SECTION ── */}
