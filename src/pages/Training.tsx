@@ -364,15 +364,15 @@ const WorkoutSummaryScreen: React.FC<{
       {/* Hero header */}
       <div style={{
         padding: '3.5rem 1.5rem 2rem', textAlign: 'center',
-        background: 'linear-gradient(180deg, rgba(34,197,94,0.07) 0%, transparent 100%)',
+        background: 'linear-gradient(180deg, rgba(87,96,56,0.07) 0%, transparent 100%)',
       }}>
         <div style={{
           width: 80, height: 80, borderRadius: 28,
-          background: 'linear-gradient(135deg, rgba(34,197,94,0.2), rgba(34,197,94,0.06))',
+          background: 'linear-gradient(135deg, rgba(87,96,56,0.15), rgba(87,96,56,0.06))',
           border: '1px solid rgba(87,96,56,0.30)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto 20px',
-          boxShadow: '0 0 50px rgba(34,197,94,0.18)',
+          boxShadow: '0 0 50px rgba(87,96,56,0.18)',
         }}>
           <Check size={36} color="#576038" />
         </div>
@@ -406,7 +406,7 @@ const WorkoutSummaryScreen: React.FC<{
           {[
             { label: 'Duration', value: `${summary.durationMinutes}m`, color: '#576038', icon: <Timer size={14} color="#576038" /> },
             { label: 'Volume', value: summary.totalVolume > 1000 ? `${(summary.totalVolume / 1000).toFixed(1)}k` : String(Math.round(summary.totalVolume)), sub: 'kg', color: '#974400', icon: <BarChart2 size={14} color="#974400" /> },
-            { label: 'PRs', value: String(summary.prCount), color: '#FBBF24', icon: <Award size={14} color="#FBBF24" /> },
+            { label: 'PRs', value: String(summary.prCount), color: '#974400', icon: <Award size={14} color="#974400" /> },
           ].map(s => (
             <div key={s.label} style={{
               background: 'var(--bg-card)',
@@ -435,8 +435,8 @@ const WorkoutSummaryScreen: React.FC<{
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               padding: '10px 16px',
-              background: up ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)',
-              border: `1px solid ${up ? 'rgba(34,197,94,0.18)' : 'rgba(239,68,68,0.18)'}`,
+              background: up ? 'rgba(87,96,56,0.06)' : 'rgba(239,68,68,0.06)',
+              border: `1px solid ${up ? 'rgba(87,96,56,0.18)' : 'rgba(239,68,68,0.18)'}`,
               borderRadius: 14,
             }}>
               {up ? <TrendingUp size={14} color="#576038" /> : <TrendingDown size={14} color="#EF4444" />}
@@ -466,12 +466,12 @@ const WorkoutSummaryScreen: React.FC<{
 
         {/* AI Coach Feedback */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(59,130,246,0.04))',
-          border: '1px solid rgba(99,102,241,0.22)', borderRadius: 20, padding: '16px 18px',
+          background: 'linear-gradient(135deg, rgba(87,96,56,0.06), rgba(87,96,56,0.03))',
+          border: '1px solid rgba(87,96,56,0.18)', borderRadius: 20, padding: '16px 18px',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <Zap size={13} color="#576038" fill="#576038" />
-            <span style={{ fontSize: '0.58rem', fontWeight: 800, color: 'rgba(99,102,241,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Coach Feedback</span>
+            <span style={{ fontSize: '0.58rem', fontWeight: 800, color: 'rgba(87,96,56,0.75)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Coach Feedback</span>
           </div>
           <p style={{
             fontSize: '0.88rem',
@@ -494,28 +494,28 @@ const WorkoutSummaryScreen: React.FC<{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '12px 14px',
                 background: 'var(--bg-card)',
-                border: `1px solid ${ex.isPR ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.05)'}`,
+                border: `1px solid ${ex.isPR ? 'rgba(151,68,0,0.22)' : 'rgba(0,0,0,0.05)'}`,
                 borderRadius: 14,
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</span>
+                    <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</span>
                     {ex.isPR && (
                       <span style={{
                         fontSize: '0.54rem', fontWeight: 800, padding: '2px 6px', borderRadius: 99, flexShrink: 0,
-                        background: 'rgba(251,191,36,0.12)', color: '#FBBF24', border: '1px solid rgba(251,191,36,0.2)',
+                        background: 'rgba(151,68,0,0.10)', color: '#974400', border: '1px solid rgba(151,68,0,0.20)',
                         display: 'flex', alignItems: 'center', gap: 3,
                       }}>
                         <Award size={8} /> PR
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.28)', fontWeight: 600, marginTop: 3 }}>
+                  <div style={{ fontSize: '0.67rem', color: 'rgba(0,0,0,0.32)', fontWeight: 600, marginTop: 3 }}>
                     {ex.setCount} sets{ex.bestSet ? ` · best ${ex.bestSet.weight}kg × ${ex.bestSet.reps}` : ''}
                   </div>
                 </div>
                 {ex.volume > 0 && (
-                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'rgba(255,255,255,0.28)', fontVariantNumeric: 'tabular-nums', flexShrink: 0, paddingLeft: 12 }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'rgba(0,0,0,0.32)', fontVariantNumeric: 'tabular-nums', flexShrink: 0, paddingLeft: 12 }}>
                     {Math.round(ex.volume)}kg
                   </span>
                 )}

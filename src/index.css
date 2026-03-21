@@ -22,7 +22,7 @@
   --accent-green-glow:rgba(87,96,56,0.2);
   --accent-orange:    #974400;
   --accent-red:       #DC2626;
-  --accent-teal:      #0891B2;
+  --accent-teal:      #8B9467;
   --accent-indigo:    #576038;
   --accent-purple:    #7C3AED;
   --accent-pink:      #DB2777;
@@ -534,7 +534,7 @@ button {
   background: var(--accent-blue);
   color: white; border: none; border-radius: var(--radius-full);
   padding: 0.875rem 1.75rem; font-weight: 700; font-size: 0.9375rem;
-  box-shadow: 0 4px 16px rgba(59,130,246,0.25);
+  box-shadow: 0 4px 16px rgba(87,96,56,0.25);
 }
 .btn-blue:active { transform: scale(0.97); box-shadow: none; }
 
@@ -649,7 +649,7 @@ button:focus:not(:focus-visible) { outline: none; }
 }
 
 /* ─ Hero section backgrounds ─ */
-.hero-bg-blue   { background: linear-gradient(160deg, rgba(59,130,246,0.08) 0%, transparent 60%); }
+.hero-bg-blue   { background: linear-gradient(160deg, rgba(87,96,56,0.08) 0%, transparent 60%); }
 .hero-bg-green  { background: linear-gradient(160deg, rgba(87,96,56,0.08) 0%, transparent 60%); }
 .hero-bg-coach  { background: linear-gradient(160deg, rgba(87,96,56,0.09) 0%, rgba(62,69,40,0.04) 60%, transparent 100%); }
 
