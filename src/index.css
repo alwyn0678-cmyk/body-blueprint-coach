@@ -79,6 +79,9 @@
   --sp-4: 16px; --sp-5: 20px;  --sp-6: 24px;
   --sp-8: 32px; --sp-10: 40px;
 
+  /* ── Nav ── */
+  --nav-icon-inactive: rgba(0,0,0,0.40);
+
   /* ── Transitions ── */
   --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
   --ease-out:    cubic-bezier(0.0, 0.0, 0.2, 1);
@@ -114,6 +117,8 @@
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.45);
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.55);
+
+  --nav-icon-inactive: rgba(255,255,255,0.55);
 }
 
 [data-theme="dark"] body {
@@ -188,6 +193,66 @@
 }
 [data-theme="dark"] .skeleton {
   background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+}
+
+/* ── Dark: Glass cards ── */
+[data-theme="dark"] .card-glass {
+  background: rgba(28,28,40,0.95);
+  border-color: var(--border-default);
+}
+[data-theme="dark"] .glass-panel {
+  background: rgba(28,28,40,0.95);
+  border-color: var(--border-default);
+}
+
+/* ── Dark: Metric tile ── */
+[data-theme="dark"] .metric-tile {
+  background: rgba(255,255,255,0.04);
+}
+
+/* ── Dark: Insight cards ── */
+[data-theme="dark"] .insight-card      { background: rgba(255,255,255,0.03); }
+[data-theme="dark"] .insight-card.high   { background: rgba(220,38,38,0.12); }
+[data-theme="dark"] .insight-card.medium { background: rgba(234,140,58,0.12); }
+[data-theme="dark"] .insight-card.low    { background: rgba(79,70,229,0.12); }
+
+/* ── Dark: Row items ── */
+[data-theme="dark"] .food-row          { border-bottom-color: var(--border-subtle); }
+[data-theme="dark"] .food-row:active   { background: rgba(255,255,255,0.04); }
+[data-theme="dark"] .settings-row      { border-bottom-color: var(--border-subtle); }
+[data-theme="dark"] .settings-row:active { background: rgba(255,255,255,0.04); }
+
+/* ── Dark: Interactive cards ── */
+[data-theme="dark"] .card-interactive:hover  { background-color: var(--bg-elevated); }
+[data-theme="dark"] .card-interactive:active { background-color: rgba(255,255,255,0.04); }
+
+/* ── Dark: Quick action buttons ── */
+[data-theme="dark"] .quick-action-btn        { border-color: var(--border-subtle); }
+[data-theme="dark"] .quick-action-btn:active { background: rgba(255,255,255,0.04); }
+
+/* ── Dark: Dividers ── */
+[data-theme="dark"] .list-divider { background: var(--border-subtle); }
+[data-theme="dark"] .divider      { background: var(--border-subtle); }
+
+/* ── Dark: Toggle (unchecked track) ── */
+[data-theme="dark"] .toggle-track { background: rgba(255,255,255,0.14); }
+
+/* ── Dark: Dashed empty state ── */
+[data-theme="dark"] .dashed-empty {
+  border-color: rgba(255,255,255,0.12);
+  color: var(--text-tertiary);
+}
+
+/* ── Dark: Recharts tooltip ── */
+[data-theme="dark"] .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: var(--bg-elevated) !important;
+  border-color: var(--border-default) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ── Dark: Macro pill ── */
+[data-theme="dark"] .macro-pill {
+  background: rgba(255,255,255,0.07);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -797,7 +862,7 @@ button:focus:not(:focus-visible) { outline: none; }
 .section-label {
   font-size: 0.6rem; font-weight: 800;
   text-transform: uppercase; letter-spacing: 0.1em;
-  color: rgba(28,28,46,0.35); margin-bottom: 8px;
+  color: var(--text-tertiary); margin-bottom: 8px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════

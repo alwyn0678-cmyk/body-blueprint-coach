@@ -19,18 +19,18 @@ import {
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
-  bgPrimary: 'var(--bg-primary)',
-  bgCard: '#FFFFFF',
-  bgElevated: 'var(--bg-elevated)',
-  accentBlue: '#3B82F6',
-  accentGreen: '#16A34A',
+  bgPrimary:    'var(--bg-primary)',
+  bgCard:       'var(--bg-card)',
+  bgElevated:   'var(--bg-elevated)',
+  accentBlue:   '#3B82F6',
+  accentGreen:  '#16A34A',
   accentOrange: '#EA8C3A',
-  accentRed: '#DC2626',
-  textPrimary: '#1C1C2E',
-  textSecondary: 'rgba(28,28,46,0.65)',
-  textTertiary: 'rgba(28,28,46,0.42)',
-  border: 'rgba(0,0,0,0.06)',
-  borderMd: 'rgba(0,0,0,0.09)',
+  accentRed:    '#DC2626',
+  textPrimary:   'var(--text-primary)',
+  textSecondary: 'var(--text-secondary)',
+  textTertiary:  'var(--text-tertiary)',
+  border:   'var(--border-subtle)',
+  borderMd: 'var(--border-default)',
 };
 
 // ── Local primitives ──────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ const PageCard: React.FC<{ children: React.ReactNode; style?: React.CSSPropertie
 );
 
 const RowDivider: React.FC = () => (
-  <div style={{ height: 1, background: 'rgba(0,0,0,0.03)', margin: '0 16px' }} />
+  <div style={{ height: 1, background: 'var(--border-subtle)', margin: '0 16px' }} />
 );
 
 const SecLabel: React.FC<{ text: string }> = ({ text }) => (
@@ -57,7 +57,7 @@ const SecLabel: React.FC<{ text: string }> = ({ text }) => (
     fontWeight: 800,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.1em',
-    color: 'rgba(0,0,0,0.20)',
+    color: 'var(--text-muted)',
     marginBottom: 8,
   }}>
     {text}
@@ -121,7 +121,7 @@ const ToggleSwitch: React.FC<{ value: boolean; onChange: () => void }> = ({ valu
       width: 44,
       height: 26,
       borderRadius: 13,
-      background: value ? C.accentBlue : 'rgba(0,0,0,0.08)',
+      background: value ? C.accentBlue : 'var(--border-strong)',
       border: 'none',
       cursor: 'pointer',
       position: 'relative',
@@ -157,7 +157,7 @@ const PrefRow: React.FC<{
     padding: '14px 16px',
     gap: 14,
   }}>
-    <div style={{ color: 'rgba(0,0,0,0.28)', flexShrink: 0, display: 'flex' }}>{icon}</div>
+    <div style={{ color: 'var(--text-tertiary)', flexShrink: 0, display: 'flex' }}>{icon}</div>
     <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ fontSize: '0.9rem', fontWeight: 700, color: C.textPrimary }}>{label}</div>
       {subtitle && <div style={{ fontSize: '0.68rem', color: C.textTertiary, fontWeight: 600, marginTop: 1 }}>{subtitle}</div>}
@@ -427,7 +427,7 @@ export const Settings: React.FC = () => {
                   width: 34,
                   height: 34,
                   borderRadius: '50%',
-                  background: 'rgba(0,0,0,0.06)',
+                  background: 'var(--bg-elevated)',
                   border: `1px solid ${C.borderMd}`,
                   display: 'flex',
                   alignItems: 'center',
@@ -436,7 +436,7 @@ export const Settings: React.FC = () => {
                   flexShrink: 0,
                 }}
               >
-                <Edit2 size={13} color="rgba(0,0,0,0.38)" />
+                <Edit2 size={13} style={{ color: 'var(--text-tertiary)' }} />
               </button>
             </div>
 
@@ -492,7 +492,7 @@ export const Settings: React.FC = () => {
                     }}>
                       <div style={{ fontSize: '1rem', fontWeight: 800, color: C.accentOrange, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{item.value}</div>
                       <div style={{ fontSize: '0.52rem', color: C.textTertiary, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginTop: 2 }}>{item.label}</div>
-                      <div style={{ fontSize: '0.58rem', color: 'rgba(0,0,0,0.14)', marginTop: 1, lineHeight: 1.3 }}>{item.sub}</div>
+                      <div style={{ fontSize: '0.58rem', color: 'var(--text-muted)', marginTop: 1, lineHeight: 1.3 }}>{item.sub}</div>
                     </div>
                   ))}
                 </div>
@@ -545,7 +545,7 @@ export const Settings: React.FC = () => {
             subtitle={settings.theme === 'dark' ? 'Dark mode' : 'Light mode'}
             right={
               <div style={{
-                display: 'flex', gap: 2, background: 'rgba(0,0,0,0.06)',
+                display: 'flex', gap: 2, background: 'var(--bg-elevated)',
                 borderRadius: 9999, padding: 2, border: `1px solid ${C.border}`,
               }}>
                 {(['Light', 'Dark'] as const).map(opt => {
@@ -559,10 +559,11 @@ export const Settings: React.FC = () => {
                       }}
                       style={{
                         padding: '4px 10px', borderRadius: 9999, border: 'none',
-                        background: active ? (opt === 'Dark' ? '#1C1C2E' : 'rgba(0,0,0,0.09)') : 'transparent',
-                        color: active ? (opt === 'Dark' ? '#F0F0FF' : C.textPrimary) : C.textTertiary,
+                        background: active ? 'var(--bg-card)' : 'transparent',
+                        color: active ? C.textPrimary : C.textTertiary,
                         fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
                         transition: 'all 0.15s ease',
+                        boxShadow: active ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
                       }}
                     >
                       {opt}
@@ -581,7 +582,7 @@ export const Settings: React.FC = () => {
               <div style={{
                 display: 'flex',
                 gap: 2,
-                background: 'rgba(0,0,0,0.06)',
+                background: 'var(--bg-elevated)',
                 borderRadius: 9999,
                 padding: 2,
                 border: `1px solid ${C.border}`,
@@ -599,12 +600,13 @@ export const Settings: React.FC = () => {
                         padding: '4px 10px',
                         borderRadius: 9999,
                         border: 'none',
-                        background: active ? 'rgba(0,0,0,0.09)' : 'transparent',
+                        background: active ? 'var(--bg-card)' : 'transparent',
                         color: active ? C.textPrimary : C.textTertiary,
                         fontSize: '0.72rem',
                         fontWeight: 700,
                         cursor: 'pointer',
                         transition: 'all 0.15s ease',
+                        boxShadow: active ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
                       }}
                     >
                       {opt}
@@ -663,7 +665,7 @@ export const Settings: React.FC = () => {
               </>
             ) : (
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'rgba(0,0,0,0.28)' }}>No program selected</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>No program selected</div>
                 <div style={{ fontSize: '0.62rem', color: C.textTertiary, fontWeight: 600, marginTop: 2 }}>Tap Change to choose a training split</div>
               </div>
             )}
@@ -733,7 +735,7 @@ export const Settings: React.FC = () => {
                 }}
                 style={{
                   flex: 1, padding: '10px 14px', borderRadius: 12,
-                  background: 'rgba(0,0,0,0.04)', border: `1px solid ${C.border}`,
+                  background: 'var(--bg-input)', border: `1px solid ${C.borderMd}`,
                   color: C.textPrimary, fontSize: '0.9rem', fontWeight: 600, outline: 'none',
                 }}
               />
@@ -781,7 +783,7 @@ export const Settings: React.FC = () => {
                   width: 40,
                   height: 40,
                   borderRadius: 11,
-                  background: 'rgba(0,0,0,0.05)',
+                  background: 'var(--bg-elevated)',
                   border: `1px solid ${C.border}`,
                   display: 'flex',
                   alignItems: 'center',
@@ -797,7 +799,7 @@ export const Settings: React.FC = () => {
                 </div>
                 <span style={{
                   padding: '3px 10px',
-                  background: 'rgba(0,0,0,0.05)',
+                  background: 'var(--bg-elevated)',
                   border: `1px solid ${C.border}`,
                   borderRadius: 9999,
                   color: C.textTertiary,
@@ -811,7 +813,7 @@ export const Settings: React.FC = () => {
                   onClick={() => handleConnectApp(integration.id, integration.name)}
                   style={{
                     padding: '5px 12px',
-                    background: 'rgba(0,0,0,0.06)',
+                    background: 'var(--bg-elevated)',
                     border: `1px solid ${C.borderMd}`,
                     borderRadius: 9999,
                     color: C.textSecondary,
@@ -823,7 +825,7 @@ export const Settings: React.FC = () => {
                   Connect
                 </button>
               </div>
-              {i < INTEGRATIONS.length - 1 && <div style={{ height: 1, background: 'rgba(0,0,0,0.03)', margin: '0 16px' }} />}
+              {i < INTEGRATIONS.length - 1 && <div style={{ height: 1, background: 'var(--border-subtle)', margin: '0 16px' }} />}
             </React.Fragment>
           ))}
         </PageCard>
@@ -843,7 +845,7 @@ export const Settings: React.FC = () => {
               opacity: exportingJSON ? 0.45 : 1,
             }}
           >
-            <Download size={18} color="rgba(0,0,0,0.28)" />
+            <Download size={18} style={{ color: 'var(--text-tertiary)' }} />
             <div style={{ flex: 1, textAlign: 'left' as const }}>
               <div style={{ fontSize: '0.9rem', fontWeight: 700, color: C.textPrimary }}>{exportingJSON ? 'Preparing export...' : 'Export All Data'}</div>
               <div style={{ fontSize: '0.68rem', color: C.textTertiary, marginTop: 1 }}>Full backup as JSON</div>
@@ -861,7 +863,7 @@ export const Settings: React.FC = () => {
               opacity: exportingCSV ? 0.45 : 1,
             }}
           >
-            <Download size={18} color="rgba(0,0,0,0.28)" />
+            <Download size={18} style={{ color: 'var(--text-tertiary)' }} />
             <div style={{ flex: 1, textAlign: 'left' as const }}>
               <div style={{ fontSize: '0.9rem', fontWeight: 700, color: C.textPrimary }}>{exportingCSV ? 'Preparing export...' : 'Export History'}</div>
               <div style={{ fontSize: '0.68rem', color: C.textTertiary, marginTop: 1 }}>Log history as CSV spreadsheet</div>
@@ -877,7 +879,7 @@ export const Settings: React.FC = () => {
               padding: '14px 16px', gap: 14,
             }}
           >
-            <Upload size={18} color="rgba(0,0,0,0.28)" />
+            <Upload size={18} style={{ color: 'var(--text-tertiary)' }} />
             <div style={{ flex: 1, textAlign: 'left' as const }}>
               <div style={{ fontSize: '0.9rem', fontWeight: 700, color: C.textPrimary }}>Import Data</div>
               <div style={{ fontSize: '0.68rem', color: C.textTertiary, marginTop: 1 }}>Restore from JSON backup · Max 5MB</div>
@@ -907,7 +909,7 @@ export const Settings: React.FC = () => {
 
         <p style={{
           fontSize: '0.65rem',
-          color: 'rgba(0,0,0,0.12)',
+          color: 'var(--text-muted)',
           textAlign: 'center',
           padding: '0 1rem',
           lineHeight: 1.5,
@@ -948,7 +950,7 @@ export const Settings: React.FC = () => {
               <Trash2 size={16} color={C.accentRed} />
               <p style={{ color: C.accentRed, fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>This permanently deletes all your data.</p>
             </div>
-            <p style={{ color: 'rgba(0,0,0,0.28)', fontSize: '0.8rem', textAlign: 'center', margin: '0 0 14px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textAlign: 'center', margin: '0 0 14px' }}>
               This action cannot be undone.
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -957,7 +959,7 @@ export const Settings: React.FC = () => {
                 style={{
                   flex: 1,
                   padding: '0.75rem',
-                  background: 'rgba(0,0,0,0.06)',
+                  background: 'var(--bg-elevated)',
                   border: `1px solid ${C.borderMd}`,
                   borderRadius: 14,
                   color: C.textSecondary,
@@ -1014,7 +1016,7 @@ export const Settings: React.FC = () => {
         <p style={{
           textAlign: 'center',
           fontSize: '0.6rem',
-          color: 'rgba(0,0,0,0.07)',
+          color: 'var(--text-muted)',
           fontWeight: 600,
           letterSpacing: '0.07em',
           marginTop: 12,
@@ -1080,20 +1082,20 @@ export const Settings: React.FC = () => {
                   {comingSoonApp.name} integration is coming soon — we're working on it.
                 </p>
               </div>
-              <button onClick={() => setComingSoonApp(null)} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '50%', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                <X size={15} color="rgba(28,28,46,0.45)" />
+              <button onClick={() => setComingSoonApp(null)} style={{ background: 'var(--bg-elevated)', border: 'none', borderRadius: '50%', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                <X size={15} style={{ color: 'var(--text-tertiary)' }} />
               </button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(0,0,0,0.03)', borderRadius: 14, border: `1px solid ${C.border}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'var(--bg-elevated)', borderRadius: 14, border: `1px solid ${C.border}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Bell size={15} color="rgba(0,0,0,0.35)" />
+                <Bell size={15} style={{ color: 'var(--text-tertiary)' }} />
                 <span style={{ fontWeight: 700, fontSize: '0.88rem', color: C.textPrimary }}>Notify me when available</span>
               </div>
               <button
                 onClick={() => setNotifyEnabled(prev => ({ ...prev, [comingSoonApp.id]: !prev[comingSoonApp.id] }))}
                 style={{
                   width: 44, height: 26, borderRadius: 13,
-                  background: notifyEnabled[comingSoonApp.id] ? '#4ade80' : 'rgba(0,0,0,0.08)',
+                  background: notifyEnabled[comingSoonApp.id] ? '#22C55E' : 'var(--border-strong)',
                   border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s ease',
                 }}
               >
@@ -1107,7 +1109,7 @@ export const Settings: React.FC = () => {
             </div>
             <button
               onClick={() => setComingSoonApp(null)}
-              style={{ marginTop: '1rem', width: '100%', padding: '0.8rem', background: 'rgba(0,0,0,0.06)', border: `1px solid ${C.borderMd}`, borderRadius: 14, color: C.textPrimary, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+              style={{ marginTop: '1rem', width: '100%', padding: '0.8rem', background: 'var(--bg-elevated)', border: `1px solid ${C.borderMd}`, borderRadius: 14, color: C.textPrimary, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
             >
               Got it
             </button>
@@ -1176,7 +1178,7 @@ const ProfileEditSheet: React.FC<{
     padding: '0.8rem 1rem',
     borderRadius: 12,
     border: `1px solid ${C.borderMd}`,
-    background: 'rgba(0,0,0,0.04)',
+    background: 'var(--bg-input)',
     color: C.textPrimary,
     fontSize: '0.9rem',
     fontWeight: 600,
@@ -1190,13 +1192,13 @@ const ProfileEditSheet: React.FC<{
     ...inputStyle,
     appearance: 'none',
     WebkitAppearance: 'none',
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(0,0,0,0.20)' strokeWidth='1.5' fill='none' strokeLinecap='round'/%3E%3C/svg%3E")`,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(128,128,128,0.7)' strokeWidth='1.5' fill='none' strokeLinecap='round'/%3E%3C/svg%3E")`,
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'right 1rem center',
   };
 
   const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: 'rgba(0,0,0,0.28)', marginBottom: 5 }}>
+    <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: 5 }}>
       {children}
     </div>
   );
@@ -1212,8 +1214,8 @@ const ProfileEditSheet: React.FC<{
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: C.textPrimary }}>Edit Profile</h2>
             <p style={{ fontSize: '0.75rem', color: C.textTertiary, fontWeight: 600, marginTop: 2 }}>Changes recalculate your targets</p>
           </div>
-          <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <X size={18} color="rgba(28,28,46,0.45)" />
+          <button onClick={onClose} style={{ background: 'var(--bg-elevated)', border: 'none', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <X size={18} style={{ color: 'var(--text-tertiary)' }} />
           </button>
         </div>
 
@@ -1294,8 +1296,8 @@ const ProfileEditSheet: React.FC<{
             style={{
               width: '100%',
               padding: '0.9rem',
-              background: saveState === 'saved' ? '#4ade80' : isValid ? '#fff' : 'rgba(0,0,0,0.08)',
-              color: saveState === 'saved' ? '#000' : isValid ? '#000' : 'rgba(0,0,0,0.20)',
+              background: saveState === 'saved' ? '#22C55E' : isValid ? '#4F46E5' : 'var(--bg-elevated)',
+              color: saveState === 'saved' ? '#fff' : isValid ? '#fff' : 'var(--text-muted)',
               border: 'none',
               borderRadius: 14,
               fontWeight: 800,
@@ -1330,8 +1332,8 @@ const ProgramPickerSheet: React.FC<{
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: C.textPrimary }}>Choose Program</h2>
           <p style={{ fontSize: '0.75rem', color: C.textTertiary, fontWeight: 600, marginTop: 2 }}>Your training split for the week</p>
         </div>
-        <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-          <X size={18} color="rgba(28,28,46,0.45)" />
+        <button onClick={onClose} style={{ background: 'var(--bg-elevated)', border: 'none', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <X size={18} style={{ color: 'var(--text-tertiary)' }} />
         </button>
       </div>
 
@@ -1367,7 +1369,7 @@ const ProgramPickerSheet: React.FC<{
                     {isSelected && <Check size={16} color={p.accent} />}
                   </div>
                   <div style={{ fontSize: '0.62rem', fontWeight: 700, color: p.accent, textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: 6 }}>{p.tag}</div>
-                  <p style={{ fontSize: '0.8rem', color: 'rgba(0,0,0,0.35)', lineHeight: 1.5, margin: '0 0 8px' }}>{p.desc}</p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 8px' }}>{p.desc}</p>
                   <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 5 }}>
                     {p.split.split(' · ').filter(s => !s.includes('days')).map(day => (
                       <span key={day} style={{

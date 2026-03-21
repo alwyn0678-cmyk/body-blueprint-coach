@@ -151,7 +151,7 @@ const LogSheet: React.FC<{
         transition={{ type: 'spring', damping: 26, stiffness: 300 }}
         style={{ position: 'relative', background: 'var(--bg-sheet)', borderRadius: '28px 28px 0 0', padding: '24px 20px', paddingBottom: 'calc(28px + env(safe-area-inset-bottom))', border: '1px solid var(--border-default)', borderBottom: 'none', boxShadow: '0 -8px 40px rgba(0,0,0,0.5)' }}
       >
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(0,0,0,0.12)', margin: '0 auto 20px' }} />
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border-strong)', margin: '0 auto 20px' }} />
         <div style={{ fontSize: '1.1rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 16 }}>{labels[type]}</div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <input
@@ -427,7 +427,7 @@ export const Dashboard: React.FC = () => {
               </div>
               <div style={{ display: 'flex', gap: 4, marginBottom: weeklyNudge ? 8 : 0 }}>
                 {Array.from({ length: Math.max(user.trainingFrequency, 1) }).map((_, i) => (
-                  <div key={i} style={{ height: 4, flex: 1, borderRadius: 2, background: i < weeklyStats.workoutsCompleted ? '#3B82F6' : 'rgba(0,0,0,0.06)', transition: 'background 0.3s', boxShadow: i < weeklyStats.workoutsCompleted ? '0 0 6px rgba(59,130,246,0.5)' : 'none' }} />
+                  <div key={i} style={{ height: 4, flex: 1, borderRadius: 2, background: i < weeklyStats.workoutsCompleted ? '#3B82F6' : 'var(--border-default)', transition: 'background 0.3s', boxShadow: i < weeklyStats.workoutsCompleted ? '0 0 6px rgba(59,130,246,0.5)' : 'none' }} />
                 ))}
               </div>
               {weeklyNudge && (
@@ -558,14 +558,14 @@ export const Dashboard: React.FC = () => {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F59E0B', marginBottom: 3 }}>Plateau detected</div>
-              <div style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.35)', lineHeight: 1.5, fontWeight: 600 }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.5, fontWeight: 600 }}>
                 Your weight trend has moved less than 0.3kg in 14 days. Your weekly check-in will suggest a 100 kcal reduction. Consider a high-carb refeed day to reset leptin.
               </div>
             </div>
             <button
               onClick={() => setDismissedInsights(prev => new Set([...prev, 'plateau']))}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
-            ><X size={14} color="rgba(0,0,0,0.16)" /></button>
+            ><X size={14} style={{ color: 'var(--text-muted)' }} /></button>
           </div>
         </motion.div>
       )}
@@ -592,14 +592,14 @@ export const Dashboard: React.FC = () => {
               }}>
                 {recoveryInsight.type === 'fatigue' ? 'Fatigue signal' : 'Ready to push'}
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.35)', lineHeight: 1.5, fontWeight: 600 }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.5, fontWeight: 600 }}>
                 {recoveryInsight.message}
               </div>
             </div>
             <button
               onClick={() => setDismissedInsights(prev => new Set([...prev, `recovery_${recoveryInsight.type}`]))}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
-            ><X size={14} color="rgba(0,0,0,0.16)" /></button>
+            ><X size={14} style={{ color: 'var(--text-muted)' }} /></button>
           </div>
         </motion.div>
       )}
@@ -619,14 +619,14 @@ export const Dashboard: React.FC = () => {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#6366F1', marginBottom: 3 }}>4+ days without training</div>
-              <div style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.35)', lineHeight: 1.5, fontWeight: 600 }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.5, fontWeight: 600 }}>
                 No workouts logged in 4+ days. The training stimulus is the driver of adaptation — even a 30-minute session beats skipping.
               </div>
             </div>
             <button
               onClick={() => setDismissedInsights(prev => new Set([...prev, 'stall']))}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
-            ><X size={14} color="rgba(0,0,0,0.16)" /></button>
+            ><X size={14} style={{ color: 'var(--text-muted)' }} /></button>
           </div>
         </motion.div>
       )}
