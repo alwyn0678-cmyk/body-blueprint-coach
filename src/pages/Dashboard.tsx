@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import {
-  calculateStreak, computeWeeklyStats,
+  calculateStreak, computeWeeklyStats, calculateWeightTrend,
 } from '../utils/aiCoachingEngine';
 import { coachService } from '../services/aiCoach';
 
@@ -133,13 +133,22 @@ export const Dashboard: React.FC = () => {
   const totals = useMemo(() => getNutritionTotals(dateStr), [state.logs, dateStr]);
   const streak = useMemo(() => calculateStreak(state.logs), [state.logs]);
   const weeklyStats = useMemo(() => computeWeeklyStats(state.logs, user.targets), [state.logs, user.targets]);
+
+  const weightDelta = useMemo(() => {
+    const trend = calculateWeightTrend(state.logs, user.weight).filter(d => d.trend !== null);
+    if (trend.length < 7) return 0;
+    const latest = trend[trend.length - 1].trend!;
+    const week = trend[Math.max(0, trend.length - 8)].trend!;
+    return parseFloat((latest - week).toFixed(2));
+  }, [state.logs, user.weight]);
+
   const coachInsight = useMemo(() => coachService.getDailyInsight({
     user, todayLog: log, weeklyStats,
     recentWorkouts: Object.values(state.logs).flatMap(l => l.workouts)
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 3),
-    weightTrend: 'maintaining',
-    weightDelta7d: 0,
-  }), [user, weeklyStats, log, state.logs]);
+    weightTrend: weightDelta < -0.1 ? 'losing' : weightDelta > 0.1 ? 'gaining' : 'maintaining',
+    weightDelta7d: weightDelta,
+  }), [user, weeklyStats, log, state.logs, weightDelta]);
 
   const recentWorkouts = useMemo(() =>
     Object.entries(state.logs)

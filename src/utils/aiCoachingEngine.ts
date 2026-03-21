@@ -134,7 +134,8 @@ export const computeEarnedBadges = (
   // Weekly training target
   const weekStart = (() => {
     const d = new Date();
-    d.setDate(d.getDate() - d.getDay()); // Sunday
+    const day = d.getDay();
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); // Monday
     return d.toISOString().split('T')[0];
   })();
   const thisWeekWorkouts = Object.entries(logs)

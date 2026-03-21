@@ -228,9 +228,8 @@ const WeeklyCheckInCard: React.FC<{
 
 // ─── Adaptive TDEE card ───────────────────────────────────────────────────────
 
-const AdaptiveTDEECard: React.FC<{ user: any; weeklyStats: any; currentEma: number | null }> = ({ user, weeklyStats, currentEma }) => {
+const AdaptiveTDEECard: React.FC<{ user: any; weeklyStats: any; evaluation: ReturnType<typeof evaluateWeeklyCheckIn> }> = ({ user, evaluation }) => {
   const { updateUser, showToast } = useApp();
-  const evaluation = useMemo(() => evaluateWeeklyCheckIn(user, {}, currentEma, { plateauDetection: true }), [user, currentEma]);
 
   const handleApply = () => {
     if (!evaluation.newTargets) return;
@@ -514,10 +513,13 @@ export const Coach: React.FC = () => {
 
       saveWeeklyCheckIn(checkIn);
       showToast('Weekly check-in complete!', 'success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Check-in failed. Try again.';
+      showToast(msg, 'error');
     } finally {
       setWeeklyLoading(false);
     }
-  }, [user, weeklyStats, weightDelta, currentEma, weekAdjustment]);
+  }, [user, weeklyStats, weightDelta, currentEma, weekAdjustment, showToast]);
 
   const insightColor = dailyInsight.priority === 'high' ? '#974400'
     : dailyInsight.priority === 'medium' ? '#974400' : '#576038';
@@ -570,7 +572,7 @@ export const Coach: React.FC = () => {
       {/* ── Adaptive TDEE adjustment ── */}
       {weeklyStats.daysLogged >= 5 && weekAdjustment.recommendation !== 'maintain' && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <AdaptiveTDEECard user={user} weeklyStats={weeklyStats} currentEma={currentEma} />
+          <AdaptiveTDEECard user={user} weeklyStats={weeklyStats} evaluation={weekAdjustment} />
         </motion.div>
       )}
 
@@ -741,7 +743,7 @@ export const Coach: React.FC = () => {
                       maxWidth: '86%', padding: '10px 14px', borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
                       background: m.role === 'user' ? 'linear-gradient(135deg, #576038, #3E4528)' : 'var(--bg-elevated)',
                       border: m.role === 'assistant' ? '1px solid rgba(0,0,0,0.06)' : 'none',
-                      fontSize: '0.84rem', fontWeight: 500, lineHeight: 1.6, color: 'var(--text-primary)',
+                      fontSize: '0.84rem', fontWeight: 500, lineHeight: 1.6, color: m.role === 'user' ? '#FFFFFF' : 'var(--text-primary)',
                       boxShadow: m.role === 'user' ? '0 4px 12px rgba(87,96,56,0.25)' : '0 2px 8px rgba(0,0,0,0.06)',
                     }}>
                       {m.role === 'assistant' ? <ChatMarkdown text={m.content} /> : m.content}
