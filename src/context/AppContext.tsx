@@ -75,6 +75,8 @@ interface AppContextType {
   trackRecentFood: (food: FoodItem) => void;
   clearRecentFoods: () => void;
   toggleFavoriteFood: (food: FoodItem) => void;
+  // Exercise favorites
+  toggleFavoriteExercise: (id: string) => void;
   // Program
   setAssignedProgram: (programId: 'male_phase2' | 'female_phase1' | null) => void;
   // Custom programs
@@ -176,6 +178,7 @@ const defaultState: AppState = {
   settings: DEFAULT_SETTINGS,
   recentFoods: [],
   favoriteFoods: [],
+  favoriteExerciseIds: [],
   assignedProgram: null,
   customPrograms: [],
   activeCustomProgramId: null,
@@ -201,6 +204,7 @@ function loadInitialState(): AppState {
     recipes: loaded.recipes ?? [],
     customPrograms: loaded.customPrograms ?? [],
     activeCustomProgramId: loaded.activeCustomProgramId ?? null,
+    favoriteExerciseIds: loaded.favoriteExerciseIds ?? [],
   };
 }
 
@@ -565,6 +569,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   };
 
+  // ── Exercise favorites ───────────────────────────────────────────────────────
+
+  const toggleFavoriteExercise = (id: string) => {
+    setState(prev => {
+      const fav = prev.favoriteExerciseIds ?? [];
+      return {
+        ...prev,
+        favoriteExerciseIds: fav.includes(id) ? fav.filter(x => x !== id) : [id, ...fav],
+      };
+    });
+  };
+
   // ── Measurements ────────────────────────────────────────────────────────────
 
   const addMeasurement = (m: BodyMeasurement) => {
@@ -699,7 +715,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       saveMeal, deleteSavedMeal, logSavedMeal, addRecipe, deleteRecipe,
       updateSettings, updateConnectionStatus, updateUnits,
       getNutritionTotals, getProgressionHistory,
-      trackRecentFood, clearRecentFoods, toggleFavoriteFood,
+      trackRecentFood, clearRecentFoods, toggleFavoriteFood, toggleFavoriteExercise,
       setAssignedProgram, saveCustomProgram, deleteCustomProgram, activateCustomProgram, duplicateCustomProgram, setActiveMesocycle,
       updateWeight,
       saveWorkoutDraft, clearWorkoutDraft, getWorkoutDraft,

@@ -191,6 +191,56 @@ export const computeConsistencyScore = (
 };
 
 /**
+ * Returns true if no workout has been logged for 4+ consecutive days
+ * (looking back from today, skipping today itself if empty).
+ */
+export const detectTrainingStall = (logs: Record<string, DailyLog>): boolean => {
+  const d = new Date();
+  let missDays = 0;
+  for (let i = 0; i < 7; i++) {
+    const dateStr = d.toISOString().split('T')[0];
+    const hasWorkout = (logs[dateStr]?.workouts?.length ?? 0) > 0;
+    if (hasWorkout) return false;
+    missDays++;
+    if (missDays >= 4 && i > 0) return true; // always skip i=0 (today) from breaking
+    d.setDate(d.getDate() - 1);
+  }
+  return missDays >= 4;
+};
+
+/**
+ * Analyse recent session RPEs to surface a fatigue/recovery insight.
+ * Returns null if no signal is present.
+ */
+export const computeRecoveryInsight = (
+  logs: Record<string, DailyLog>,
+): { type: 'fatigue' | 'ready'; message: string } | null => {
+  const sessions: number[] = [];
+  const sorted = Object.keys(logs).sort().reverse();
+  for (const date of sorted) {
+    for (const w of logs[date].workouts ?? []) {
+      if (w.sessionRPE != null) sessions.push(w.sessionRPE);
+    }
+    if (sessions.length >= 3) break;
+  }
+  if (sessions.length < 2) return null;
+  const avg = sessions.reduce((a, b) => a + b, 0) / sessions.length;
+  if (avg >= 8.5) {
+    return {
+      type: 'fatigue',
+      message: `Your last ${sessions.length} sessions averaged RPE ${avg.toFixed(1)} — you're accumulating fatigue. Consider a deload this week or add an extra rest day before your next session.`,
+    };
+  }
+  if (avg <= 6.5 && sessions.length >= 3) {
+    return {
+      type: 'ready',
+      message: `RPE averaging ${avg.toFixed(1)} across your last ${sessions.length} sessions — you have capacity to push harder. Try adding a set or increasing load by 2.5–5% this week.`,
+    };
+  }
+  return null;
+};
+
+/**
  * Detect weight plateau: EMA moved <0.3 kg over last 14 days.
  */
 export const detectPlateau = (

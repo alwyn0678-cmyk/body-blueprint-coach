@@ -9,6 +9,7 @@ import { useApp } from '../context/AppContext';
 import {
   calculateWeightTrend, calculateStreak, computeWeeklyStats,
   calculateWorkoutStreak, computeEarnedBadges, getWeeklyWorkoutNudge, computeConsistencyScore,
+  detectPlateau, detectTrainingStall, computeRecoveryInsight,
 } from '../utils/aiCoachingEngine';
 import { coachService } from '../services/aiCoach';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
@@ -189,6 +190,10 @@ export const Dashboard: React.FC = () => {
   const earnedBadges = useMemo(() => computeEarnedBadges(state.logs, user), [state.logs, user]);
   const weeklyNudge = useMemo(() => getWeeklyWorkoutNudge(weeklyStats.workoutsCompleted, user.trainingFrequency), [weeklyStats.workoutsCompleted, user.trainingFrequency]);
   const consistencyScore = useMemo(() => computeConsistencyScore(weeklyStats.calorieAdherence, weeklyStats.proteinAdherence, weeklyStats.workoutsCompleted, user.trainingFrequency), [weeklyStats, user.trainingFrequency]);
+  const isPlateauing = useMemo(() => user.weight ? detectPlateau(state.logs, user.weight) : false, [state.logs, user.weight]);
+  const isTrainingStalled = useMemo(() => detectTrainingStall(state.logs), [state.logs]);
+  const recoveryInsight = useMemo(() => computeRecoveryInsight(state.logs), [state.logs]);
+  const [dismissedInsights, setDismissedInsights] = useState<Set<string>>(new Set());
 
   const weightTrendData = useMemo(() => {
     const data = calculateWeightTrend(state.logs, user.weight);
@@ -502,6 +507,95 @@ export const Dashboard: React.FC = () => {
                 <span style={{ fontSize: '0.65rem', fontWeight: 800, color: badge.color, whiteSpace: 'nowrap' }}>{badge.label}</span>
               </div>
             ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Proactive coaching insights ── */}
+      {isPlateauing && !dismissedInsights.has('plateau') && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          <div style={{
+            background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)',
+            borderRadius: 18, padding: '13px 15px',
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+              background: 'rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Target size={15} color="#F59E0B" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F59E0B', marginBottom: 3 }}>Plateau detected</div>
+              <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, fontWeight: 600 }}>
+                Your weight trend has moved less than 0.3kg in 14 days. Your weekly check-in will suggest a 100 kcal reduction. Consider a high-carb refeed day to reset leptin.
+              </div>
+            </div>
+            <button
+              onClick={() => setDismissedInsights(prev => new Set([...prev, 'plateau']))}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, flexShrink: 0, color: 'rgba(255,255,255,0.2)' }}
+            >✕</button>
+          </div>
+        </motion.div>
+      )}
+
+      {recoveryInsight && !dismissedInsights.has(`recovery_${recoveryInsight.type}`) && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          <div style={{
+            background: recoveryInsight.type === 'fatigue' ? 'rgba(239,68,68,0.07)' : 'rgba(34,197,94,0.06)',
+            border: `1px solid ${recoveryInsight.type === 'fatigue' ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.18)'}`,
+            borderRadius: 18, padding: '13px 15px',
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+              background: recoveryInsight.type === 'fatigue' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Activity size={15} color={recoveryInsight.type === 'fatigue' ? '#EF4444' : '#22C55E'} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontSize: '0.78rem', fontWeight: 800, marginBottom: 3,
+                color: recoveryInsight.type === 'fatigue' ? '#EF4444' : '#22C55E',
+              }}>
+                {recoveryInsight.type === 'fatigue' ? 'Fatigue signal' : 'Ready to push'}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, fontWeight: 600 }}>
+                {recoveryInsight.message}
+              </div>
+            </div>
+            <button
+              onClick={() => setDismissedInsights(prev => new Set([...prev, `recovery_${recoveryInsight.type}`]))}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, flexShrink: 0, color: 'rgba(255,255,255,0.2)' }}
+            >✕</button>
+          </div>
+        </motion.div>
+      )}
+
+      {isTrainingStalled && !dismissedInsights.has('stall') && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          <div style={{
+            background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)',
+            borderRadius: 18, padding: '13px 15px',
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+              background: 'rgba(99,102,241,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Dumbbell size={15} color="#6366F1" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#6366F1', marginBottom: 3 }}>4+ days without training</div>
+              <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, fontWeight: 600 }}>
+                No workouts logged in 4+ days. The training stimulus is the driver of adaptation — even a 30-minute session beats skipping.
+              </div>
+            </div>
+            <button
+              onClick={() => setDismissedInsights(prev => new Set([...prev, 'stall']))}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, flexShrink: 0, color: 'rgba(255,255,255,0.2)' }}
+            >✕</button>
           </div>
         </motion.div>
       )}

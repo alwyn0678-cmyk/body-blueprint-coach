@@ -487,6 +487,105 @@ Be direct. Reference actual numbers. No generic praise.`,
   }
 }
 
+// ─── Food Scanner ─────────────────────────────────────────────────────────────
+
+export interface DetectedFood {
+  name: string;
+  estimatedGrams: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  confidence: 'high' | 'medium' | 'low';
+}
+
+/**
+ * Analyse a meal image using Claude Vision and return estimated nutrition.
+ * Requires a Claude API key in localStorage.
+ */
+export async function analyzeFoodImage(
+  base64Data: string,
+  mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
+): Promise<{ foods: DetectedFood[]; disclaimer: string } | { error: string }> {
+  const key = getClaudeKey();
+  if (!key) return { error: 'No API key set. Add your Claude key in Settings → AI Coach.' };
+
+  const systemPrompt = `You are a nutrition estimation assistant. When given a photo of food, you identify each visible food item and estimate its nutritional content based on visual portion assessment. Always respond with valid JSON only — no markdown, no explanations outside the JSON.`;
+
+  const userPrompt = `Analyse this meal photo. Identify each distinct food item visible on the plate/in the image.
+
+For each food, estimate:
+- The portion size in grams (visual assessment)
+- Calories, protein, carbs, and fats for that portion
+- Your confidence level
+
+Respond ONLY with this exact JSON structure (no other text):
+{
+  "foods": [
+    {
+      "name": "food name",
+      "estimatedGrams": 150,
+      "calories": 200,
+      "protein": 25,
+      "carbs": 10,
+      "fats": 6,
+      "confidence": "high"
+    }
+  ],
+  "disclaimer": "These are visual estimates. Actual values may vary based on preparation method and exact portion size."
+}
+
+Confidence levels: "high" = clearly identifiable food with well-known macros, "medium" = recognisable but portion uncertain, "low" = unclear or mixed item.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: CLAUDE_MODEL,
+        max_tokens: 1200,
+        system: systemPrompt,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mediaType, data: base64Data },
+            },
+            { type: 'text', text: userPrompt },
+          ],
+        }],
+      }),
+    });
+
+    const data = await res.json();
+    if (data.error) {
+      if (data.error.type === 'authentication_error') return { error: 'Invalid API key.' };
+      return { error: `API error: ${data.error.message}` };
+    }
+
+    const text = data.content?.[0]?.text ?? '';
+    // Extract JSON from the response (handle potential markdown fences)
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return { error: 'Could not parse AI response. Try again.' };
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed.foods)) return { error: 'Unexpected response format.' };
+
+    return {
+      foods: parsed.foods as DetectedFood[],
+      disclaimer: parsed.disclaimer ?? 'These are visual estimates — actual values may vary.',
+    };
+  } catch (e) {
+    return { error: `Network error: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
 // ─── Singleton ────────────────────────────────────────────────────────────────
 
 export const coachService = new AICoachService();

@@ -370,6 +370,7 @@ export interface AppState {
   settings: AppSettings;
   recentFoods: FoodItem[];
   favoriteFoods: FoodItem[];
+  favoriteExerciseIds: string[]; // pinned exercises in picker
   assignedProgram: 'male_phase2' | 'female_phase1' | null;
   // Custom programs
   customPrograms: CustomProgram[];

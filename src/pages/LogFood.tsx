@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { ChevronLeft, ChevronRight, BookOpen, Pencil, Check, X, Plus, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, Pencil, Check, X, Plus, ChevronDown, Camera } from 'lucide-react';
 import { MealType, FoodItem } from '../types';
 import { FoodSearch } from './FoodSearch';
+import { FoodScanner } from './FoodScanner';
 import { getLocalISOString } from '../utils/dateUtils';
 import { SwipeReveal, SlideOver } from '../components/MotionUI';
 import { getMacrosFromLog } from '../utils/aiCoachingEngine';
@@ -69,6 +70,7 @@ export const LogFood: React.FC = () => {
   const [showCopyYesterday, setShowCopyYesterday] = useState(false);
   const [copiedYesterday, setCopiedYesterday] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   const prevDate = offsetDate(selectedDate, -1);
   const prevDateLog = state.logs[prevDate];
@@ -540,6 +542,11 @@ export const LogFood: React.FC = () => {
     );
   };
 
+  const handleScanLog = (mealType: MealType, items: { food: FoodItem; amount: number }[]) => {
+    items.forEach(({ food, amount }) => addFoodToLog(selectedDate, mealType, food, amount));
+    showToast(`${items.length} item${items.length !== 1 ? 's' : ''} logged from scan`, 'success');
+  };
+
   return (
     <div
       style={{
@@ -550,6 +557,13 @@ export const LogFood: React.FC = () => {
       }}
       className="animate-fade-in"
     >
+      {showScanner && (
+        <FoodScanner
+          defaultMealType={activeMeal}
+          onLog={handleScanLog}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
 
       {/* ── DAILY SUMMARY HEADER ── */}
       <div style={{
@@ -583,16 +597,30 @@ export const LogFood: React.FC = () => {
               <ChevronRight size={16} />
             </button>
           </div>
-          <span style={{
-            fontSize: '0.65rem', fontWeight: 800,
-            color: isOver ? 'var(--accent-red)' : calPct >= 90 ? '#fbbf24' : 'var(--accent-blue)',
-            textTransform: 'uppercase', letterSpacing: '0.06em',
-            padding: '3px 9px', borderRadius: '50px',
-            backgroundColor: isOver ? 'rgba(255,69,58,0.1)' : calPct >= 90 ? 'rgba(251,191,36,0.1)' : 'rgba(10,132,255,0.1)',
-            border: `1px solid ${isOver ? 'rgba(255,69,58,0.2)' : calPct >= 90 ? 'rgba(251,191,36,0.2)' : 'rgba(10,132,255,0.2)'}`,
-          }}>
-            {isOver ? 'Over' : calPct >= 90 ? 'Nearly there' : `${Math.round(calPct)}% logged`}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              fontSize: '0.65rem', fontWeight: 800,
+              color: isOver ? 'var(--accent-red)' : calPct >= 90 ? '#fbbf24' : 'var(--accent-blue)',
+              textTransform: 'uppercase', letterSpacing: '0.06em',
+              padding: '3px 9px', borderRadius: '50px',
+              backgroundColor: isOver ? 'rgba(255,69,58,0.1)' : calPct >= 90 ? 'rgba(251,191,36,0.1)' : 'rgba(10,132,255,0.1)',
+              border: `1px solid ${isOver ? 'rgba(255,69,58,0.2)' : calPct >= 90 ? 'rgba(251,191,36,0.2)' : 'rgba(10,132,255,0.2)'}`,
+            }}>
+              {isOver ? 'Over' : calPct >= 90 ? 'Nearly there' : `${Math.round(calPct)}% logged`}
+            </span>
+            {/* Camera scan button */}
+            <button
+              onClick={() => setShowScanner(true)}
+              title="Scan a meal with AI"
+              style={{
+                width: 32, height: 32, borderRadius: 10,
+                background: 'rgba(10,132,255,0.12)', border: '1px solid rgba(10,132,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+              }}
+            >
+              <Camera size={15} color="var(--accent-blue)" />
+            </button>
+          </div>
         </div>
 
         {/* Calorie row: logged / target */}
@@ -669,6 +697,31 @@ export const LogFood: React.FC = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+        {/* Smart remaining hint — show if meaningful gap remains */}
+        {targets && calPct < 95 && !isOver && (Math.round(proRemaining) > 5 || Math.round(carbRemaining) > 10 || Math.round(fatRemaining) > 5) && (
+          <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>
+              Still to go
+            </div>
+            <div style={{ display: 'flex', gap: 14 }}>
+              {proRemaining > 5 && (
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--color-protein)', fontVariantNumeric: 'tabular-nums' }}>
+                  +{Math.round(proRemaining)}g protein
+                </span>
+              )}
+              {carbRemaining > 10 && (
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-carbs)', fontVariantNumeric: 'tabular-nums' }}>
+                  +{Math.round(carbRemaining)}g carbs
+                </span>
+              )}
+              {fatRemaining > 5 && (
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-fats)', fontVariantNumeric: 'tabular-nums' }}>
+                  +{Math.round(fatRemaining)}g fats
+                </span>
+              )}
+            </div>
           </div>
         )}
       </div>

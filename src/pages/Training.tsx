@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Dumbbell, Plus, Timer, X, Check, RotateCcw, Search,
   TrendingUp, TrendingDown, Trash2, Play, ChevronDown, ChevronUp,
-  Award, Zap, Flame, Target, BarChart2, Copy,
+  Award, Zap, Flame, Target, BarChart2, Copy, Star, RefreshCw,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useApp } from '../context/AppContext';
@@ -575,14 +575,23 @@ const getMovementPattern = (muscles: string[]): 'push' | 'pull' | 'legs' | 'core
 
 const PATTERN_COLOR: Record<string, string> = {
   push: '#3B82F6', pull: '#22C55E', legs: '#F59E0B', core: '#A855F7',
+  favorites: '#F59E0B', swap: '#A855F7',
 };
 
 const FILTER_TABS = [
   { key: 'all', label: 'All' },
+  { key: 'favorites', label: '★ Saved' },
   { key: 'push', label: 'Push' },
   { key: 'pull', label: 'Pull' },
   { key: 'legs', label: 'Legs' },
   { key: 'core', label: 'Core' },
+  { key: 'Chest', label: 'Chest' },
+  { key: 'Back', label: 'Back' },
+  { key: 'Shoulders', label: 'Shoulders' },
+  { key: 'Glutes', label: 'Glutes' },
+  { key: 'Hamstrings', label: 'Hamstrings' },
+  { key: 'Biceps', label: 'Biceps' },
+  { key: 'Triceps', label: 'Triceps' },
 ] as const;
 
 // ── Exercise Picker ────────────────────────────────────────────────────────────
@@ -590,11 +599,15 @@ const ExercisePicker: React.FC<{
   library: { id: string; name: string; targetMuscles: string[] }[];
   alreadyAdded: string[];
   recentIds: string[];
+  favoriteIds: string[];
+  onToggleFavorite: (id: string) => void;
   onConfirm: (selected: { id: string; name: string }[]) => void;
   onClose: () => void;
-}> = ({ library, alreadyAdded, recentIds, onConfirm, onClose }) => {
+  /** If set, show only exercises matching these muscles (swap mode) */
+  swapMuscles?: string[];
+}> = ({ library, alreadyAdded, recentIds, favoriteIds, onToggleFavorite, onConfirm, onClose, swapMuscles }) => {
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>(swapMuscles ? 'swap' : 'all');
   const [selected, setSelected] = useState<{ id: string; name: string }[]>([]);
 
   const toggle = (id: string, name: string) => {
@@ -603,9 +616,15 @@ const ExercisePicker: React.FC<{
     );
   };
 
+  const MUSCLE_KEYS = new Set(['Chest', 'Back', 'Shoulders', 'Glutes', 'Hamstrings', 'Biceps', 'Triceps', 'Quads', 'Calves', 'Core', 'Traps', 'Rear Delts']);
+
   const filtered = library.filter(e => {
     const matchQ = e.name.toLowerCase().includes(query.toLowerCase());
-    const matchF = filter === 'all' || getMovementPattern(e.targetMuscles) === filter;
+    let matchF = true;
+    if (filter === 'favorites') matchF = favoriteIds.includes(e.id);
+    else if (filter === 'swap') matchF = !!swapMuscles && e.targetMuscles.some(m => swapMuscles.includes(m));
+    else if (MUSCLE_KEYS.has(filter)) matchF = e.targetMuscles.includes(filter);
+    else if (filter !== 'all') matchF = getMovementPattern(e.targetMuscles) === filter;
     return matchQ && matchF;
   });
 
@@ -760,6 +779,17 @@ const ExercisePicker: React.FC<{
                     ))}
                   </div>
                 </div>
+                {/* Favorite star */}
+                <button
+                  onClick={e => { e.stopPropagation(); onToggleFavorite(ex.id); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, flexShrink: 0, display: 'flex' }}
+                >
+                  <Star
+                    size={16}
+                    color={favoriteIds.includes(ex.id) ? '#F59E0B' : 'rgba(255,255,255,0.18)'}
+                    fill={favoriteIds.includes(ex.id) ? '#F59E0B' : 'none'}
+                  />
+                </button>
               </div>
             );
           })
@@ -813,9 +843,13 @@ const ActiveWorkoutScreen: React.FC<{
   onCancel: () => void;
   showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
 }> = ({ workoutName, exercises, elapsed, logs, today, goalType, onUpdateExercises, onAddExercise, onFinish, onCancel, showToast }) => {
+  const { state, toggleFavoriteExercise } = useApp();
   const [restTimer, setRestTimer] = useState<number | null>(null);
   const restRef = useRef<ReturnType<typeof setTimeout>>();
   const [activeInput, setActiveInput] = useState<string | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [swapExIdx, setSwapExIdx] = useState<number | null>(null);
+  const [swapMuscles, setSwapMuscles] = useState<string[]>([]);
 
   useEffect(() => {
     if (restTimer === null || restTimer <= 0) return;
@@ -1102,6 +1136,22 @@ const ActiveWorkoutScreen: React.FC<{
                         <Copy size={13} color="rgba(99,102,241,0.8)" />
                       </button>
                     )}
+                    <button
+                      onClick={() => {
+                        // Find muscles for this exercise and open swap picker
+                        const libEx = state.workoutLibrary.find(l => l.id === ex.libraryId);
+                        setSwapExIdx(exIdx);
+                        setSwapMuscles(libEx?.targetMuscles ?? []);
+                        setShowPicker(true);
+                      }}
+                      title="Swap exercise"
+                      style={{
+                        background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+                        borderRadius: 10, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                      }}
+                    >
+                      <RefreshCw size={13} color="rgba(245,158,11,0.8)" />
+                    </button>
                     <button
                       onClick={() => removeExercise(exIdx)}
                       style={{
@@ -1391,13 +1441,40 @@ const ActiveWorkoutScreen: React.FC<{
           </button>
         </div>
       </div>
+
+      {/* Swap / add exercise picker (inside ActiveWorkoutScreen) */}
+      {showPicker && (
+        <ExercisePicker
+          library={state.workoutLibrary}
+          alreadyAdded={swapExIdx !== null ? [] : exercises.map(e => e.libraryId)}
+          recentIds={Object.entries(logs).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 5).flatMap(([, l]) => l.workouts.flatMap(w => w.exercises.map(e => e.exerciseId)))}
+          favoriteIds={state.favoriteExerciseIds ?? []}
+          onToggleFavorite={toggleFavoriteExercise}
+          swapMuscles={swapExIdx !== null ? swapMuscles : undefined}
+          onConfirm={selected => {
+            if (swapExIdx !== null && selected.length > 0) {
+              const pick = selected[0];
+              onUpdateExercises(prev => prev.map((ex, i) => i !== swapExIdx ? ex : {
+                ...ex,
+                libraryId: pick.id,
+                name: pick.name,
+              }));
+              showToast(`Swapped to ${pick.name}`, 'success');
+            }
+            setShowPicker(false);
+            setSwapExIdx(null);
+            setSwapMuscles([]);
+          }}
+          onClose={() => { setShowPicker(false); setSwapExIdx(null); setSwapMuscles([]); }}
+        />
+      )}
     </div>
   );
 };
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export const Training: React.FC = () => {
-  const { state, addWorkout, showToast, setAssignedProgram, activateCustomProgram } = useApp();
+  const { state, addWorkout, showToast, setAssignedProgram, activateCustomProgram, toggleFavoriteExercise } = useApp();
   const navigate = useNavigate();
   const today = getLocalISOString();
 
@@ -1699,6 +1776,8 @@ export const Training: React.FC = () => {
             library={state.workoutLibrary}
             alreadyAdded={exercises.map(e => e.libraryId)}
             recentIds={recentExerciseIds}
+            favoriteIds={state.favoriteExerciseIds ?? []}
+            onToggleFavorite={toggleFavoriteExercise}
             onConfirm={addExercisesToSession}
             onClose={() => setShowPicker(false)}
           />
@@ -1800,6 +1879,8 @@ export const Training: React.FC = () => {
         {showPicker && (
           <ExercisePicker
             library={state.workoutLibrary} alreadyAdded={[]} recentIds={recentExerciseIds}
+            favoriteIds={state.favoriteExerciseIds ?? []}
+            onToggleFavorite={toggleFavoriteExercise}
             onConfirm={addExercisesToSession} onClose={() => { setShowPicker(false); setSessionActive(false); }}
           />
         )}
@@ -2265,6 +2346,8 @@ export const Training: React.FC = () => {
         <ExercisePicker
           library={state.workoutLibrary} alreadyAdded={exercises.map(e => e.libraryId)}
           recentIds={recentExerciseIds}
+          favoriteIds={state.favoriteExerciseIds ?? []}
+          onToggleFavorite={toggleFavoriteExercise}
           onConfirm={addExercisesToSession} onClose={() => setShowPicker(false)}
         />
       )}
