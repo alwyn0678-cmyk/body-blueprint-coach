@@ -81,6 +81,11 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
       setPhase('error');
       return;
     }
+    if (result.foods.length === 0) {
+      setErrorMsg('No food items detected in this image. Try a clearer photo with the food more visible.');
+      setPhase('error');
+      return;
+    }
     setFoods(result.foods);
     setDisclaimer(result.disclaimer);
     // Pre-select all, set default amounts = estimatedGrams
@@ -159,7 +164,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
         flexShrink: 0,
       }}>
         <div>
-          <h2 style={{ fontFamily: "'Outfit',sans-serif", fontSize: '1.35rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.35rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
             Scan Meal
           </h2>
           <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', marginTop: 2, fontWeight: 600 }}>
@@ -253,7 +258,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                   background: 'linear-gradient(135deg, #0A84FF, #5AC8FA)',
                   border: 'none', borderRadius: 18,
                   color: '#fff', fontWeight: 900, fontSize: '1rem',
-                  fontFamily: "'Outfit',sans-serif", letterSpacing: '-0.01em',
+                  fontFamily: 'var(--font-display)', letterSpacing: '-0.01em',
                   cursor: 'pointer', boxShadow: '0 8px 32px rgba(10,132,255,0.35)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
@@ -271,14 +276,22 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
               <div style={{ position: 'relative', width: '100%', maxHeight: 200, borderRadius: 16, overflow: 'hidden' }}>
                 <img src={imagePreview} alt="meal" style={{ width: '100%', objectFit: 'cover', opacity: 0.4 }} />
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Loader size={32} color="#0A84FF" style={{ animation: 'spin 1s linear infinite' }} />
+                  <Loader size={32} color="#0A84FF" className="animate-spin" />
                 </div>
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
               </div>
             )}
             <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>
               Identifying foods and estimating macros…
             </p>
+            <button
+              onClick={() => setPhase('pick')}
+              style={{
+                padding: '0.55rem 1.25rem', background: 'rgba(255,255,255,0.06)', border,
+                borderRadius: 12, color: 'rgba(255,255,255,0.45)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
           </div>
         )}
 
@@ -351,7 +364,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                 {[
                   { label: 'P', value: totalNutrition.protein, color: '#F59E0B' },
                   { label: 'C', value: totalNutrition.carbs, color: '#3B82F6' },
-                  { label: 'F', value: totalNutrition.fats, color: '#EF4444' },
+                  { label: 'F', value: totalNutrition.fats, color: '#22C55E' },
                 ].map(m => (
                   <div key={m.label} style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '0.95rem', fontWeight: 900, color: m.color, fontVariantNumeric: 'tabular-nums' }}>{m.value}g</div>
@@ -465,7 +478,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                             {[
                               { label: 'Protein', value: n.protein, color: '#F59E0B' },
                               { label: 'Carbs', value: n.carbs, color: '#3B82F6' },
-                              { label: 'Fats', value: n.fats, color: '#EF4444' },
+                              { label: 'Fats', value: n.fats, color: '#22C55E' },
                             ].map(m => (
                               <div key={m.label} style={{
                                 flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 10,
@@ -508,7 +521,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                 border: 'none', borderRadius: 18,
                 color: selected.size > 0 ? '#fff' : 'rgba(255,255,255,0.3)',
                 fontWeight: 900, fontSize: '1rem',
-                fontFamily: "'Outfit',sans-serif", letterSpacing: '-0.01em',
+                fontFamily: 'var(--font-display)', letterSpacing: '-0.01em',
                 cursor: selected.size > 0 ? 'pointer' : 'default',
                 boxShadow: selected.size > 0 ? '0 8px 32px rgba(34,197,94,0.3)' : 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,

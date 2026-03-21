@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Flame, Dumbbell, Droplets, Footprints, TrendingUp, TrendingDown,
-  Minus, ChevronRight, Brain, Zap, Target, Activity,
+  Minus, ChevronRight, Brain, Zap, Target, Activity, X,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import {
@@ -175,7 +175,7 @@ const LogSheet: React.FC<{
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export const Dashboard: React.FC = () => {
-  const { state, updateDailyLog, updateWeight, getNutritionTotals, showToast } = useApp();
+  const { state, updateDailyLog, updateWeight, getNutritionTotals, showToast, lastSavedAt } = useApp();
   const navigate = useNavigate();
   const [activeSheet, setActiveSheet] = useState<'water' | 'steps' | 'weight' | null>(null);
 
@@ -236,6 +236,15 @@ export const Dashboard: React.FC = () => {
 
   const insightColor = coachInsight.priority === 'high' ? '#EF4444'
     : coachInsight.priority === 'medium' ? '#F59E0B' : '#6366F1';
+
+  const savedLabel = lastSavedAt
+    ? (() => {
+        const diff = Math.floor((Date.now() - new Date(lastSavedAt).getTime()) / 1000);
+        if (diff < 10) return 'Saved';
+        if (diff < 60) return `Saved ${diff}s ago`;
+        return `Saved ${Math.floor(diff / 60)}m ago`;
+      })()
+    : null;
 
   const calPct = Math.round(Math.min((totals.calories / user.targets.calories) * 100, 100));
 
@@ -533,8 +542,8 @@ export const Dashboard: React.FC = () => {
             </div>
             <button
               onClick={() => setDismissedInsights(prev => new Set([...prev, 'plateau']))}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, flexShrink: 0, color: 'rgba(255,255,255,0.2)' }}
-            >✕</button>
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
+            ><X size={14} color="rgba(255,255,255,0.25)" /></button>
           </div>
         </motion.div>
       )}
@@ -567,8 +576,8 @@ export const Dashboard: React.FC = () => {
             </div>
             <button
               onClick={() => setDismissedInsights(prev => new Set([...prev, `recovery_${recoveryInsight.type}`]))}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, flexShrink: 0, color: 'rgba(255,255,255,0.2)' }}
-            >✕</button>
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
+            ><X size={14} color="rgba(255,255,255,0.25)" /></button>
           </div>
         </motion.div>
       )}
@@ -594,8 +603,8 @@ export const Dashboard: React.FC = () => {
             </div>
             <button
               onClick={() => setDismissedInsights(prev => new Set([...prev, 'stall']))}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, flexShrink: 0, color: 'rgba(255,255,255,0.2)' }}
-            >✕</button>
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
+            ><X size={14} color="rgba(255,255,255,0.25)" /></button>
           </div>
         </motion.div>
       )}
@@ -631,6 +640,16 @@ export const Dashboard: React.FC = () => {
           <Brain size={15} /> AI Coach
         </button>
       </motion.div>
+
+      {/* ── Sync status ── */}
+      {savedLabel && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, paddingBottom: 4 }}>
+          <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 4px #22C55E' }} />
+          <span style={{ fontSize: '0.58rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+            {savedLabel} · data stored locally
+          </span>
+        </div>
+      )}
 
       {/* ── Log sheets ── */}
       <AnimatePresence>

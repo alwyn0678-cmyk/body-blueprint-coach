@@ -791,7 +791,10 @@ export const LogFood: React.FC = () => {
                     {Math.round(meal.totalNutrition.calories)} kcal
                   </div>
                   <button
-                    onClick={() => { setActiveMeal(activeMeal); setShowSavedMeals(true); }}
+                    onClick={() => {
+                      logSavedMeal(selectedDate, activeMeal, meal.id);
+                      showToast(`${meal.name} added to ${activeMeal}`, 'success');
+                    }}
                     style={{
                       padding: '4px 0', background: 'rgba(10,132,255,0.12)',
                       border: '1px solid rgba(10,132,255,0.2)',

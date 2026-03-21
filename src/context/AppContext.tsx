@@ -48,6 +48,7 @@ interface AppContextType {
   state: AppState;
   toasts: ToastItem[];
   isCloudSynced: boolean;
+  lastSavedAt: string | null;
   // User
   updateUser: (user: Partial<UserProfile>) => void;
   // Logs
@@ -235,6 +236,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [workoutDraft, setWorkoutDraftState] = useState<WorkoutDraft | null>(null);
   const [isCloudSynced, setIsCloudSynced] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const lastSavedRef = useRef<string>('');
   const cloudSyncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -249,6 +251,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try {
           localStorage.setItem('bbc_state', serialized);
           lastSavedRef.current = serialized;
+          setLastSavedAt(new Date().toISOString());
         } catch (e) {
           if (e instanceof DOMException && e.name === 'QuotaExceededError') {
             console.warn('[BBC] localStorage quota exceeded');
@@ -709,7 +712,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{
-      state, toasts, isCloudSynced,
+      state, toasts, isCloudSynced, lastSavedAt,
       updateUser, updateDailyLog, addFoodToLog, removeFoodEntry, editFoodEntry,
       addCustomFood, addWorkout, updateHealthMetrics,
       saveMeal, deleteSavedMeal, logSavedMeal, addRecipe, deleteRecipe,
