@@ -6,24 +6,25 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 
 // ── Total step count ──────────────────────────────────────────────────────────
+const STEP_WELCOME = 0;
 const FORM_STEPS = 7;
 const STEP_CALCULATING = 8;
 const STEP_PLAN = 9;
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
-  bgPrimary: '#080810',
-  bgCard: '#0f0f1a',
-  bgElevated: '#161625',
-  accentBlue: '#0A84FF',
-  accentGreen: '#32D74B',
-  accentOrange: '#FF9F0A',
-  accentRed: '#FF453A',
-  textPrimary: '#F2F2F7',
-  textSecondary: 'rgba(242,242,247,0.6)',
-  textTertiary: 'rgba(242,242,247,0.35)',
-  border: 'rgba(0,0,0,0.05)',
-  borderMd: 'rgba(0,0,0,0.07)',
+  bgPrimary: '#F5F0E8',
+  bgCard: '#FFFFFF',
+  bgElevated: '#F8F5F0',
+  accentBlue: '#3B82F6',
+  accentGreen: '#16A34A',
+  accentOrange: '#EA8C3A',
+  accentRed: '#DC2626',
+  textPrimary: '#1C1C2E',
+  textSecondary: 'rgba(28,28,46,0.65)',
+  textTertiary: 'rgba(28,28,46,0.42)',
+  border: 'rgba(0,0,0,0.06)',
+  borderMd: 'rgba(0,0,0,0.09)',
 };
 
 // ── Form data shape ───────────────────────────────────────────────────────────
@@ -75,7 +76,7 @@ const BigSelectionCard: React.FC<{
   selected: boolean;
   accentColor?: string;
   onClick: () => void;
-}> = ({ title, desc, emoji, selected, accentColor = 'rgba(255,255,255,0.9)', onClick }) => (
+}> = ({ title, desc, emoji, selected, accentColor = '#1C1C2E', onClick }) => (
   <div
     onClick={onClick}
     style={{
@@ -253,7 +254,7 @@ const UnitToggle: React.FC<{
 export const Onboarding: React.FC = () => {
   const { updateUser, setAssignedProgram } = useApp();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(STEP_WELCOME);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [calcProgress, setCalcProgress] = useState(0);
   const [targets, setTargets] = useState<{ calories: number; protein: number; carbs: number; fats: number } | null>(null);
@@ -380,6 +381,13 @@ export const Onboarding: React.FC = () => {
       setStep(s => s - 1);
     }
   };
+
+  // Auto-advance welcome screen
+  useEffect(() => {
+    if (step !== STEP_WELCOME) return;
+    const timer = setTimeout(() => setStep(1), 2600);
+    return () => clearTimeout(timer);
+  }, [step]);
 
   useEffect(() => {
     if (step !== STEP_CALCULATING) return;
@@ -515,6 +523,53 @@ export const Onboarding: React.FC = () => {
   const renderContent = () => {
     switch (step) {
 
+      // ── Step 0: Animated Welcome ──────────────────────────────────────────
+      case STEP_WELCOME: return (
+        <div
+          key="step-welcome"
+          style={{
+            flex: 1, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            padding: '2rem', textAlign: 'center', gap: '1.75rem',
+          }}
+        >
+          <div style={{
+            width: 96, height: 96, borderRadius: 28,
+            background: '#FFFFFF',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            animation: 'scaleIn 0.7s cubic-bezier(0.16,1,0.3,1) both',
+          }}>
+            <span style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '2.2rem', fontWeight: 900,
+              letterSpacing: '-0.06em', color: '#1C1C2E',
+            }}>
+              CB
+            </span>
+          </div>
+          <div style={{
+            display: 'flex', flexDirection: 'column', gap: '0.625rem',
+            animation: 'slideUp 0.7s 0.3s cubic-bezier(0.16,1,0.3,1) both',
+          }}>
+            <div style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '2.1rem', fontWeight: 900,
+              letterSpacing: '-0.04em', lineHeight: 1.05,
+              color: '#1C1C2E',
+            }}>
+              Welcome to<br />Carly Evolved
+            </div>
+            <div style={{
+              fontSize: '0.9rem', color: 'rgba(28,28,46,0.50)',
+              fontWeight: 500, lineHeight: 1.5,
+            }}>
+              Your intelligent fitness companion
+            </div>
+          </div>
+        </div>
+      );
+
       // ── Step 1: Welcome ───────────────────────────────────────────────────
       case 1: return (
         <div
@@ -523,27 +578,21 @@ export const Onboarding: React.FC = () => {
           style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '2rem 1.5rem', textAlign: 'center', gap: '2rem' }}
         >
           {/* Premium CB logo */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem' }}>
             <div style={{
-              width: 96, height: 96, borderRadius: '28px',
-              background: 'linear-gradient(145deg, #07070f 0%, #12122a 100%)',
-              border: '1.5px solid rgba(99,102,241,0.4)',
+              width: 96, height: 96, borderRadius: 28,
+              background: '#FFFFFF',
+              border: '1px solid rgba(0,0,0,0.07)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               position: 'relative', overflow: 'hidden',
-              boxShadow: '0 0 40px rgba(99,102,241,0.3), 0 0 80px rgba(99,102,241,0.1), inset 0 1px 0 rgba(0,0,0,0.06)',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)',
             }}>
-              {/* Background glow rings */}
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '28px', background: 'radial-gradient(circle at 50% 40%, rgba(99,102,241,0.25) 0%, transparent 70%)', pointerEvents: 'none' }} />
-              {/* Ring decoration */}
-              <div style={{ position: 'absolute', width: 110, height: 110, borderRadius: '50%', border: '1px solid rgba(99,102,241,0.15)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }} />
-              {/* CB Text */}
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 40% 30%, rgba(59,130,246,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
               <span style={{
                 fontFamily: 'var(--font-display)', fontSize: '2.2rem', fontWeight: 900,
                 letterSpacing: '-0.06em', lineHeight: 1,
-                background: 'linear-gradient(135deg, #ffffff 0%, rgba(165,180,252,0.9) 50%, rgba(168,85,247,0.8) 100%)',
-                WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                color: '#1C1C2E',
                 position: 'relative', zIndex: 1,
-                filter: 'drop-shadow(0 0 12px rgba(99,102,241,0.8))',
               }}>
                 CB
               </span>
@@ -552,8 +601,7 @@ export const Onboarding: React.FC = () => {
               <div style={{
                 fontFamily: 'var(--font-display)', fontSize: '2.4rem', fontWeight: 900,
                 letterSpacing: '-0.04em', lineHeight: 0.95,
-                background: 'linear-gradient(135deg, #fff 0%, rgba(165,180,252,0.85) 100%)',
-                WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                color: C.textPrimary,
               }}>
                 Evolved
               </div>
@@ -568,8 +616,8 @@ export const Onboarding: React.FC = () => {
             {['Science-backed', 'AI-powered', 'Adaptive'].map(badge => (
               <span key={badge} style={{
                 padding: '0.35rem 0.9rem', borderRadius: 9999,
-                background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)',
-                fontSize: '0.68rem', fontWeight: 700, color: '#A5B4FC',
+                background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)',
+                fontSize: '0.68rem', fontWeight: 700, color: C.textSecondary,
                 letterSpacing: '0.04em', whiteSpace: 'nowrap' as const,
               }}>
                 {badge}
@@ -604,12 +652,12 @@ export const Onboarding: React.FC = () => {
                 borderRadius: 'var(--radius-lg)',
                 border: formData.sex === 'male' ? `1.5px solid ${C.accentBlue}` : `1px solid ${C.border}`,
                 background: formData.sex === 'male'
-                  ? 'linear-gradient(135deg, rgba(10,132,255,0.12) 0%, rgba(94,92,230,0.08) 100%)'
+                  ? 'linear-gradient(135deg, rgba(59,130,246,0.09) 0%, rgba(79,70,229,0.06) 100%)'
                   : C.bgCard,
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 transition: 'all 0.15s ease',
-                boxShadow: formData.sex === 'male' ? `0 0 0 3px rgba(10,132,255,0.12)` : 'none',
+                boxShadow: formData.sex === 'male' ? `0 0 0 3px rgba(59,130,246,0.1)` : '0 1px 4px rgba(0,0,0,0.05)',
               }}
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -625,12 +673,12 @@ export const Onboarding: React.FC = () => {
                 borderRadius: 'var(--radius-lg)',
                 border: formData.sex === 'female' ? '1.5px solid #BF5AF2' : `1px solid ${C.border}`,
                 background: formData.sex === 'female'
-                  ? 'linear-gradient(135deg, rgba(191,90,242,0.12) 0%, rgba(255,55,95,0.08) 100%)'
+                  ? 'linear-gradient(135deg, rgba(124,58,237,0.09) 0%, rgba(219,39,119,0.06) 100%)'
                   : C.bgCard,
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 transition: 'all 0.15s ease',
-                boxShadow: formData.sex === 'female' ? '0 0 0 3px rgba(191,90,242,0.12)' : 'none',
+                boxShadow: formData.sex === 'female' ? '0 0 0 3px rgba(124,58,237,0.10)' : '0 1px 4px rgba(0,0,0,0.05)',
               }}
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -758,12 +806,12 @@ export const Onboarding: React.FC = () => {
                 <div style={{
                   padding: '0.75rem 1rem',
                   borderRadius: 'var(--radius-md)',
-                  background: 'rgba(10,132,255,0.07)',
-                  border: '1px solid rgba(10,132,255,0.18)',
+                  background: 'rgba(59,130,246,0.07)',
+                  border: '1px solid rgba(59,130,246,0.18)',
                   display: 'flex', alignItems: 'center', gap: '0.625rem',
                 }}>
                   <span style={{ fontSize: '1rem' }}>📅</span>
-                  <span style={{ fontSize: '0.825rem', color: 'rgba(10,132,255,0.9)', fontWeight: 600 }}>
+                  <span style={{ fontSize: '0.825rem', color: 'rgba(59,130,246,0.9)', fontWeight: 600 }}>
                     {timeline}
                   </span>
                 </div>
@@ -831,7 +879,7 @@ export const Onboarding: React.FC = () => {
             <div style={{
               position: 'absolute', inset: 0,
               borderRadius: '50%',
-              background: 'conic-gradient(from 0deg, #0A84FF, #BF5AF2, #32D74B, #0A84FF)',
+              background: 'conic-gradient(from 0deg, #3B82F6, #7C3AED, #16A34A, #3B82F6)',
               animation: 'spin 1.2s linear infinite',
               opacity: 0.9,
             }} />
@@ -903,13 +951,13 @@ export const Onboarding: React.FC = () => {
           <div style={{
             padding: '1.5rem',
             borderRadius: 'var(--radius-xl)',
-            background: 'linear-gradient(135deg, rgba(10,132,255,0.15) 0%, rgba(94,92,230,0.1) 100%)',
-            border: '1px solid rgba(10,132,255,0.2)',
+            background: 'linear-gradient(135deg, rgba(59,130,246,0.09) 0%, rgba(79,70,229,0.06) 100%)',
+            border: '1px solid rgba(59,130,246,0.18)',
             marginBottom: '1rem',
             textAlign: 'center' as const,
-            boxShadow: '0 0 32px rgba(10,132,255,0.1)',
+            boxShadow: '0 0 32px rgba(59,130,246,0.06)',
           }}>
-            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'rgba(10,132,255,0.8)', margin: '0 0 0.375rem' }}>
+            <p style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'rgba(59,130,246,0.85)', margin: '0 0 0.375rem' }}>
               Daily Calorie Target
             </p>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.375rem' }}>
@@ -934,9 +982,9 @@ export const Onboarding: React.FC = () => {
           {/* 3 macro pills */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.625rem', marginBottom: '1rem' }}>
             {[
-              { label: 'Protein', value: targets?.protein, unit: 'g', color: C.accentOrange, bg: 'rgba(255,159,10,0.1)', border: 'rgba(255,159,10,0.2)' },
-              { label: 'Carbs',   value: targets?.carbs,   unit: 'g', color: C.accentBlue,   bg: 'rgba(10,132,255,0.1)',  border: 'rgba(10,132,255,0.2)' },
-              { label: 'Fats',    value: targets?.fats,    unit: 'g', color: C.accentGreen,  bg: 'rgba(50,215,75,0.1)',   border: 'rgba(50,215,75,0.2)' },
+              { label: 'Protein', value: targets?.protein, unit: 'g', color: C.accentOrange, bg: 'rgba(234,140,58,0.09)', border: 'rgba(234,140,58,0.18)' },
+              { label: 'Carbs',   value: targets?.carbs,   unit: 'g', color: C.accentBlue,   bg: 'rgba(59,130,246,0.09)', border: 'rgba(59,130,246,0.18)' },
+              { label: 'Fats',    value: targets?.fats,    unit: 'g', color: C.accentGreen,  bg: 'rgba(22,163,74,0.09)',  border: 'rgba(22,163,74,0.18)' },
             ].map(macro => (
               <div key={macro.label} style={{
                 padding: '0.875rem 0.625rem',
@@ -978,12 +1026,12 @@ export const Onboarding: React.FC = () => {
   };
 
   // ── Layout ────────────────────────────────────────────────────────────────
-  const isFullscreen = step === 1 || step === STEP_CALCULATING || step === STEP_PLAN;
+  const isFullscreen = step === STEP_WELCOME || step === 1 || step === STEP_CALCULATING || step === STEP_PLAN;
 
   return (
     <div style={{
       minHeight: '100dvh',
-      background: C.bgPrimary,
+      background: 'var(--bg-primary)',
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
@@ -998,7 +1046,7 @@ export const Onboarding: React.FC = () => {
         width: 400,
         height: 400,
         borderRadius: '50%',
-        background: 'radial-gradient(ellipse, rgba(94,92,230,0.07) 0%, transparent 70%)',
+        background: 'radial-gradient(ellipse, rgba(234,140,58,0.07) 0%, transparent 70%)',
         pointerEvents: 'none',
         zIndex: 0,
       }} />
