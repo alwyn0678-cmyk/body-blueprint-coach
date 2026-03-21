@@ -378,7 +378,7 @@ const WorkoutSummaryScreen: React.FC<{
         </div>
         <h1 style={{
           fontFamily: "'Outfit',sans-serif", fontSize: '2rem', fontWeight: 900,
-          letterSpacing: '-0.03em', margin: 0, color: '#fff',
+          letterSpacing: '-0.03em', margin: 0, color: 'var(--text-primary)',
         }}>Workout Complete</h1>
         <p style={{ fontSize: '0.82rem', color: 'rgba(0,0,0,0.24)', fontWeight: 600, marginTop: 8 }}>
           {summary.name}
@@ -455,9 +455,9 @@ const WorkoutSummaryScreen: React.FC<{
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             padding: '10px 16px',
-            background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.15)', borderRadius: 14,
+            background: 'rgba(151,68,0,0.06)', border: '1px solid rgba(151,68,0,0.15)', borderRadius: 14,
           }}>
-            <Flame size={14} color="#F97316" />
+            <Flame size={14} color="#974400" />
             <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(28,28,46,0.68)' }}>
               ~{summary.caloriesBurned} kcal burned
             </span>
@@ -1199,7 +1199,7 @@ const ActiveWorkoutScreen: React.FC<{
                         border: `1.5px solid ${set.done ? 'rgba(87,96,56,0.30)' : 'rgba(0,0,0,0.06)'}`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 900, color: set.done ? '#576038' : 'rgba(255,255,255,0.28)' }}>{setIdx + 1}</span>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 900, color: set.done ? '#576038' : 'rgba(0,0,0,0.28)' }}>{setIdx + 1}</span>
                       </div>
 
                       {/* Set Type badge */}
@@ -1235,7 +1235,7 @@ const ActiveWorkoutScreen: React.FC<{
                           width: 62, height: 42, borderRadius: 11, flexShrink: 0,
                           background: isActive ? 'rgba(87,96,56,0.10)' : 'rgba(0,0,0,0.04)',
                           border: `1.5px solid ${isActive ? 'rgba(87,96,56,0.45)' : 'rgba(0,0,0,0.06)'}`,
-                          color: '#fff', textAlign: 'center',
+                          color: 'var(--text-primary)', textAlign: 'center',
                           fontSize: '1.05rem', fontWeight: 800,
                           outline: 'none', fontVariantNumeric: 'tabular-nums',
                           boxShadow: isActive ? '0 0 16px rgba(87,96,56,0.15)' : 'none',
@@ -1256,7 +1256,7 @@ const ActiveWorkoutScreen: React.FC<{
                           width: 52, height: 42, borderRadius: 11, flexShrink: 0,
                           background: isActive ? 'rgba(87,96,56,0.10)' : 'rgba(0,0,0,0.04)',
                           border: `1.5px solid ${isActive ? 'rgba(87,96,56,0.45)' : 'rgba(0,0,0,0.06)'}`,
-                          color: '#fff', textAlign: 'center',
+                          color: 'var(--text-primary)', textAlign: 'center',
                           fontSize: '1.05rem', fontWeight: 800,
                           outline: 'none', fontVariantNumeric: 'tabular-nums',
                           boxShadow: isActive ? '0 0 16px rgba(87,96,56,0.15)' : 'none',
@@ -1820,7 +1820,7 @@ export const Training: React.FC = () => {
           {
             id: 'female_phase1' as const,
             emoji: '🍑', label: 'Glute & Posterior Focus', tag: 'Lower · Upper',
-            desc: '4 days/week · Glute emphasis', color: '#EC4899',
+            desc: '4 days/week · Glute emphasis', color: '#8B9467',
             sub: 'Posterior chain priority with upper accessory work',
           },
         ].map(opt => (
@@ -1925,7 +1925,7 @@ export const Training: React.FC = () => {
       <div style={{ padding: '1.25rem 1.25rem 0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ fontFamily: "'Outfit',sans-serif", fontSize: '1.6rem', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>Train</h1>
-          <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.28)', fontWeight: 600, margin: '2px 0 0' }}>{program.name}</p>
+          <p style={{ fontSize: '0.7rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600, margin: '2px 0 0' }}>{program.name}</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button
@@ -1999,7 +1999,7 @@ export const Training: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <span style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 800, fontSize: '0.95rem' }}>Custom Session</span>
-                  <p style={{ fontSize: '0.66rem', color: 'rgba(255,255,255,0.28)', fontWeight: 600, margin: '2px 0 0' }}>Pick a template or build your own</p>
+                  <p style={{ fontSize: '0.66rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600, margin: '2px 0 0' }}>Pick a template or build your own</p>
                 </div>
                 <button onClick={() => setShowCustomOptions(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
                   <X size={16} color="rgba(0,0,0,0.24)" />
@@ -2269,7 +2269,7 @@ export const Training: React.FC = () => {
                       style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#fff', marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {workout.name.split('—')[1]?.trim() || workout.name}
                         </div>
                         <div style={{ display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap' }}>

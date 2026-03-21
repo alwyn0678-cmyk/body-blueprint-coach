@@ -783,7 +783,7 @@ const ProgramEditorScreen: React.FC<{
                     }}
                   >
                     <div style={{ fontSize: '1rem', marginBottom: 3 }}>{cfg.emoji}</div>
-                    <div style={{ fontWeight: 800, fontSize: '0.8rem', color: goal === key ? cfg.color : 'rgba(255,255,255,0.6)' }}>{cfg.label}</div>
+                    <div style={{ fontWeight: 800, fontSize: '0.8rem', color: goal === key ? cfg.color : 'rgba(0,0,0,0.35)' }}>{cfg.label}</div>
                   </button>
                 ))}
               </div>

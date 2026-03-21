@@ -308,7 +308,7 @@ export const ProgramSnapshotCard: React.FC<ProgramSnapshotCardProps> = ({
             <div style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600 }}>
               {focus}
             </div>
-            <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.28)', fontWeight: 600, marginTop: 1 }}>
+            <div style={{ fontSize: '0.6rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600, marginTop: 1 }}>
               {exercises}
             </div>
           </div>
@@ -490,7 +490,7 @@ export const WeeklyPauseCard: React.FC = () => (
       <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'rgba(0,0,0,0.35)' }}>
         Weekly Check-In Paused
       </div>
-      <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.28)', marginTop: 2 }}>
+      <div style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.28)', marginTop: 2 }}>
         Enable in Settings → Coaching Engine to resume.
       </div>
     </div>
@@ -667,9 +667,9 @@ export const RecoveryCard: React.FC<RecoveryCardProps> = ({
     : null;
 
   const badgeBg = validScore
-    ? validScore >= 85 ? 'rgba(48,209,88,0.15)'
+    ? validScore >= 85 ? 'rgba(87,96,56,0.10)'
     : validScore >= 70 ? 'rgba(87,96,56,0.12)'
-    : validScore >= 50 ? 'rgba(255,159,10,0.15)'
+    : validScore >= 50 ? 'rgba(151,68,0,0.12)'
     : 'rgba(255,69,58,0.15)'
     : 'transparent';
 
@@ -797,7 +797,7 @@ export const WeightCard: React.FC<WeightCardProps> = ({
           <span style={{
             fontSize: '0.625rem', fontWeight: 700,
             color: weightDeltaGood ? 'var(--accent-green)' : 'var(--accent-red)',
-            backgroundColor: weightDeltaGood ? 'rgba(48,209,88,0.12)' : 'rgba(255,69,58,0.12)',
+            backgroundColor: weightDeltaGood ? 'rgba(87,96,56,0.10)' : 'rgba(255,69,58,0.12)',
             padding: '0.15rem 0.4rem', borderRadius: 'var(--radius-full)',
           }}>
             {weightDeltaStr}
@@ -846,17 +846,17 @@ export const DailyHabitsCard: React.FC<DailyHabitsCardProps> = ({
         <span style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'rgba(87,96,56,0.70)', display: 'block', marginTop: 4 }}>Hydration</span>
       </div>
       {/* Steps */}
-      <div onClick={onStepsOpen} style={{ cursor: 'pointer', background: 'linear-gradient(145deg, rgba(48,209,88,0.07), rgba(48,209,88,0.02))', border: '1px solid rgba(48,209,88,0.15)', borderRadius: 'var(--radius-md)', padding: '0.875rem' }}>
+      <div onClick={onStepsOpen} style={{ cursor: 'pointer', background: 'linear-gradient(145deg, rgba(87,96,56,0.07), rgba(87,96,56,0.02))', border: '1px solid rgba(87,96,56,0.15)', borderRadius: 'var(--radius-md)', padding: '0.875rem' }}>
         <div style={{ fontSize: '1.375rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em', lineHeight: 1 }}>{safeSteps.toLocaleString()}</div>
-        <span style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'rgba(48,209,88,0.8)', display: 'block', marginTop: 4 }}>Steps</span>
-        <div style={{ height: 3, borderRadius: 99, backgroundColor: 'rgba(48,209,88,0.1)', overflow: 'hidden', marginTop: 6 }}>
+        <span style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'rgba(87,96,56,0.70)', display: 'block', marginTop: 4 }}>Steps</span>
+        <div style={{ height: 3, borderRadius: 99, backgroundColor: 'rgba(87,96,56,0.10)', overflow: 'hidden', marginTop: 6 }}>
           <div style={{ height: '100%', width: `${isNaN(stepsPct) ? 0 : stepsPct}%`, borderRadius: 99, backgroundColor: 'var(--accent-green)', transition: 'width 0.4s ease' }} />
         </div>
       </div>
       {/* Meals */}
-      <div onClick={onMealsPress} style={{ cursor: 'pointer', background: 'linear-gradient(145deg, rgba(255,159,10,0.07), rgba(255,159,10,0.02))', border: '1px solid rgba(255,159,10,0.14)', borderRadius: 'var(--radius-md)', padding: '0.875rem' }}>
+      <div onClick={onMealsPress} style={{ cursor: 'pointer', background: 'linear-gradient(145deg, rgba(151,68,0,0.06), rgba(151,68,0,0.02))', border: '1px solid rgba(151,68,0,0.12)', borderRadius: 'var(--radius-md)', padding: '0.875rem' }}>
         <div style={{ fontSize: '1.625rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em', lineHeight: 1 }}>{Math.round(mealsLogged)}</div>
-        <span style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'rgba(255,159,10,0.8)', display: 'block', marginTop: 4 }}>Meals</span>
+        <span style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'rgba(151,68,0,0.70)', display: 'block', marginTop: 4 }}>Meals</span>
       </div>
       {/* Training */}
       <div onClick={onTrainingPress} style={{ cursor: 'pointer', background: 'linear-gradient(145deg, rgba(0,0,0,0.03), rgba(255,255,255,0.01))', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 'var(--radius-md)', padding: '0.875rem' }}>

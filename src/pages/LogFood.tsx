@@ -376,7 +376,7 @@ export const LogFood: React.FC = () => {
                               disabled={!editingEntry.amount || parseFloat(editingEntry.amount) <= 0}
                               style={{
                                 background: (!editingEntry.amount || parseFloat(editingEntry.amount) <= 0)
-                                  ? 'rgba(50,215,75,0.3)' : 'var(--accent-green)',
+                                  ? 'rgba(87,96,56,0.20)' : 'var(--accent-green)',
                                 border: 'none', borderRadius: '7px', padding: '0.35rem',
                                 display: 'flex', cursor: 'pointer',
                               }}
@@ -473,8 +473,8 @@ export const LogFood: React.FC = () => {
                   <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                     padding: '0.55rem',
-                    backgroundColor: 'rgba(50,215,75,0.08)',
-                    border: '1px solid rgba(50,215,75,0.18)',
+                    backgroundColor: 'rgba(87,96,56,0.07)',
+                    border: '1px solid rgba(87,96,56,0.15)',
                     borderRadius: '10px',
                   }}>
                     <Check size={14} color="var(--accent-green)" />
@@ -655,7 +655,7 @@ export const LogFood: React.FC = () => {
         {targets && (
           <div style={{ display: 'flex', gap: '8px' }}>
             {[
-              { label: 'Protein', key: 'P', logged: Math.round(dayTotals.protein), target: proTarget, color: 'var(--color-protein)', bg: 'rgba(255,159,10,0.15)' },
+              { label: 'Protein', key: 'P', logged: Math.round(dayTotals.protein), target: proTarget, color: 'var(--color-protein)', bg: 'rgba(151,68,0,0.12)' },
               { label: 'Carbs',   key: 'C', logged: Math.round(dayTotals.carbs),   target: carbTarget, color: 'var(--color-carbs)',   bg: 'rgba(87,96,56,0.08)' },
               { label: 'Fats',    key: 'F', logged: Math.round(dayTotals.fats),    target: fatTarget,  color: 'var(--color-fats)',    bg: 'rgba(255,69,58,0.12)' },
             ].map(m => {

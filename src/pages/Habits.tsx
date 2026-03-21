@@ -356,7 +356,7 @@ export const Habits: React.FC = () => {
             </button>
           </div>
           <p style={{
-            fontSize: '0.95rem', fontWeight: 600, color: affirmationDone ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.9)',
+            fontSize: '0.95rem', fontWeight: 600, color: affirmationDone ? 'rgba(0,0,0,0.35)' : 'var(--text-primary)',
             lineHeight: 1.5, margin: '0 0 14px 0',
             fontStyle: 'italic',
             textDecoration: affirmationDone ? 'line-through' : 'none',

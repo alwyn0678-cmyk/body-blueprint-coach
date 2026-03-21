@@ -343,7 +343,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             </span>
             {f.source === 'custom' && (
               <span style={{
-                fontSize: '0.55rem', fontWeight: 800, color: '#a78bfa',
+                fontSize: '0.55rem', fontWeight: 800, color: '#576038',
                 backgroundColor: 'rgba(87,96,56,0.10)',
                 padding: '1px 5px', borderRadius: '4px', flexShrink: 0,
               }}>CUSTOM</span>
@@ -365,8 +365,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             <span style={{
               fontSize: '0.65rem', fontWeight: 800,
               color: 'var(--color-protein)',
-              backgroundColor: 'rgba(255,159,10,0.1)',
-              border: '1px solid rgba(255,159,10,0.18)',
+              backgroundColor: 'rgba(151,68,0,0.10)',
+              border: '1px solid rgba(151,68,0,0.15)',
               padding: '2px 7px', borderRadius: '99px',
               fontVariantNumeric: 'tabular-nums',
             }}>
@@ -752,8 +752,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         }}>
           <div style={{
             width: 64, height: 64, borderRadius: '50%',
-            backgroundColor: 'rgba(255,159,10,0.1)',
-            border: '1px solid rgba(255,159,10,0.25)',
+            backgroundColor: 'rgba(151,68,0,0.10)',
+            border: '1px solid rgba(151,68,0,0.20)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem',
           }}>
             <Camera size={28} color="var(--accent-orange)" />
@@ -1054,8 +1054,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0.6rem 0.9rem', margin: '0 12px 8px',
-          backgroundColor: 'rgba(255,159,10,0.08)',
-          border: '1px solid rgba(255,159,10,0.2)',
+          backgroundColor: 'rgba(151,68,0,0.07)',
+          border: '1px solid rgba(151,68,0,0.15)',
           borderRadius: '12px', gap: '10px', flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
@@ -1069,8 +1069,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             style={{
               display: 'flex', alignItems: 'center', gap: '4px',
               padding: '0.35rem 0.65rem',
-              backgroundColor: 'rgba(255,159,10,0.12)',
-              border: '1px solid rgba(255,159,10,0.25)',
+              backgroundColor: 'rgba(151,68,0,0.10)',
+              border: '1px solid rgba(151,68,0,0.20)',
               borderRadius: '8px', color: 'var(--accent-orange)',
               fontWeight: 700, fontSize: '0.7rem', cursor: 'pointer', flexShrink: 0,
             }}

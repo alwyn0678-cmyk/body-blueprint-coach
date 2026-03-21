@@ -24,7 +24,7 @@
   --accent-red:       #DC2626;
   --accent-teal:      #8B9467;
   --accent-indigo:    #576038;
-  --accent-purple:    #7C3AED;
+  --accent-purple:    #576038;
   --accent-pink:      #DB2777;
   --accent-yellow:    #974400;
 
@@ -638,7 +638,7 @@ button:focus:not(:focus-visible) { outline: none; }
 .gradient-blue    { background: linear-gradient(135deg, #576038 0%, #3E4528 100%); }
 .gradient-green   { background: linear-gradient(135deg, #576038 0%, #8B9467 100%); }
 .gradient-orange  { background: linear-gradient(135deg, #974400 0%, #D2691E 100%); }
-.gradient-purple  { background: linear-gradient(135deg, #7C3AED 0%, #576038 100%); }
+.gradient-purple  { background: linear-gradient(135deg, #576038 0%, #3E4528 100%); }
 .gradient-coach   { background: linear-gradient(135deg, #576038 0%, #3E4528 100%); }
 .gradient-amber   { background: linear-gradient(135deg, #974400 0%, #D97706 100%); }
 

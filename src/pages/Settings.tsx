@@ -197,7 +197,7 @@ export const Settings: React.FC = () => {
 
   const tdee = calculateTDEEBreakdown(user);
   const goalLabel = user.goalType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-  const goalColor = user.goalType === 'fat_loss' ? C.accentOrange : user.goalType === 'muscle_gain' ? C.accentBlue : user.goalType === 'recomposition' ? '#a78bfa' : C.accentGreen;
+  const goalColor = user.goalType === 'fat_loss' ? C.accentOrange : user.goalType === 'muscle_gain' ? C.accentBlue : user.goalType === 'recomposition' ? '#8B9467' : C.accentGreen;
   const initials = user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   const currentProgram = PROGRAMS.find(p => p.id === state.assignedProgram);
   const isMetric = (settings.units ?? 'metric') === 'metric';

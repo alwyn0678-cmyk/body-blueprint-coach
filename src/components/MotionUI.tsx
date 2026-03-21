@@ -113,7 +113,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
                 {title ? <h2 className="text-h2 m-0">{title}</h2> : <div />}
                 {onClose && (
                   <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', padding: '8px', borderRadius: '50%', display: 'flex', cursor: 'pointer' }}>
-                    <X size={18} color="rgba(255,255,255,0.7)" />
+                    <X size={18} color="rgba(0,0,0,0.40)" />
                   </button>
                 )}
               </div>
