@@ -10,10 +10,10 @@ import { CustomProgram, CustomProgramDay, CustomProgramExercise, ProgramGoal } f
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const GOAL_CONFIG: Record<ProgramGoal, { label: string; color: string; emoji: string }> = {
-  hypertrophy: { label: 'Hypertrophy', color: '#A855F7', emoji: '💪' },
-  strength:    { label: 'Strength',    color: '#3B82F6', emoji: '🏋️' },
-  endurance:   { label: 'Endurance',   color: '#22C55E', emoji: '🏃' },
-  fat_loss:    { label: 'Fat Loss',    color: '#F97316', emoji: '🔥' },
+  hypertrophy: { label: 'Hypertrophy', color: '#8B9467', emoji: '💪' },
+  strength:    { label: 'Strength',    color: '#576038', emoji: '🏋️' },
+  endurance:   { label: 'Endurance',   color: '#576038', emoji: '🏃' },
+  fat_loss:    { label: 'Fat Loss',    color: '#974400', emoji: '🔥' },
 };
 
 const SUPERSET_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -106,7 +106,7 @@ const ExercisePicker: React.FC<{
         <div style={{ padding: '16px 16px 10px', display: 'flex', gap: 10, alignItems: 'center' }}>
           <button
             onClick={onClose}
-            style={{ background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: 99, padding: '6px 10px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}
+            style={{ background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: 99, padding: '6px 10px', color: 'rgba(26,26,26,0.5)', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}
           >Cancel</button>
           <div style={{ flex: 1, position: 'relative' }}>
             <Search size={13} color="rgba(0,0,0,0.20)" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
@@ -118,7 +118,7 @@ const ExercisePicker: React.FC<{
               style={{
                 width: '100%', paddingLeft: 30, paddingRight: 12, paddingTop: 8, paddingBottom: 8,
                 background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)',
-                borderRadius: 99, color: '#fff', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box',
+                borderRadius: 99, color: '#1A1A1A', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box',
               }}
             />
           </div>
@@ -126,8 +126,8 @@ const ExercisePicker: React.FC<{
             <button
               onClick={confirm}
               style={{
-                background: 'linear-gradient(135deg, #3B82F6, #6366F1)', border: 'none',
-                borderRadius: 99, padding: '7px 14px', color: '#fff',
+                background: 'linear-gradient(135deg, #576038, #3E4528)', border: 'none',
+                borderRadius: 99, padding: '7px 14px', color: '#FFFFFF',
                 fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer', whiteSpace: 'nowrap',
               }}
             >Add {selected.length}</button>
@@ -146,23 +146,23 @@ const ExercisePicker: React.FC<{
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '11px 12px', borderRadius: 14, marginBottom: 4,
-                  background: isSelected ? 'rgba(59,130,246,0.1)' : 'transparent',
-                  border: `1px solid ${isSelected ? 'rgba(59,130,246,0.3)' : 'transparent'}`,
+                  background: isSelected ? 'rgba(87,96,56,0.08)' : 'transparent',
+                  border: `1px solid ${isSelected ? 'rgba(87,96,56,0.25)' : 'transparent'}`,
                   cursor: isAdded ? 'default' : 'pointer', opacity: isAdded ? 0.4 : 1,
                   transition: 'all 0.1s',
                 }}
               >
                 <div style={{
                   width: 22, height: 22, borderRadius: 99, flexShrink: 0,
-                  border: `2px solid ${isSelected ? '#3B82F6' : 'rgba(0,0,0,0.10)'}`,
-                  background: isSelected ? '#3B82F6' : 'transparent',
+                  border: `2px solid ${isSelected ? '#576038' : 'rgba(0,0,0,0.10)'}`,
+                  background: isSelected ? '#576038' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.1s',
                 }}>
-                  {isSelected && <Check size={12} color="#fff" strokeWidth={3} />}
+                  {isSelected && <Check size={12} color="#FFFFFF" strokeWidth={3} />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</div>
                   <div style={{ fontSize: '0.67rem', color: 'rgba(0,0,0,0.24)', fontWeight: 600, marginTop: 1 }}>{ex.targetMuscles.slice(0, 3).join(' · ')}</div>
                 </div>
                 {isAdded && <span style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.20)', fontWeight: 700 }}>Added</span>}
@@ -196,7 +196,7 @@ const ExerciseRow: React.FC<{
 
   const fieldStyle: React.CSSProperties = {
     background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)',
-    borderRadius: 10, color: '#fff', fontSize: '0.8rem', fontWeight: 700,
+    borderRadius: 10, color: '#1A1A1A', fontSize: '0.8rem', fontWeight: 700,
     padding: '7px 10px', outline: 'none', width: '100%', boxSizing: 'border-box',
   };
 
@@ -219,10 +219,10 @@ const ExerciseRow: React.FC<{
         {/* Reorder */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0 }}>
           <button onClick={onMoveUp} disabled={index === 0} style={{ background: 'none', border: 'none', padding: '1px 4px', cursor: index === 0 ? 'default' : 'pointer', opacity: index === 0 ? 0.2 : 0.5 }}>
-            <ChevronUp size={12} color="#fff" />
+            <ChevronUp size={12} color="#1A1A1A" />
           </button>
           <button onClick={onMoveDown} disabled={index === total - 1} style={{ background: 'none', border: 'none', padding: '1px 4px', cursor: index === total - 1 ? 'default' : 'pointer', opacity: index === total - 1 ? 0.2 : 0.5 }}>
-            <ChevronDown size={12} color="#fff" />
+            <ChevronDown size={12} color="#1A1A1A" />
           </button>
         </div>
 
@@ -232,9 +232,9 @@ const ExerciseRow: React.FC<{
           title={ex.supersetGroup ? `Superset ${ex.supersetGroup} — tap to remove` : 'Tap to add superset group'}
           style={{
             width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-            background: ex.supersetGroup ? 'rgba(99,102,241,0.2)' : 'rgba(0,0,0,0.04)',
-            border: `1px solid ${ex.supersetGroup ? 'rgba(99,102,241,0.4)' : 'rgba(0,0,0,0.06)'}`,
-            color: ex.supersetGroup ? '#818CF8' : 'rgba(0,0,0,0.16)',
+            background: ex.supersetGroup ? 'rgba(87,96,56,0.12)' : 'rgba(0,0,0,0.04)',
+            border: `1px solid ${ex.supersetGroup ? 'rgba(87,96,56,0.25)' : 'rgba(0,0,0,0.06)'}`,
+            color: ex.supersetGroup ? '#576038' : 'rgba(0,0,0,0.16)',
             fontWeight: 900, fontSize: '0.7rem', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
@@ -244,7 +244,7 @@ const ExerciseRow: React.FC<{
 
         {/* Name */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</div>
+          <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1A1A1A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</div>
           <div style={{ fontSize: '0.67rem', color: 'rgba(0,0,0,0.24)', fontWeight: 600, marginTop: 1 }}>
             {ex.sets} × {ex.reps} · {ex.rest}s rest
           </div>
@@ -255,7 +255,7 @@ const ExerciseRow: React.FC<{
           onClick={() => setExpanded(e => !e)}
           style={{ background: 'none', border: 'none', padding: '4px 6px', cursor: 'pointer', opacity: 0.5 }}
         >
-          <Collapse size={14} color="#fff" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
+          <Collapse size={14} color="#1A1A1A" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
         </button>
         <button
           onClick={onDelete}
@@ -357,7 +357,7 @@ const DaySection: React.FC<{
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
+      background: '#FFFFFF',
       border: '1px solid rgba(0,0,0,0.06)', borderRadius: 20, overflow: 'hidden', marginBottom: 10,
     }}>
       {/* Day header */}
@@ -365,19 +365,19 @@ const DaySection: React.FC<{
         {/* Reorder day */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0 }}>
           <button onClick={onMoveUp} disabled={index === 0} style={{ background: 'none', border: 'none', padding: '1px 3px', cursor: index === 0 ? 'default' : 'pointer', opacity: index === 0 ? 0.2 : 0.4 }}>
-            <ChevronUp size={11} color="#fff" />
+            <ChevronUp size={11} color="#1A1A1A" />
           </button>
           <button onClick={onMoveDown} disabled={index === total - 1} style={{ background: 'none', border: 'none', padding: '1px 3px', cursor: index === total - 1 ? 'default' : 'pointer', opacity: index === total - 1 ? 0.2 : 0.4 }}>
-            <ChevronDown size={11} color="#fff" />
+            <ChevronDown size={11} color="#1A1A1A" />
           </button>
         </div>
 
         {/* Day number badge */}
         <div style={{
           width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-          background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.25)',
+          background: 'rgba(87,96,56,0.12)', border: '1px solid rgba(87,96,56,0.20)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontWeight: 900, fontSize: '0.85rem', color: '#3B82F6',
+          fontWeight: 900, fontSize: '0.85rem', color: '#576038',
         }}>
           {index + 1}
         </div>
@@ -389,7 +389,7 @@ const DaySection: React.FC<{
           placeholder={`Day ${index + 1}`}
           style={{
             flex: 1, background: 'transparent', border: 'none', outline: 'none',
-            color: '#fff', fontWeight: 800, fontSize: '0.95rem',
+            color: '#1A1A1A', fontWeight: 800, fontSize: '0.95rem',
             fontFamily: "'Outfit', sans-serif",
           }}
         />
@@ -404,7 +404,7 @@ const DaySection: React.FC<{
           onClick={toggleCollapse}
           style={{ background: 'none', border: 'none', padding: '4px 2px', cursor: 'pointer', opacity: 0.5 }}
         >
-          <Collapse size={16} color="#fff" style={{ transform: day.collapsed ? 'none' : 'rotate(180deg)', transition: 'transform 0.15s' }} />
+          <Collapse size={16} color="#1A1A1A" style={{ transform: day.collapsed ? 'none' : 'rotate(180deg)', transition: 'transform 0.15s' }} />
         </button>
 
         {/* Delete day */}
@@ -426,7 +426,7 @@ const DaySection: React.FC<{
             style={{
               width: '100%', boxSizing: 'border-box',
               background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)',
-              borderRadius: 10, color: 'rgba(255,255,255,0.6)', fontSize: '0.78rem', fontWeight: 600,
+              borderRadius: 10, color: 'rgba(26,26,26,0.5)', fontSize: '0.78rem', fontWeight: 600,
               padding: '7px 12px', outline: 'none',
             }}
           />
@@ -460,8 +460,8 @@ const DaySection: React.FC<{
             onClick={() => setShowPicker(true)}
             style={{
               width: '100%', padding: '9px', borderRadius: 12,
-              background: 'rgba(59,130,246,0.08)', border: '1px dashed rgba(59,130,246,0.25)',
-              color: '#3B82F6', fontWeight: 700, fontSize: '0.82rem',
+              background: 'rgba(87,96,56,0.06)', border: '1px dashed rgba(87,96,56,0.20)',
+              color: '#576038', fontWeight: 700, fontSize: '0.82rem',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
           >
@@ -498,12 +498,12 @@ const ProgramCard: React.FC<{
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
-      border: `1px solid ${isActive ? 'rgba(34,197,94,0.25)' : 'rgba(0,0,0,0.06)'}`,
+      background: '#FFFFFF',
+      border: `1px solid ${isActive ? 'rgba(87,96,56,0.20)' : 'rgba(0,0,0,0.06)'}`,
       borderRadius: 20, overflow: 'hidden', position: 'relative',
     }}>
       {isActive && (
-        <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: 2, background: 'linear-gradient(90deg, transparent, #22C55E, transparent)' }} />
+        <div style={{ position: 'absolute', top: 0, left: '15%', right: '15%', height: 2, background: 'linear-gradient(90deg, transparent, #576038, transparent)' }} />
       )}
 
       <div style={{ padding: '16px 14px 14px' }}>
@@ -511,9 +511,9 @@ const ProgramCard: React.FC<{
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-              <span style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1.05rem', color: '#fff' }}>{program.name}</span>
+              <span style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1.05rem', color: '#1A1A1A' }}>{program.name}</span>
               {isActive && (
-                <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', fontWeight: 800, fontSize: '0.62rem', color: '#22C55E', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Active</span>
+                <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(87,96,56,0.12)', border: '1px solid rgba(87,96,56,0.25)', fontWeight: 800, fontSize: '0.62rem', color: '#576038', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Active</span>
               )}
               {!isActive && (
                 <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)', fontWeight: 700, fontSize: '0.62rem', color: 'rgba(0,0,0,0.24)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{program.status}</span>
@@ -544,12 +544,12 @@ const ProgramCard: React.FC<{
                 <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={() => setShowMenu(false)} />
                 <div style={{
                   position: 'absolute', right: 0, top: 36, zIndex: 101,
-                  background: '#1a1a2e', border: '1px solid rgba(0,0,0,0.07)',
+                  background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)',
                   borderRadius: 14, overflow: 'hidden', minWidth: 150, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                 }}>
                   {[
-                    { label: 'Edit',      action: () => { onEdit(); setShowMenu(false); }, color: '#fff' },
-                    { label: 'Duplicate', action: () => { onDuplicate(); setShowMenu(false); }, color: '#fff' },
+                    { label: 'Edit',      action: () => { onEdit(); setShowMenu(false); }, color: '#1A1A1A' },
+                    { label: 'Duplicate', action: () => { onDuplicate(); setShowMenu(false); }, color: '#1A1A1A' },
                     { label: 'Delete',    action: () => { onDelete(); setShowMenu(false); }, color: '#FF453A' },
                   ].map(item => (
                     <button key={item.label} onClick={item.action} style={{
@@ -587,7 +587,7 @@ const ProgramCard: React.FC<{
             style={{
               flex: 1, padding: '9px', borderRadius: 12,
               background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)',
-              color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+              color: 'rgba(26,26,26,0.6)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
             }}
           >Edit</button>
           {!isActive && (
@@ -595,12 +595,12 @@ const ProgramCard: React.FC<{
               onClick={onActivate}
               style={{
                 flex: 2, padding: '9px', borderRadius: 12,
-                background: 'linear-gradient(135deg, #22C55E, #16a34a)', border: 'none',
-                color: '#000', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #576038, #3E4528)', border: 'none',
+                color: '#FFFFFF', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
-              <Zap size={13} fill="#000" /> Activate Program
+              <Zap size={13} fill="#FFFFFF" /> Activate Program
             </button>
           )}
           {isActive && (
@@ -608,8 +608,8 @@ const ProgramCard: React.FC<{
               onClick={onActivate}
               style={{
                 flex: 2, padding: '9px', borderRadius: 12,
-                background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)',
-                color: '#22C55E', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                background: 'rgba(87,96,56,0.06)', border: '1px solid rgba(87,96,56,0.20)',
+                color: '#576038', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
@@ -706,7 +706,7 @@ const ProgramEditorScreen: React.FC<{
   const fieldStyle: React.CSSProperties = {
     width: '100%', boxSizing: 'border-box',
     background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)',
-    borderRadius: 12, color: '#fff', fontSize: '0.9rem', fontWeight: 700,
+    borderRadius: 12, color: '#1A1A1A', fontSize: '0.9rem', fontWeight: 700,
     padding: '12px 14px', outline: 'none', fontFamily: "'Outfit', sans-serif",
   };
 
@@ -717,17 +717,17 @@ const ProgramEditorScreen: React.FC<{
         padding: '1rem 1.25rem 0.75rem',
         display: 'flex', alignItems: 'center', gap: 12,
         borderBottom: '1px solid rgba(0,0,0,0.04)',
-        background: 'rgba(7,7,15,0.95)', backdropFilter: 'blur(12px)',
+        background: 'rgba(250,249,246,0.95)', backdropFilter: 'blur(12px)',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
         <button
           onClick={handleSaveDraft}
-          style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: 99, padding: '7px 12px', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 5 }}
+          style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: 99, padding: '7px 12px', cursor: 'pointer', color: 'rgba(26,26,26,0.6)', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 5 }}
         >
           <ArrowLeft size={13} /> Back
         </button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1rem', color: '#fff' }}>
+          <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1rem', color: '#1A1A1A' }}>
             {program ? 'Edit Program' : 'New Program'}
           </div>
           <div style={{ fontSize: '0.62rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600, marginTop: 1 }}>
@@ -736,9 +736,9 @@ const ProgramEditorScreen: React.FC<{
         </div>
         <span style={{
           padding: '4px 10px', borderRadius: 99,
-          background: status === 'active' ? 'rgba(34,197,94,0.12)' : 'rgba(0,0,0,0.04)',
-          border: `1px solid ${status === 'active' ? 'rgba(34,197,94,0.25)' : 'rgba(0,0,0,0.07)'}`,
-          color: status === 'active' ? '#22C55E' : 'rgba(0,0,0,0.24)',
+          background: status === 'active' ? 'rgba(87,96,56,0.10)' : 'rgba(0,0,0,0.04)',
+          border: `1px solid ${status === 'active' ? 'rgba(87,96,56,0.20)' : 'rgba(0,0,0,0.07)'}`,
+          color: status === 'active' ? '#576038' : 'rgba(0,0,0,0.24)',
           fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
         }}>{status}</span>
       </div>
@@ -748,7 +748,7 @@ const ProgramEditorScreen: React.FC<{
 
         {/* Program Details */}
         <div style={{
-          background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
+          background: '#FFFFFF',
           border: '1px solid rgba(0,0,0,0.06)', borderRadius: 20, padding: '18px 16px', marginBottom: 16,
         }}>
           <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.16)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Program Details</div>
@@ -803,8 +803,8 @@ const ProgramEditorScreen: React.FC<{
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
                 padding: '7px 14px', borderRadius: 99,
-                background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
-                color: '#3B82F6', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
+                background: 'rgba(87,96,56,0.08)', border: '1px solid rgba(87,96,56,0.20)',
+                color: '#576038', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
               }}
             >
               <Plus size={13} /> Add Day
@@ -839,7 +839,7 @@ const ProgramEditorScreen: React.FC<{
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         padding: '12px 20px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
-        background: 'rgba(7,7,15,0.95)', backdropFilter: 'blur(16px)',
+        background: 'rgba(250,249,246,0.95)', backdropFilter: 'blur(16px)',
         borderTop: '1px solid rgba(0,0,0,0.05)',
         display: 'flex', gap: 10,
       }}>
@@ -848,21 +848,21 @@ const ProgramEditorScreen: React.FC<{
           style={{
             flex: 1, padding: '13px', borderRadius: 14,
             background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.07)',
-            color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
+            color: 'rgba(26,26,26,0.6)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
           }}
         >Save Draft</button>
         <button
           onClick={handleActivate}
           style={{
             flex: 2, padding: '13px', borderRadius: 14,
-            background: 'linear-gradient(135deg, #22C55E, #16a34a)', border: 'none',
-            color: '#000', fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer',
+            background: 'linear-gradient(135deg, #576038, #3E4528)', border: 'none',
+            color: '#FFFFFF', fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-            boxShadow: '0 6px 24px rgba(34,197,94,0.3)',
+            boxShadow: '0 6px 24px rgba(87,96,56,0.25)',
             fontFamily: "'Outfit', sans-serif",
           }}
         >
-          <Zap size={15} fill="#000" /> Activate Program
+          <Zap size={15} fill="#FFFFFF" /> Activate Program
         </button>
       </div>
     </div>
@@ -908,7 +908,7 @@ const ProgramListScreen: React.FC<{
       }}>
         <button
           onClick={() => navigate('/training')}
-          style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: 99, padding: '7px 12px', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 5 }}
+          style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: 99, padding: '7px 12px', cursor: 'pointer', color: 'rgba(26,26,26,0.6)', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 5 }}
         >
           <ArrowLeft size={13} /> Train
         </button>
@@ -921,8 +921,8 @@ const ProgramListScreen: React.FC<{
           style={{
             display: 'flex', alignItems: 'center', gap: 5,
             padding: '8px 14px', borderRadius: 99,
-            background: 'linear-gradient(135deg, #3B82F6, #6366F1)', border: 'none',
-            color: '#fff', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer',
+            background: 'linear-gradient(135deg, #576038, #3E4528)', border: 'none',
+            color: '#FFFFFF', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer',
           }}
         >
           <Plus size={13} /> New
@@ -933,18 +933,18 @@ const ProgramListScreen: React.FC<{
         {programs.length === 0 ? (
           /* Empty state */
           <div style={{
-            background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
+            background: '#FFFFFF',
             border: '1.5px dashed rgba(0,0,0,0.06)', borderRadius: 24,
             padding: '3.5rem 2rem', textAlign: 'center',
           }}>
             <div style={{
               width: 72, height: 72, borderRadius: 24,
-              background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(99,102,241,0.1))',
-              border: '1px solid rgba(59,130,246,0.25)',
+              background: 'linear-gradient(135deg, rgba(87,96,56,0.12), rgba(87,96,56,0.08))',
+              border: '1px solid rgba(87,96,56,0.20)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 20px',
             }}>
-              <Target size={32} color="#3B82F6" />
+              <Target size={32} color="#576038" />
             </div>
             <h2 style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1.3rem', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Build your first program</h2>
             <p style={{ color: 'rgba(0,0,0,0.28)', fontSize: '0.82rem', fontWeight: 600, margin: '0 0 24px', lineHeight: 1.5 }}>
@@ -954,10 +954,10 @@ const ProgramListScreen: React.FC<{
               onClick={onNew}
               style={{
                 padding: '13px 32px', borderRadius: 14,
-                background: 'linear-gradient(135deg, #3B82F6, #6366F1)', border: 'none',
-                color: '#fff', fontWeight: 900, fontSize: '0.95rem', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #576038, #3E4528)', border: 'none',
+                color: '#FFFFFF', fontWeight: 900, fontSize: '0.95rem', cursor: 'pointer',
                 display: 'inline-flex', alignItems: 'center', gap: 8,
-                boxShadow: '0 6px 24px rgba(59,130,246,0.3)',
+                boxShadow: '0 6px 24px rgba(87,96,56,0.25)',
                 fontFamily: "'Outfit', sans-serif",
               }}
             >

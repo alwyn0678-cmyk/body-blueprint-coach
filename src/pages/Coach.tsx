@@ -432,6 +432,9 @@ export const Coach: React.FC = () => {
         history.slice(0, -1), // history excludes the current message (passed separately)
       );
       setChatMessages(prev => [...prev, { role: 'assistant', content: reply, id: `a_${Date.now()}` }]);
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'Failed to get response. Check your API key.';
+      showToast(errMsg, 'error');
     } finally {
       setChatLoading(false);
     }
