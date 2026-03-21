@@ -5,7 +5,7 @@ import { FoodItem, MealType } from '../types';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type Category = 'all' | 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'post-workout';
+type Category = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'post-workout';
 
 interface Recipe {
   id: string;
@@ -586,7 +586,6 @@ const RECIPES: Recipe[] = [
 // ── Category config ────────────────────────────────────────────────────────────
 
 const CATEGORIES: { id: Category; label: string; emoji: string }[] = [
-  { id: 'all',          label: 'All',         emoji: '🍽️' },
   { id: 'breakfast',    label: 'Breakfast',   emoji: '🌅' },
   { id: 'lunch',        label: 'Lunch',       emoji: '☀️' },
   { id: 'dinner',       label: 'Dinner',      emoji: '🌙' },
@@ -616,15 +615,12 @@ const MacroPill: React.FC<{ label: string; value: number; unit: string; color: s
 
 export const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ activeMeal, selectedDate: _selectedDate, onAdd }) => {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-  const [activeCategory, setActiveCategory] = useState<Category>('all');
+  const [activeCategory, setActiveCategory] = useState<Category>('breakfast');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
 
   const filtered = useMemo(() => {
-    let list = RECIPES;
-    if (activeCategory !== 'all') {
-      list = list.filter(r => r.category === activeCategory);
-    }
+    let list = RECIPES.filter(r => r.category === activeCategory);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(r =>
@@ -700,7 +696,7 @@ export const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ activeMeal, select
       } as React.CSSProperties}>
         {CATEGORIES.map(cat => {
           const isActive = activeCategory === cat.id;
-          const count = cat.id === 'all' ? RECIPES.length : RECIPES.filter(r => r.category === cat.id).length;
+          const count = RECIPES.filter(r => r.category === cat.id).length;
           return (
             <button
               key={cat.id}
