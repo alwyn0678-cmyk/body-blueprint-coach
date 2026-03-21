@@ -54,7 +54,7 @@ const CalorieArc: React.FC<{
     <div style={{ position: 'relative', width: 152, height: 152, flexShrink: 0 }}>
       <svg width={152} height={152} style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
         {/* Outer calorie track */}
-        <circle cx={76} cy={76} r={R} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={9} />
+        <circle cx={76} cy={76} r={R} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={9} />
         {/* Outer calorie fill */}
         <circle cx={76} cy={76} r={R} fill="none" stroke={over ? '#EF4444' : '#22C55E'}
           strokeWidth={9} strokeLinecap="round"
@@ -62,7 +62,7 @@ const CalorieArc: React.FC<{
           style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.25,1,0.5,1), stroke 0.3s ease', filter: over ? 'drop-shadow(0 0 6px #EF4444)' : 'drop-shadow(0 0 6px #22C55E)' }} />
 
         {/* Inner macro ring track */}
-        <circle cx={76} cy={76} r={innerR} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={7} />
+        <circle cx={76} cy={76} r={innerR} fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth={7} />
 
         {/* Protein segment — first 120° (top third) */}
         <circle cx={76} cy={76} r={innerR} fill="none" stroke="#F59E0B"
@@ -148,7 +148,7 @@ const LogSheet: React.FC<{
         transition={{ type: 'spring', damping: 26, stiffness: 300 }}
         style={{ position: 'relative', background: 'var(--bg-sheet)', borderRadius: '28px 28px 0 0', padding: '24px 20px', paddingBottom: 'calc(28px + env(safe-area-inset-bottom))', border: '1px solid var(--border-default)', borderBottom: 'none', boxShadow: '0 -8px 40px rgba(0,0,0,0.5)' }}
       >
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.18)', margin: '0 auto 20px' }} />
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(0,0,0,0.12)', margin: '0 auto 20px' }} />
         <div style={{ fontSize: '1.1rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 16 }}>{labels[type]}</div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <input
@@ -310,7 +310,7 @@ export const Dashboard: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <div style={{ fontSize: '0.65rem', fontWeight: 800, padding: '2px 8px', borderRadius: 8, background: calPct >= 90 ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.07)', color: calPct >= 90 ? '#EF4444' : 'var(--text-secondary)' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 800, padding: '2px 8px', borderRadius: 8, background: calPct >= 90 ? 'rgba(239,68,68,0.15)' : 'rgba(0,0,0,0.06)', color: calPct >= 90 ? '#EF4444' : 'var(--text-secondary)' }}>
                   {calPct}%
                 </div>
               </div>
@@ -340,7 +340,7 @@ export const Dashboard: React.FC = () => {
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
             padding: '14px 8px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)',
             borderRadius: 18, cursor: 'pointer', transition: 'transform 0.12s, background 0.12s',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+            boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.04)',
           }}
             onTouchStart={e => (e.currentTarget.style.transform = 'scale(0.95)')}
             onTouchEnd={e => (e.currentTarget.style.transform = '')}
@@ -410,7 +410,7 @@ export const Dashboard: React.FC = () => {
               </div>
               <div style={{ display: 'flex', gap: 4, marginBottom: weeklyNudge ? 8 : 0 }}>
                 {Array.from({ length: Math.max(user.trainingFrequency, 1) }).map((_, i) => (
-                  <div key={i} style={{ height: 4, flex: 1, borderRadius: 2, background: i < weeklyStats.workoutsCompleted ? '#3B82F6' : 'rgba(255,255,255,0.08)', transition: 'background 0.3s', boxShadow: i < weeklyStats.workoutsCompleted ? '0 0 6px rgba(59,130,246,0.5)' : 'none' }} />
+                  <div key={i} style={{ height: 4, flex: 1, borderRadius: 2, background: i < weeklyStats.workoutsCompleted ? '#3B82F6' : 'rgba(0,0,0,0.06)', transition: 'background 0.3s', boxShadow: i < weeklyStats.workoutsCompleted ? '0 0 6px rgba(59,130,246,0.5)' : 'none' }} />
                 ))}
               </div>
               {weeklyNudge && (
@@ -441,7 +441,7 @@ export const Dashboard: React.FC = () => {
         style={{ display: 'flex', gap: 10 }}>
 
         {/* Weight EMA mini chart */}
-        <div style={{ flex: 3, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 18, padding: '14px 14px 10px', overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+        <div style={{ flex: 3, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 18, padding: '14px 14px 10px', overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
             <span style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>Weight</span>
             {weightDelta !== 0 && (
@@ -492,7 +492,7 @@ export const Dashboard: React.FC = () => {
               color: weeklyStats.proteinAdherence >= 80 ? '#22C55E' : '#F59E0B',
             },
           ].map(({ label, value, sub, color }) => (
-            <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '12px 12px', flex: 1, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
+            <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 14, padding: '12px 12px', flex: 1, boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.03)' }}>
               <div style={{ fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: 3 }}>{label}</div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', fontWeight: 900, letterSpacing: '-0.03em', color }}>{value}</div>
               <div style={{ fontSize: '0.58rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{sub}</div>
@@ -536,14 +536,14 @@ export const Dashboard: React.FC = () => {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#F59E0B', marginBottom: 3 }}>Plateau detected</div>
-              <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, fontWeight: 600 }}>
+              <div style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.35)', lineHeight: 1.5, fontWeight: 600 }}>
                 Your weight trend has moved less than 0.3kg in 14 days. Your weekly check-in will suggest a 100 kcal reduction. Consider a high-carb refeed day to reset leptin.
               </div>
             </div>
             <button
               onClick={() => setDismissedInsights(prev => new Set([...prev, 'plateau']))}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
-            ><X size={14} color="rgba(255,255,255,0.25)" /></button>
+            ><X size={14} color="rgba(0,0,0,0.16)" /></button>
           </div>
         </motion.div>
       )}
@@ -570,14 +570,14 @@ export const Dashboard: React.FC = () => {
               }}>
                 {recoveryInsight.type === 'fatigue' ? 'Fatigue signal' : 'Ready to push'}
               </div>
-              <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, fontWeight: 600 }}>
+              <div style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.35)', lineHeight: 1.5, fontWeight: 600 }}>
                 {recoveryInsight.message}
               </div>
             </div>
             <button
               onClick={() => setDismissedInsights(prev => new Set([...prev, `recovery_${recoveryInsight.type}`]))}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
-            ><X size={14} color="rgba(255,255,255,0.25)" /></button>
+            ><X size={14} color="rgba(0,0,0,0.16)" /></button>
           </div>
         </motion.div>
       )}
@@ -597,14 +597,14 @@ export const Dashboard: React.FC = () => {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#6366F1', marginBottom: 3 }}>4+ days without training</div>
-              <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, fontWeight: 600 }}>
+              <div style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.35)', lineHeight: 1.5, fontWeight: 600 }}>
                 No workouts logged in 4+ days. The training stimulus is the driver of adaptation — even a 30-minute session beats skipping.
               </div>
             </div>
             <button
               onClick={() => setDismissedInsights(prev => new Set([...prev, 'stall']))}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
-            ><X size={14} color="rgba(255,255,255,0.25)" /></button>
+            ><X size={14} color="rgba(0,0,0,0.16)" /></button>
           </div>
         </motion.div>
       )}

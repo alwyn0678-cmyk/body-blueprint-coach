@@ -22,8 +22,8 @@ const C = {
   textPrimary: '#F2F2F7',
   textSecondary: 'rgba(242,242,247,0.6)',
   textTertiary: 'rgba(242,242,247,0.35)',
-  border: 'rgba(255,255,255,0.06)',
-  borderMd: 'rgba(255,255,255,0.1)',
+  border: 'rgba(0,0,0,0.05)',
+  borderMd: 'rgba(0,0,0,0.07)',
 };
 
 // ── Form data shape ───────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ const BigSelectionCard: React.FC<{
     <div style={{
       width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
       backgroundColor: selected ? accentColor : 'transparent',
-      border: selected ? 'none' : `1.5px solid rgba(255,255,255,0.18)`,
+      border: selected ? 'none' : `1.5px solid rgba(0,0,0,0.12)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       transition: 'background-color 0.15s ease',
     }}>
@@ -154,7 +154,7 @@ const FloatingInput: React.FC<{
         fontWeight: floated ? 700 : 400,
         letterSpacing: floated ? '0.06em' : 0,
         textTransform: floated ? 'uppercase' as const : 'none' as const,
-        color: hasError ? '#f87171' : focused ? 'rgba(255,255,255,0.5)' : C.textTertiary,
+        color: hasError ? '#f87171' : focused ? 'rgba(0,0,0,0.35)' : C.textTertiary,
         pointerEvents: 'none' as const,
         transition: 'all 0.18s cubic-bezier(0.16,1,0.3,1)',
         zIndex: 1,
@@ -184,7 +184,7 @@ const FloatingInput: React.FC<{
           fontSize: '1rem',
           fontWeight: 500,
           transition: 'border-color 0.2s ease',
-          boxShadow: focused ? '0 0 0 3px rgba(255,255,255,0.04)' : 'none',
+          boxShadow: focused ? '0 0 0 3px rgba(0,0,0,0.03)' : 'none',
           outline: 'none',
         }}
       />
@@ -221,7 +221,7 @@ const UnitToggle: React.FC<{
   <div style={{
     display: 'flex',
     gap: 2,
-    background: 'rgba(255,255,255,0.06)',
+    background: 'rgba(0,0,0,0.05)',
     borderRadius: 'var(--radius-full)',
     padding: 2,
     border: `1px solid ${C.border}`,
@@ -234,7 +234,7 @@ const UnitToggle: React.FC<{
           padding: '0.25rem 0.75rem',
           borderRadius: 'var(--radius-full)',
           border: 'none',
-          background: value === opt ? 'rgba(255,255,255,0.12)' : 'transparent',
+          background: value === opt ? 'rgba(0,0,0,0.08)' : 'transparent',
           color: value === opt ? C.textPrimary : C.textTertiary,
           fontSize: '0.75rem',
           fontWeight: 700,
@@ -530,7 +530,7 @@ export const Onboarding: React.FC = () => {
               border: '1.5px solid rgba(99,102,241,0.4)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               position: 'relative', overflow: 'hidden',
-              boxShadow: '0 0 40px rgba(99,102,241,0.3), 0 0 80px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.08)',
+              boxShadow: '0 0 40px rgba(99,102,241,0.3), 0 0 80px rgba(99,102,241,0.1), inset 0 1px 0 rgba(0,0,0,0.06)',
             }}>
               {/* Background glow rings */}
               <div style={{ position: 'absolute', inset: 0, borderRadius: '28px', background: 'radial-gradient(circle at 50% 40%, rgba(99,102,241,0.25) 0%, transparent 70%)', pointerEvents: 'none' }} />
@@ -742,7 +742,7 @@ export const Onboarding: React.FC = () => {
                 <div style={{
                   padding: '0.875rem 1rem',
                   borderRadius: 'var(--radius-md)',
-                  background: 'rgba(255,255,255,0.04)',
+                  background: 'rgba(0,0,0,0.03)',
                   border: `1px solid ${C.border}`,
                   display: 'flex', alignItems: 'center', gap: '0.625rem',
                 }}>
@@ -864,7 +864,7 @@ export const Onboarding: React.FC = () => {
 
           {/* Progress bar */}
           <div style={{ width: '100%', maxWidth: 280 }}>
-            <div style={{ height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 9999, overflow: 'hidden' }}>
+            <div style={{ height: 4, background: 'rgba(0,0,0,0.06)', borderRadius: 9999, overflow: 'hidden' }}>
               <div style={{
                 height: '100%',
                 width: `${calcProgress * 100}%`,
@@ -961,7 +961,7 @@ export const Onboarding: React.FC = () => {
           <div style={{
             padding: '1rem 1.125rem',
             borderRadius: 'var(--radius-md)',
-            background: 'rgba(255,255,255,0.03)',
+            background: 'rgba(0,0,0,0.02)',
             border: `1px solid ${C.border}`,
             display: 'flex', gap: '0.75rem', alignItems: 'flex-start',
           }}>
@@ -1024,7 +1024,7 @@ export const Onboarding: React.FC = () => {
             </button>
           </div>
           {/* Progress line — thin 4px, blue fill */}
-          <div style={{ height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 9999, overflow: 'hidden' }}>
+          <div style={{ height: 4, background: 'rgba(0,0,0,0.06)', borderRadius: 9999, overflow: 'hidden' }}>
             <div style={{
               height: '100%',
               width: `${((step - 1) / (FORM_STEPS - 1)) * 100}%`,
@@ -1094,7 +1094,7 @@ export const Onboarding: React.FC = () => {
             <p style={{
               textAlign: 'center',
               fontSize: '0.78rem',
-              color: 'rgba(255,255,255,0.4)',
+              color: 'rgba(0,0,0,0.28)',
               fontWeight: 600,
               marginTop: 8,
             }}>

@@ -62,7 +62,7 @@ const HabitRow: React.FC<{
           onClick={onToggle}
           style={{
             width: 38, height: 38, borderRadius: '50%', border: 'none', cursor: 'pointer',
-            background: completed ? habit.color : 'rgba(255,255,255,0.06)',
+            background: completed ? habit.color : 'rgba(0,0,0,0.05)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.2s cubic-bezier(0.175,0.885,0.32,1.275)',
             transform: completed ? 'scale(1.05)' : 'scale(1)',
@@ -99,8 +99,8 @@ const HabitRow: React.FC<{
             return (
               <div key={date} style={{
                 width: 8, height: 8, borderRadius: '50%',
-                background: done ? habit.color : isToday ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)',
-                border: isToday && !done ? '1px solid rgba(255,255,255,0.3)' : 'none',
+                background: done ? habit.color : isToday ? 'rgba(0,0,0,0.10)' : 'rgba(0,0,0,0.05)',
+                border: isToday && !done ? '1px solid rgba(0,0,0,0.20)' : 'none',
                 transition: 'background 0.2s',
               }} />
             );
@@ -297,7 +297,7 @@ export const Habits: React.FC = () => {
             </div>
             <div style={{ width: 72, height: 72, position: 'relative' }}>
               <svg width={72} height={72} style={{ transform: 'rotate(-90deg)' }}>
-                <circle cx={36} cy={36} r={30} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={6} />
+                <circle cx={36} cy={36} r={30} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={6} />
                 <circle cx={36} cy={36} r={30} fill="none"
                   stroke={streakScore >= 80 ? '#22C55E' : streakScore >= 50 ? '#F59E0B' : '#6366F1'}
                   strokeWidth={6} strokeLinecap="round"
@@ -319,7 +319,7 @@ export const Habits: React.FC = () => {
               const isToday = date === dateStr;
               return (
                 <div key={date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                  <div style={{ height: 28, width: '100%', borderRadius: 6, background: dayPct >= 0.8 ? '#22C55E' : dayPct >= 0.5 ? '#F59E0B' : 'rgba(255,255,255,0.06)', border: isToday ? '1px solid rgba(255,255,255,0.2)' : 'none', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ height: 28, width: '100%', borderRadius: 6, background: dayPct >= 0.8 ? '#22C55E' : dayPct >= 0.5 ? '#F59E0B' : 'rgba(0,0,0,0.05)', border: isToday ? '1px solid rgba(0,0,0,0.13)' : 'none', position: 'relative', overflow: 'hidden' }}>
                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${dayPct * 100}%`, background: dayPct >= 0.8 ? '#22C55E' : dayPct >= 0.5 ? '#F59E0B' : '#6366F1', opacity: 0.5 }} />
                   </div>
                   <span style={{ fontSize: '0.55rem', fontWeight: 700, color: isToday ? 'var(--text-secondary)' : 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -352,11 +352,11 @@ export const Habits: React.FC = () => {
               onClick={() => setAffirmationIdx(i => (i + 1) % AFFIRMATIONS.length)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', opacity: 0.5 }}
             >
-              <RefreshCw size={13} color="rgba(255,255,255,0.5)" />
+              <RefreshCw size={13} color="rgba(0,0,0,0.35)" />
             </button>
           </div>
           <p style={{
-            fontSize: '0.95rem', fontWeight: 600, color: affirmationDone ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.9)',
+            fontSize: '0.95rem', fontWeight: 600, color: affirmationDone ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.9)',
             lineHeight: 1.5, margin: '0 0 14px 0',
             fontStyle: 'italic',
             textDecoration: affirmationDone ? 'line-through' : 'none',
@@ -397,7 +397,7 @@ export const Habits: React.FC = () => {
             <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
               {(['nutrition', 'training', 'sleep', 'wellness'] as const).map(cat => (
                 <button key={cat} onClick={() => setNewCat(cat)}
-                  style={{ flex: 1, padding: '6px 4px', borderRadius: 8, border: 'none', fontSize: '0.62rem', fontWeight: 700, textTransform: 'capitalize', cursor: 'pointer', background: newCat === cat ? '#6366F1' : 'rgba(255,255,255,0.06)', color: newCat === cat ? 'white' : 'var(--text-tertiary)' }}>
+                  style={{ flex: 1, padding: '6px 4px', borderRadius: 8, border: 'none', fontSize: '0.62rem', fontWeight: 700, textTransform: 'capitalize', cursor: 'pointer', background: newCat === cat ? '#6366F1' : 'rgba(0,0,0,0.05)', color: newCat === cat ? 'white' : 'var(--text-tertiary)' }}>
                   {cat}
                 </button>
               ))}

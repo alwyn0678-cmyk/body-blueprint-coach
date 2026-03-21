@@ -158,7 +158,7 @@ const cycleRpe = (current: number): number => {
 };
 
 const rpeColor = (rpe: number): string => {
-  if (rpe === 0) return 'rgba(255,255,255,0.15)';
+  if (rpe === 0) return 'rgba(0,0,0,0.10)';
   if (rpe <= 7) return '#22C55E';
   if (rpe <= 8) return '#F59E0B';
   return '#EF4444';
@@ -357,7 +357,7 @@ const WorkoutSummaryScreen: React.FC<{
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, background: '#07070f',
+      position: 'fixed', inset: 0, background: '#F5F0E8',
       zIndex: 9020, display: 'flex', flexDirection: 'column', overflowY: 'auto',
     }}>
       {showConfetti && <ConfettiBurst />}
@@ -380,7 +380,7 @@ const WorkoutSummaryScreen: React.FC<{
           fontFamily: "'Outfit',sans-serif", fontSize: '2rem', fontWeight: 900,
           letterSpacing: '-0.03em', margin: 0, color: '#fff',
         }}>Workout Complete</h1>
-        <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: 8 }}>
+        <p style={{ fontSize: '0.82rem', color: 'rgba(0,0,0,0.24)', fontWeight: 600, marginTop: 8 }}>
           {summary.name}
         </p>
         {sessionBadges.length > 0 && (
@@ -409,9 +409,9 @@ const WorkoutSummaryScreen: React.FC<{
             { label: 'PRs', value: String(summary.prCount), color: '#FBBF24', icon: <Award size={14} color="#FBBF24" /> },
           ].map(s => (
             <div key={s.label} style={{
-              background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
+              background: 'var(--bg-card)',
               borderRadius: 18, padding: '16px 8px',
-              border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center',
+              border: '1px solid rgba(0,0,0,0.05)', textAlign: 'center',
               position: 'relative', overflow: 'hidden',
             }}>
               <div style={{ marginBottom: 6 }}>{s.icon}</div>
@@ -422,7 +422,7 @@ const WorkoutSummaryScreen: React.FC<{
                 {s.value}
                 {'sub' in s && s.sub && <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.7 }}>{s.sub}</span>}
               </div>
-              <div style={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.25)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 6 }}>{s.label}</div>
+              <div style={{ fontSize: '0.52rem', color: 'rgba(0,0,0,0.16)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 6 }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -443,7 +443,7 @@ const WorkoutSummaryScreen: React.FC<{
               <span style={{ fontSize: '0.85rem', fontWeight: 800, color: up ? '#22C55E' : '#EF4444' }}>
                 {up ? '+' : ''}{pct.toFixed(0)}% vs last session
               </span>
-              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.3)' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(0,0,0,0.20)' }}>
                 ({Math.round(summary.prevVolume)}→{Math.round(summary.totalVolume)}kg)
               </span>
             </div>
@@ -458,7 +458,7 @@ const WorkoutSummaryScreen: React.FC<{
             background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.15)', borderRadius: 14,
           }}>
             <Flame size={14} color="#F97316" />
-            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.65)' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(28,28,46,0.68)' }}>
               ~{summary.caloriesBurned} kcal burned
             </span>
           </div>
@@ -475,7 +475,7 @@ const WorkoutSummaryScreen: React.FC<{
           </div>
           <p style={{
             fontSize: '0.88rem',
-            color: coachFeedback ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.28)',
+            color: coachFeedback ? 'rgba(28,28,46,0.85)' : 'rgba(28,28,46,0.30)',
             fontWeight: 600, lineHeight: 1.65, margin: 0,
             fontStyle: coachFeedback ? 'normal' : 'italic',
           }}>
@@ -485,7 +485,7 @@ const WorkoutSummaryScreen: React.FC<{
 
         {/* Exercise breakdown */}
         <div>
-          <div style={{ fontSize: '0.58rem', fontWeight: 800, color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+          <div style={{ fontSize: '0.58rem', fontWeight: 800, color: 'rgba(0,0,0,0.14)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
             Exercises · {summary.exercises.length}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
@@ -493,8 +493,8 @@ const WorkoutSummaryScreen: React.FC<{
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '12px 14px',
-                background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
-                border: `1px solid ${ex.isPR ? 'rgba(251,191,36,0.22)' : 'rgba(255,255,255,0.06)'}`,
+                background: 'var(--bg-card)',
+                border: `1px solid ${ex.isPR ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.05)'}`,
                 borderRadius: 14,
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -530,7 +530,7 @@ const WorkoutSummaryScreen: React.FC<{
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         padding: '1rem 1.25rem', paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
-        background: 'linear-gradient(to top, #07070f 55%, transparent)',
+        background: 'linear-gradient(to top, var(--bg-primary) 55%, transparent)',
       }}>
         <button
           onClick={onDone}
@@ -637,15 +637,15 @@ const ExercisePicker: React.FC<{
   return (
     <div style={{
       position: 'fixed', inset: 0,
-      background: '#07070f',
+      background: '#F5F0E8',
       zIndex: 9010,
       display: 'flex', flexDirection: 'column',
     }}>
       {/* Header */}
       <div style={{
         padding: '1.25rem 1.25rem 0',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(7,7,15,0.98)',
+        borderBottom: '1px solid rgba(0,0,0,0.05)',
+        background: 'rgba(245,240,232,0.98)',
         backdropFilter: 'blur(20px)',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -653,32 +653,32 @@ const ExercisePicker: React.FC<{
             <h2 style={{ fontFamily: "'Outfit',sans-serif", fontSize: '1.4rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
               Add Exercises
             </h2>
-            <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: 2 }}>
+            <p style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.24)', fontWeight: 600, marginTop: 2 }}>
               {selected.length > 0 ? `${selected.length} selected` : `${filtered.length} exercises`}
             </p>
           </div>
           <button onClick={onClose} style={{
-            background: 'rgba(255,255,255,0.07)', border: 'none', borderRadius: '50%',
+            background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '50%',
             width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
           }}>
-            <X size={18} color="rgba(255,255,255,0.6)" />
+            <X size={18} color="rgba(28,28,46,0.45)" />
           </button>
         </div>
 
         {/* Search */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          background: 'rgba(255,255,255,0.06)', borderRadius: 14,
+          background: 'rgba(0,0,0,0.05)', borderRadius: 14,
           padding: '0.7rem 1rem', marginBottom: 12,
-          border: '1px solid rgba(255,255,255,0.08)',
+          border: '1px solid rgba(0,0,0,0.06)',
         }}>
-          <Search size={15} color="rgba(255,255,255,0.3)" />
+          <Search size={15} color="rgba(0,0,0,0.20)" />
           <input
             autoFocus value={query} onChange={e => setQuery(e.target.value)}
             placeholder="Search exercises..."
             style={{ background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: '0.95rem', flex: 1 }}
           />
-          {query && <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={13} color="rgba(255,255,255,0.3)" /></button>}
+          {query && <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={13} color="rgba(0,0,0,0.20)" /></button>}
         </div>
 
         {/* Filter tabs */}
@@ -692,8 +692,8 @@ const ExercisePicker: React.FC<{
                 border: 'none', cursor: 'pointer',
                 background: filter === t.key
                   ? (t.key === 'all' ? '#3B82F6' : PATTERN_COLOR[t.key as keyof typeof PATTERN_COLOR] || '#3B82F6')
-                  : 'rgba(255,255,255,0.06)',
-                color: filter === t.key ? '#fff' : 'rgba(255,255,255,0.45)',
+                  : 'rgba(0,0,0,0.05)',
+                color: filter === t.key ? '#fff' : 'rgba(0,0,0,0.30)',
                 transition: 'all 0.15s',
               }}
             >{t.label}</button>
@@ -706,7 +706,7 @@ const ExercisePicker: React.FC<{
         {/* Recent */}
         {recentExercises.length > 0 && !query && filter === 'all' && (
           <div style={{ marginBottom: 16 }}>
-            <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, paddingLeft: 4 }}>Recently Used</p>
+            <p style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.16)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, paddingLeft: 4 }}>Recently Used</p>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {recentExercises.slice(0, 6).map(ex => {
                 const sel = isSelected(ex.id);
@@ -717,9 +717,9 @@ const ExercisePicker: React.FC<{
                     onClick={() => !already && toggle(ex.id, ex.name)}
                     style={{
                       padding: '8px 14px', borderRadius: 99, fontSize: '0.8rem', fontWeight: 700,
-                      background: sel ? 'rgba(34,197,94,0.15)' : already ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.07)',
-                      border: sel ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(255,255,255,0.1)',
-                      color: sel ? '#22C55E' : already ? 'rgba(255,255,255,0.25)' : '#fff',
+                      background: sel ? 'rgba(34,197,94,0.15)' : already ? 'rgba(0,0,0,0.02)' : 'rgba(0,0,0,0.06)',
+                      border: sel ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(0,0,0,0.07)',
+                      color: sel ? '#22C55E' : already ? 'rgba(0,0,0,0.16)' : '#fff',
                       cursor: already ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 6,
                     }}
                   >
@@ -733,7 +733,7 @@ const ExercisePicker: React.FC<{
         )}
 
         {filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'rgba(255,255,255,0.25)' }}>
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'rgba(0,0,0,0.16)' }}>
             <Dumbbell size={28} style={{ margin: '0 auto 12px' }} />
             <p style={{ fontSize: '0.9rem' }}>No exercises found</p>
           </div>
@@ -759,13 +759,13 @@ const ExercisePicker: React.FC<{
               >
                 <div style={{
                   width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-                  background: sel ? '#22C55E' : 'rgba(255,255,255,0.07)',
-                  border: sel ? 'none' : '1.5px solid rgba(255,255,255,0.15)',
+                  background: sel ? '#22C55E' : 'rgba(0,0,0,0.06)',
+                  border: sel ? 'none' : '1.5px solid rgba(0,0,0,0.10)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.15s',
                 }}>
                   {sel && <Check size={14} color="#000" />}
-                  {already && <Check size={14} color="rgba(255,255,255,0.4)" />}
+                  {already && <Check size={14} color="rgba(0,0,0,0.28)" />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff', display: 'block' }}>{ex.name}</span>
@@ -775,7 +775,7 @@ const ExercisePicker: React.FC<{
                       background: `${pColor}18`, color: pColor, textTransform: 'uppercase', letterSpacing: '0.05em',
                     }}>{pattern}</span>
                     {ex.targetMuscles.slice(0, 2).map(m => (
-                      <span key={m} style={{ fontSize: '0.6rem', fontWeight: 600, padding: '2px 6px', borderRadius: 5, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}>{m}</span>
+                      <span key={m} style={{ fontSize: '0.6rem', fontWeight: 600, padding: '2px 6px', borderRadius: 5, background: 'rgba(0,0,0,0.04)', color: 'rgba(0,0,0,0.28)' }}>{m}</span>
                     ))}
                   </div>
                 </div>
@@ -786,7 +786,7 @@ const ExercisePicker: React.FC<{
                 >
                   <Star
                     size={16}
-                    color={favoriteIds.includes(ex.id) ? '#F59E0B' : 'rgba(255,255,255,0.18)'}
+                    color={favoriteIds.includes(ex.id) ? '#F59E0B' : 'rgba(0,0,0,0.12)'}
                     fill={favoriteIds.includes(ex.id) ? '#F59E0B' : 'none'}
                   />
                 </button>
@@ -800,7 +800,7 @@ const ExercisePicker: React.FC<{
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         padding: '1rem 1.25rem', paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
-        background: 'linear-gradient(to top, #07070f 60%, transparent)',
+        background: 'linear-gradient(to top, var(--bg-primary) 60%, transparent)',
         zIndex: 10,
       }}>
         <button
@@ -809,9 +809,9 @@ const ExercisePicker: React.FC<{
             width: '100%', padding: '1.1rem',
             background: selected.length > 0
               ? 'linear-gradient(135deg, #3B82F6, #6366F1)'
-              : 'rgba(255,255,255,0.07)',
+              : 'rgba(0,0,0,0.06)',
             border: 'none', borderRadius: 18,
-            color: selected.length > 0 ? '#fff' : 'rgba(255,255,255,0.4)',
+            color: selected.length > 0 ? '#fff' : 'rgba(0,0,0,0.28)',
             fontWeight: 900, fontSize: '1rem', cursor: 'pointer',
             fontFamily: "'Outfit',sans-serif",
             letterSpacing: '-0.01em',
@@ -938,14 +938,14 @@ const ActiveWorkoutScreen: React.FC<{
   return (
     <div style={{
       position: 'fixed', inset: 0,
-      background: '#07070f',
+      background: '#F5F0E8',
       zIndex: 9002, display: 'flex', flexDirection: 'column', overflowY: 'auto',
     }}>
       {/* Sticky Header */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 20,
-        background: 'rgba(7,7,15,0.97)', backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        background: 'rgba(245,240,232,0.97)', backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(0,0,0,0.05)',
       }}>
         <div style={{ padding: '1rem 1.25rem 0.8rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -960,7 +960,7 @@ const ActiveWorkoutScreen: React.FC<{
                   <Timer size={12} color="#3B82F6" />
                   <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#3B82F6', fontVariantNumeric: 'tabular-nums' }}>{formatDuration(elapsed)}</span>
                 </div>
-                <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>{completedSets}/{totalSets} sets</span>
+                <span style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600 }}>{completedSets}/{totalSets} sets</span>
                 {progressPct > 0 && (
                   <span style={{
                     fontSize: '0.65rem', fontWeight: 800, color: '#22C55E',
@@ -972,15 +972,15 @@ const ActiveWorkoutScreen: React.FC<{
             <button
               onClick={onCancel}
               style={{
-                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.06)',
                 borderRadius: 99, padding: '6px 14px',
-                color: 'rgba(255,255,255,0.45)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
+                color: 'rgba(0,0,0,0.30)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
               }}
             >Cancel</button>
           </div>
         </div>
         {/* Progress bar */}
-        <div style={{ height: 3, background: 'rgba(255,255,255,0.05)' }}>
+        <div style={{ height: 3, background: 'rgba(0,0,0,0.04)' }}>
           <div style={{
             height: '100%', width: `${progressPct}%`,
             background: progressPct === 100
@@ -1021,10 +1021,10 @@ const ActiveWorkoutScreen: React.FC<{
               }}>+{s}s</button>
             ))}
             <button onClick={() => setRestTimer(null)} style={{
-              background: 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer',
+              background: 'rgba(0,0,0,0.05)', border: 'none', cursor: 'pointer',
               borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <X size={14} color="rgba(255,255,255,0.4)" />
+              <X size={14} color="rgba(0,0,0,0.28)" />
             </button>
           </div>
         </div>
@@ -1033,7 +1033,7 @@ const ActiveWorkoutScreen: React.FC<{
       {/* Exercise Cards */}
       <div style={{ flex: 1, padding: '12px 16px', paddingBottom: '7rem', display: 'flex', flexDirection: 'column', gap: 14 }}>
         {exercises.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'rgba(255,255,255,0.25)' }}>
+          <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'rgba(0,0,0,0.16)' }}>
             <Dumbbell size={36} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
             <p style={{ fontWeight: 700, fontSize: '0.95rem' }}>No exercises yet</p>
             <p style={{ fontSize: '0.78rem', marginTop: 4, opacity: 0.7 }}>Tap "Add Exercise" below</p>
@@ -1052,10 +1052,10 @@ const ActiveWorkoutScreen: React.FC<{
               key={`${ex.libraryId}-${exIdx}`}
               style={{
                 background: allDone
-                  ? 'linear-gradient(135deg, rgba(34,197,94,0.06) 0%, #0d0d1c 100%)'
-                  : 'linear-gradient(135deg, #0d0d1c 0%, #0a0a18 100%)',
+                  ? 'linear-gradient(135deg, rgba(22,163,74,0.08) 0%, var(--bg-card) 100%)'
+                  : 'var(--bg-card)',
                 borderRadius: 22,
-                border: `1px solid ${allDone ? 'rgba(34,197,94,0.25)' : 'rgba(255,255,255,0.07)'}`,
+                border: `1px solid ${allDone ? 'rgba(34,197,94,0.25)' : 'rgba(0,0,0,0.06)'}`,
                 overflow: 'hidden',
                 boxShadow: allDone ? '0 0 30px rgba(34,197,94,0.08)' : '0 4px 24px rgba(0,0,0,0.3)',
                 transition: 'all 0.3s',
@@ -1076,7 +1076,7 @@ const ActiveWorkoutScreen: React.FC<{
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{
                         fontFamily: "'Outfit',sans-serif", fontWeight: 800, fontSize: '1rem',
-                        color: allDone ? 'rgba(255,255,255,0.55)' : '#fff',
+                        color: allDone ? 'rgba(0,0,0,0.38)' : '#fff',
                       }}>{ex.name}</span>
                       {allDone && <Check size={15} color="#22C55E" />}
                       {trend === 'up' && <TrendingUp size={13} color="#22C55E" />}
@@ -1098,11 +1098,11 @@ const ActiveWorkoutScreen: React.FC<{
                         background: 'rgba(34,197,94,0.1)', padding: '2px 8px', borderRadius: 99,
                       }}>{doneSets}/{ex.sets.length} sets</span>
                       {lastPerf ? (
-                        <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>
+                        <span style={{ fontSize: '0.68rem', color: 'rgba(0,0,0,0.24)', fontWeight: 600 }}>
                           Last: {lastPerf.weight}kg × {lastPerf.reps}
                         </span>
                       ) : (
-                        <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.22)', fontWeight: 600 }}>First time</span>
+                        <span style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.14)', fontWeight: 600 }}>First time</span>
                       )}
                       {/* Today's Target — projected from last performance */}
                       {!allDone && (lastPerf || ex.targetReps) && (
@@ -1119,7 +1119,7 @@ const ActiveWorkoutScreen: React.FC<{
                         </span>
                       )}
                       {ex.rest && (
-                        <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.22)', fontWeight: 600 }}>· {ex.rest}s rest</span>
+                        <span style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.14)', fontWeight: 600 }}>· {ex.rest}s rest</span>
                       )}
                     </div>
                   </div>
@@ -1169,10 +1169,10 @@ const ActiveWorkoutScreen: React.FC<{
               {/* Column headers */}
               <div style={{ display: 'flex', padding: '0 16px', marginBottom: 6, alignItems: 'center' }}>
                 <div style={{ width: 24, flexShrink: 0 }} />
-                <span style={{ width: 36, flexShrink: 0, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.18)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>TYPE</span>
-                <span style={{ flex: 1, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.18)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>KG</span>
-                <span style={{ flex: 1, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.18)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>REPS</span>
-                <span style={{ width: 32, flexShrink: 0, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.18)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>RPE</span>
+                <span style={{ width: 36, flexShrink: 0, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(0,0,0,0.12)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>TYPE</span>
+                <span style={{ flex: 1, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(0,0,0,0.12)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>KG</span>
+                <span style={{ flex: 1, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(0,0,0,0.12)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>REPS</span>
+                <span style={{ width: 32, flexShrink: 0, fontSize: '0.55rem', fontWeight: 900, color: 'rgba(0,0,0,0.12)', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>RPE</span>
                 <div style={{ width: 40, flexShrink: 0 }} />
                 <div style={{ width: 20, flexShrink: 0 }} />
               </div>
@@ -1195,8 +1195,8 @@ const ActiveWorkoutScreen: React.FC<{
                       {/* Set number */}
                       <div style={{
                         width: 24, height: 42, borderRadius: 9, flexShrink: 0,
-                        background: set.done ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
-                        border: `1.5px solid ${set.done ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.07)'}`,
+                        background: set.done ? 'rgba(34,197,94,0.12)' : 'rgba(0,0,0,0.03)',
+                        border: `1.5px solid ${set.done ? 'rgba(34,197,94,0.35)' : 'rgba(0,0,0,0.06)'}`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
                         <span style={{ fontSize: '0.78rem', fontWeight: 900, color: set.done ? '#22C55E' : 'rgba(255,255,255,0.28)' }}>{setIdx + 1}</span>
@@ -1233,8 +1233,8 @@ const ActiveWorkoutScreen: React.FC<{
                         disabled={set.done}
                         style={{
                           width: 62, height: 42, borderRadius: 11, flexShrink: 0,
-                          background: isActive ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)',
-                          border: `1.5px solid ${isActive ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.07)'}`,
+                          background: isActive ? 'rgba(59,130,246,0.1)' : 'rgba(0,0,0,0.04)',
+                          border: `1.5px solid ${isActive ? 'rgba(59,130,246,0.5)' : 'rgba(0,0,0,0.06)'}`,
                           color: '#fff', textAlign: 'center',
                           fontSize: '1.05rem', fontWeight: 800,
                           outline: 'none', fontVariantNumeric: 'tabular-nums',
@@ -1254,8 +1254,8 @@ const ActiveWorkoutScreen: React.FC<{
                         disabled={set.done}
                         style={{
                           width: 52, height: 42, borderRadius: 11, flexShrink: 0,
-                          background: isActive ? 'rgba(59,130,246,0.1)' : 'rgba(255,255,255,0.05)',
-                          border: `1.5px solid ${isActive ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.07)'}`,
+                          background: isActive ? 'rgba(59,130,246,0.1)' : 'rgba(0,0,0,0.04)',
+                          border: `1.5px solid ${isActive ? 'rgba(59,130,246,0.5)' : 'rgba(0,0,0,0.06)'}`,
                           color: '#fff', textAlign: 'center',
                           fontSize: '1.05rem', fontWeight: 800,
                           outline: 'none', fontVariantNumeric: 'tabular-nums',
@@ -1271,9 +1271,9 @@ const ActiveWorkoutScreen: React.FC<{
                         title="RPE (Rate of Perceived Exertion) — tap to set"
                         style={{
                           width: 32, height: 42, borderRadius: 10, flexShrink: 0,
-                          background: set.rpe > 0 ? `${rpeColor(set.rpe)}18` : 'rgba(255,255,255,0.04)',
-                          border: `1.5px solid ${set.rpe > 0 ? `${rpeColor(set.rpe)}40` : 'rgba(255,255,255,0.07)'}`,
-                          color: set.rpe > 0 ? rpeColor(set.rpe) : 'rgba(255,255,255,0.2)',
+                          background: set.rpe > 0 ? `${rpeColor(set.rpe)}18` : 'rgba(0,0,0,0.03)',
+                          border: `1.5px solid ${set.rpe > 0 ? `${rpeColor(set.rpe)}40` : 'rgba(0,0,0,0.06)'}`,
+                          color: set.rpe > 0 ? rpeColor(set.rpe) : 'rgba(0,0,0,0.13)',
                           fontWeight: 900, fontSize: set.rpe > 0 ? '0.88rem' : '0.68rem',
                           cursor: set.done ? 'default' : 'pointer',
                           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -1295,13 +1295,13 @@ const ActiveWorkoutScreen: React.FC<{
                           width: 40, height: 42, borderRadius: 11, border: 'none', cursor: 'pointer',
                           background: set.done
                             ? 'rgba(34,197,94,0.2)'
-                            : (set.weight && set.reps ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.05)'),
+                            : (set.weight && set.reps ? 'rgba(34,197,94,0.12)' : 'rgba(0,0,0,0.04)'),
                           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                           boxShadow: set.done ? '0 0 16px rgba(34,197,94,0.2)' : 'none',
                           transition: 'all 0.2s',
                         }}
                       >
-                        <Check size={20} color={set.done ? '#22C55E' : (set.weight && set.reps ? 'rgba(34,197,94,0.6)' : 'rgba(255,255,255,0.15)')} />
+                        <Check size={20} color={set.done ? '#22C55E' : (set.weight && set.reps ? 'rgba(34,197,94,0.6)' : 'rgba(0,0,0,0.10)')} />
                       </button>
 
                       {/* Remove set */}
@@ -1312,7 +1312,7 @@ const ActiveWorkoutScreen: React.FC<{
                           background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         }}
                       >
-                        <X size={12} color="rgba(255,255,255,0.18)" />
+                        <X size={12} color="rgba(0,0,0,0.12)" />
                       </button>
                     </div>
                   );
@@ -1364,9 +1364,9 @@ const ActiveWorkoutScreen: React.FC<{
                     onClick={() => addSet(exIdx)}
                     style={{
                       flex: 1, height: 38,
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1.5px dashed rgba(255,255,255,0.1)',
-                      borderRadius: 11, color: 'rgba(255,255,255,0.4)',
+                      background: 'rgba(0,0,0,0.02)',
+                      border: '1.5px dashed rgba(0,0,0,0.07)',
+                      borderRadius: 11, color: 'rgba(0,0,0,0.28)',
                       fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
                     }}
@@ -1407,7 +1407,7 @@ const ActiveWorkoutScreen: React.FC<{
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 30,
         padding: '12px 16px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
-        background: 'linear-gradient(to top, rgba(7,7,15,1) 60%, transparent)',
+        background: 'linear-gradient(to top, var(--bg-primary) 60%, transparent)',
       }}>
         <div style={{ display: 'flex', gap: 10 }}>
           <button
@@ -1790,7 +1790,7 @@ export const Training: React.FC = () => {
   if (!state.assignedProgram && !state.activeCustomProgramId) {
     return (
       <div style={{
-        minHeight: '100dvh', background: '#07070f',
+        minHeight: '100dvh', background: '#F5F0E8',
         padding: '2rem 1.25rem', paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
         display: 'flex', flexDirection: 'column', gap: 12,
       }}>
@@ -1805,7 +1805,7 @@ export const Training: React.FC = () => {
             <Dumbbell size={32} color="#3B82F6" />
           </div>
           <h1 style={{ fontFamily: "'Outfit',sans-serif", fontSize: '1.8rem', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>Choose your program</h1>
-          <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
+          <p style={{ fontSize: '0.82rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
             Evidence-based training structured for progressive overload
           </p>
         </div>
@@ -1827,8 +1827,8 @@ export const Training: React.FC = () => {
           <button
             key={opt.id} onClick={() => setAssignedProgram(opt.id)}
             style={{
-              padding: '1.5rem', background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
-              border: '1px solid rgba(255,255,255,0.07)', borderRadius: 22,
+              padding: '1.5rem', background: 'var(--bg-card)',
+              border: '1px solid rgba(0,0,0,0.06)', borderRadius: 22,
               cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 8,
               position: 'relative', overflow: 'hidden',
             }}
@@ -1845,7 +1845,7 @@ export const Training: React.FC = () => {
               background: `${opt.color}18`, border: `1px solid ${opt.color}30`,
               fontWeight: 800, fontSize: '0.72rem', color: opt.color,
             }}>{opt.tag}</span>
-            <span style={{ fontWeight: 600, fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)' }}>{opt.sub}</span>
+            <span style={{ fontWeight: 600, fontSize: '0.78rem', color: 'rgba(0,0,0,0.24)' }}>{opt.sub}</span>
             <span style={{ fontWeight: 600, fontSize: '0.72rem', color: `${opt.color}90` }}>{opt.desc}</span>
           </button>
         ))}
@@ -1854,8 +1854,8 @@ export const Training: React.FC = () => {
           onClick={() => startCustomSession('Custom Workout')}
           style={{
             padding: '1rem', background: 'transparent',
-            border: '1.5px dashed rgba(255,255,255,0.12)', borderRadius: 16,
-            cursor: 'pointer', color: 'rgba(255,255,255,0.4)',
+            border: '1.5px dashed rgba(0,0,0,0.08)', borderRadius: 16,
+            cursor: 'pointer', color: 'rgba(0,0,0,0.28)',
             fontWeight: 700, fontSize: '0.9rem',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           }}
@@ -1918,7 +1918,7 @@ export const Training: React.FC = () => {
   return (
     <div style={{
       paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))',
-      background: '#07070f', minHeight: '100dvh',
+      background: '#F5F0E8', minHeight: '100dvh',
     }}>
 
       {/* Header */}
@@ -1940,8 +1940,8 @@ export const Training: React.FC = () => {
             onClick={() => { setAssignedProgram(null as any); activateCustomProgram(null); }}
             style={{
               padding: '7px 12px', borderRadius: 99,
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.4)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
+              background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)',
+              color: 'rgba(0,0,0,0.28)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
             }}
           >Switch</button>
           <button
@@ -1949,9 +1949,9 @@ export const Training: React.FC = () => {
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
               padding: '7px 14px', borderRadius: 99,
-              background: showCustomOptions ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.07)',
-              border: `1px solid ${showCustomOptions ? 'rgba(59,130,246,0.35)' : 'rgba(255,255,255,0.1)'}`,
-              color: showCustomOptions ? '#3B82F6' : 'rgba(255,255,255,0.7)',
+              background: showCustomOptions ? 'rgba(59,130,246,0.15)' : 'rgba(0,0,0,0.06)',
+              border: `1px solid ${showCustomOptions ? 'rgba(59,130,246,0.35)' : 'rgba(0,0,0,0.07)'}`,
+              color: showCustomOptions ? '#3B82F6' : 'rgba(28,28,46,0.55)',
               fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
               transition: 'all 0.15s',
             }}
@@ -1972,7 +1972,7 @@ export const Training: React.FC = () => {
           }}>
             <div>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fbbf24' }}>Resume last workout?</div>
-              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: 2 }}>
+              <div style={{ fontSize: '0.7rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600, marginTop: 2 }}>
                 {savedDraft.sessionName} · {savedDraft.exercises?.length} exercises
               </div>
             </div>
@@ -1982,7 +1982,7 @@ export const Training: React.FC = () => {
                 Resume
               </button>
               <button onClick={() => { localStorage.removeItem('bbc_workout_draft'); setShowDraftRestore(false); setSavedDraft(null); }}
-                style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 99, fontWeight: 700, fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>
+                style={{ padding: '6px 12px', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: 99, fontWeight: 700, fontSize: '0.78rem', color: 'rgba(0,0,0,0.28)', cursor: 'pointer' }}>
                 Discard
               </button>
             </div>
@@ -1992,17 +1992,17 @@ export const Training: React.FC = () => {
         {/* Custom session options */}
         {showCustomOptions && (
           <div style={{
-            background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
-            border: '1px solid rgba(255,255,255,0.07)', borderRadius: 22, overflow: 'hidden',
+            background: 'var(--bg-card)',
+            border: '1px solid rgba(0,0,0,0.06)', borderRadius: 22, overflow: 'hidden',
           }}>
-            <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <span style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 800, fontSize: '0.95rem' }}>Custom Session</span>
                   <p style={{ fontSize: '0.66rem', color: 'rgba(255,255,255,0.28)', fontWeight: 600, margin: '2px 0 0' }}>Pick a template or build your own</p>
                 </div>
                 <button onClick={() => setShowCustomOptions(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
-                  <X size={16} color="rgba(255,255,255,0.35)" />
+                  <X size={16} color="rgba(0,0,0,0.24)" />
                 </button>
               </div>
             </div>
@@ -2014,11 +2014,11 @@ export const Training: React.FC = () => {
                   style={{
                     padding: '14px 10px', background: 'transparent',
                     border: 'none',
-                    borderRight: i % 3 !== 2 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                    borderBottom: i < CUSTOM_SESSIONS.length - 3 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    borderRight: i % 3 !== 2 ? '1px solid rgba(0,0,0,0.04)' : 'none',
+                    borderBottom: i < CUSTOM_SESSIONS.length - 3 ? '1px solid rgba(0,0,0,0.04)' : 'none',
                     cursor: 'pointer', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
                   }}
-                  onPointerDown={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
+                  onPointerDown={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.03)')}
                   onPointerUp={e => (e.currentTarget.style.background = 'transparent')}
                   onPointerLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
@@ -2033,8 +2033,8 @@ export const Training: React.FC = () => {
                 onClick={() => startCustomSession('My Workout')}
                 style={{
                   width: '100%', padding: '10px', marginTop: 8,
-                  background: 'rgba(255,255,255,0.03)', border: '1.5px dashed rgba(255,255,255,0.1)',
-                  borderRadius: 12, color: 'rgba(255,255,255,0.4)',
+                  background: 'rgba(0,0,0,0.02)', border: '1.5px dashed rgba(0,0,0,0.07)',
+                  borderRadius: 12, color: 'rgba(0,0,0,0.28)',
                   fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
@@ -2064,14 +2064,14 @@ export const Training: React.FC = () => {
                   {selectedDay.name}
                 </h2>
                 {selectedDay.focus && (
-                  <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, margin: '4px 0 0' }}>{selectedDay.focus}</p>
+                  <p style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600, margin: '4px 0 0' }}>{selectedDay.focus}</p>
                 )}
                 <div style={{ display: 'flex', gap: 12, marginTop: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+                  <span style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.35)', fontWeight: 600 }}>
                     {selectedDay.exercises.length} exercises
                   </span>
-                  <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)' }}>·</span>
-                  <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>
+                  <span style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.13)' }}>·</span>
+                  <span style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.35)', fontWeight: 600 }}>
                     ~{estimatedMinutes} min
                   </span>
                 </div>
@@ -2083,14 +2083,14 @@ export const Training: React.FC = () => {
               {selectedDay.exercises.slice(0, 5).map((ex, i) => (
                 <span key={i} style={{
                   fontSize: '0.66rem', fontWeight: 700, padding: '4px 10px', borderRadius: 99,
-                  background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(0,0,0,0.06)', color: 'rgba(28,28,46,0.65)',
+                  border: '1px solid rgba(0,0,0,0.06)',
                 }}>{ex.name}</span>
               ))}
               {selectedDay.exercises.length > 5 && (
                 <span style={{
                   fontSize: '0.66rem', fontWeight: 700, padding: '4px 10px', borderRadius: 99,
-                  background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.35)',
+                  background: 'rgba(0,0,0,0.03)', color: 'rgba(0,0,0,0.24)',
                 }}>+{selectedDay.exercises.length - 5} more</span>
               )}
             </div>
@@ -2118,12 +2118,12 @@ export const Training: React.FC = () => {
 
         {/* Week progress */}
         <div style={{
-          background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
-          border: '1px solid rgba(255,255,255,0.06)', borderRadius: 22, padding: '16px 20px',
+          background: 'var(--bg-card)',
+          border: '1px solid rgba(0,0,0,0.05)', borderRadius: 22, padding: '16px 20px',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>This Week</span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: completedDayNames.size === program.days.length ? '#22C55E' : 'rgba(255,255,255,0.3)' }}>
+            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.16)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>This Week</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: completedDayNames.size === program.days.length ? '#22C55E' : 'rgba(0,0,0,0.20)' }}>
               {completedDayNames.size}/{program.days.length} done
             </span>
           </div>
@@ -2146,18 +2146,18 @@ export const Training: React.FC = () => {
                 <div key={i} onClick={() => setSelectedDayOverride(i)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                   <div style={{
                     width: 48, height: 48, borderRadius: '50%',
-                    background: isDone ? 'rgba(34,197,94,0.15)' : isSel ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.04)',
-                    border: `2px solid ${isDone ? 'rgba(34,197,94,0.5)' : isSel ? 'rgba(59,130,246,0.7)' : 'rgba(255,255,255,0.08)'}`,
+                    background: isDone ? 'rgba(34,197,94,0.15)' : isSel ? 'rgba(59,130,246,0.18)' : 'rgba(0,0,0,0.03)',
+                    border: `2px solid ${isDone ? 'rgba(34,197,94,0.5)' : isSel ? 'rgba(59,130,246,0.7)' : 'rgba(0,0,0,0.06)'}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: isSel && !isDone ? '0 0 20px rgba(59,130,246,0.2)' : isDone ? '0 0 20px rgba(34,197,94,0.15)' : 'none',
                     transition: 'all 0.2s',
                   }}>
                     {isDone
                       ? <Check size={18} color="#22C55E" />
-                      : <span style={{ fontSize: '0.9rem', fontWeight: 900, color: isSel ? '#3B82F6' : 'rgba(255,255,255,0.2)' }}>{i + 1}</span>
+                      : <span style={{ fontSize: '0.9rem', fontWeight: 900, color: isSel ? '#3B82F6' : 'rgba(0,0,0,0.13)' }}>{i + 1}</span>
                     }
                   </div>
-                  <span style={{ fontSize: '0.58rem', fontWeight: 700, color: isDone ? '#22C55E' : isSel ? '#3B82F6' : 'rgba(255,255,255,0.2)', textAlign: 'center', maxWidth: 52 }}>
+                  <span style={{ fontSize: '0.58rem', fontWeight: 700, color: isDone ? '#22C55E' : isSel ? '#3B82F6' : 'rgba(0,0,0,0.13)', textAlign: 'center', maxWidth: 52 }}>
                     {day.name.split(' ')[0]}
                   </span>
                 </div>
@@ -2181,15 +2181,15 @@ export const Training: React.FC = () => {
               { label: 'PRs', value: String(prsThisMonth), sub: 'this month', color: '#FBBF24', icon: <Award size={14} color="#FBBF24" /> },
             ].map(stat => (
               <div key={stat.label} style={{
-                background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
+                background: 'var(--bg-card)',
                 borderRadius: 16, padding: '12px 8px',
-                border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center',
+                border: '1px solid rgba(0,0,0,0.05)', textAlign: 'center',
                 position: 'relative', overflow: 'hidden',
               }}>
                 <div style={{ position: 'absolute', top: -10, right: -10, width: 40, height: 40, borderRadius: '50%', background: `${stat.color}08`, filter: 'blur(15px)' }} />
                 <div style={{ marginBottom: 4 }}>{stat.icon}</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 900, color: stat.color, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', fontFamily: "'Outfit',sans-serif" }}>{stat.value}</div>
-                <div style={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.25)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{stat.sub}</div>
+                <div style={{ fontSize: '0.52rem', color: 'rgba(0,0,0,0.16)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{stat.sub}</div>
               </div>
             ))}
           </div>
@@ -2197,29 +2197,29 @@ export const Training: React.FC = () => {
 
         {/* Volume Chart — last 7 days */}
         <div style={{
-          background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
-          border: '1px solid rgba(255,255,255,0.06)', borderRadius: 22, padding: '16px 20px',
+          background: 'var(--bg-card)',
+          border: '1px solid rgba(0,0,0,0.05)', borderRadius: 22, padding: '16px 20px',
         }}>
           <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <span style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 800, fontSize: '0.95rem' }}>Muscle Volume</span>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, marginTop: 2 }}>Sets per muscle · last 7 days</div>
+              <div style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600, marginTop: 2 }}>Sets per muscle · last 7 days</div>
             </div>
-            <Target size={16} color="rgba(255,255,255,0.2)" />
+            <Target size={16} color="rgba(0,0,0,0.13)" />
           </div>
           <div style={{ height: 140, marginLeft: -10 }}>
             <ResponsiveContainer width="100%" height="100%">
               {/* @ts-ignore */}
               <BarChart data={volumeData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.22)', fontWeight: 700 }} dy={8} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.14)', fontWeight: 700 }} dy={8} />
                 <Tooltip
-                  contentStyle={{ borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', background: '#0d0d1c', padding: '10px 14px' }}
-                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                  contentStyle={{ borderRadius: 14, border: '1px solid rgba(0,0,0,0.06)', background: '#FFFFFF', padding: '10px 14px' }}
+                  cursor={{ fill: 'rgba(0,0,0,0.02)' }}
                   formatter={(val: any) => [`${val} sets`, '']}
                 />
                 <Bar dataKey="sets" radius={[7, 7, 0, 0]} barSize={26}>
                   {volumeData.map((entry, i) => (
-                    <Cell key={i} fill={entry.sets > 0 ? (MUSCLE_COLORS[entry.name] || '#3B82F6') : 'rgba(255,255,255,0.04)'} fillOpacity={entry.sets > 0 ? 0.8 : 1} />
+                    <Cell key={i} fill={entry.sets > 0 ? (MUSCLE_COLORS[entry.name] || '#3B82F6') : 'rgba(0,0,0,0.03)'} fillOpacity={entry.sets > 0 ? 0.8 : 1} />
                   ))}
                 </Bar>
               </BarChart>
@@ -2230,19 +2230,19 @@ export const Training: React.FC = () => {
         {/* Recent workouts */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>History</span>
-            {recentWorkouts.length > 0 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.22)' }}>{recentWorkouts.length} sessions</span>}
+            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.16)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>History</span>
+            {recentWorkouts.length > 0 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(0,0,0,0.14)' }}>{recentWorkouts.length} sessions</span>}
           </div>
 
           {recentWorkouts.length === 0 ? (
             <div style={{
-              background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
-              border: '1.5px dashed rgba(255,255,255,0.07)', borderRadius: 20,
+              background: 'var(--bg-card)',
+              border: '1.5px dashed rgba(0,0,0,0.06)', borderRadius: 20,
               padding: '2.5rem', textAlign: 'center',
             }}>
-              <Dumbbell size={28} color="rgba(255,255,255,0.15)" style={{ margin: '0 auto 10px' }} />
-              <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', margin: 0 }}>No workouts yet</p>
-              <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.18)', marginTop: 4 }}>Start your first session above</p>
+              <Dumbbell size={28} color="rgba(0,0,0,0.10)" style={{ margin: '0 auto 10px' }} />
+              <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'rgba(0,0,0,0.20)', margin: 0 }}>No workouts yet</p>
+              <p style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.12)', marginTop: 4 }}>Start your first session above</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -2258,8 +2258,8 @@ export const Training: React.FC = () => {
 
                 return (
                   <div key={workout.id} style={{
-                    background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
-                    border: '1px solid rgba(255,255,255,0.06)', borderRadius: 18,
+                    background: 'var(--bg-card)',
+                    border: '1px solid rgba(0,0,0,0.05)', borderRadius: 18,
                     overflow: 'hidden',
                     transition: 'all 0.2s',
                   }}>
@@ -2273,11 +2273,11 @@ export const Training: React.FC = () => {
                           {workout.name.split('—')[1]?.trim() || workout.name}
                         </div>
                         <div style={{ display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>{dateStr}</span>
-                          <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.15)' }}>·</span>
-                          <span style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>{workout.durationMinutes}m</span>
-                          <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.15)' }}>·</span>
-                          <span style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>{workout.exercises.length} exercises</span>
+                          <span style={{ fontSize: '0.67rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600 }}>{dateStr}</span>
+                          <span style={{ fontSize: '0.55rem', color: 'rgba(0,0,0,0.10)' }}>·</span>
+                          <span style={{ fontSize: '0.67rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600 }}>{workout.durationMinutes}m</span>
+                          <span style={{ fontSize: '0.55rem', color: 'rgba(0,0,0,0.10)' }}>·</span>
+                          <span style={{ fontSize: '0.67rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600 }}>{workout.exercises.length} exercises</span>
                           {musclesHit.map(m => (
                             <span key={m} style={{
                               fontSize: '0.58rem', fontWeight: 700, padding: '2px 6px', borderRadius: 99,
@@ -2294,17 +2294,17 @@ export const Training: React.FC = () => {
                             <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '0.95rem', color: '#A855F7', fontVariantNumeric: 'tabular-nums' }}>
                               {totalVolume > 1000 ? `${(totalVolume / 1000).toFixed(1)}k` : Math.round(totalVolume)}
                             </div>
-                            <div style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.22)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>kg</div>
+                            <div style={{ fontSize: '0.5rem', color: 'rgba(0,0,0,0.14)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>kg</div>
                           </div>
                         )}
-                        {isExpanded ? <ChevronUp size={14} color="rgba(255,255,255,0.2)" /> : <ChevronDown size={14} color="rgba(255,255,255,0.2)" />}
+                        {isExpanded ? <ChevronUp size={14} color="rgba(0,0,0,0.13)" /> : <ChevronDown size={14} color="rgba(0,0,0,0.13)" />}
                       </div>
                     </div>
 
                     {/* Expanded: exercise list */}
                     {isExpanded && (
                       <div style={{
-                        borderTop: '1px solid rgba(255,255,255,0.05)',
+                        borderTop: '1px solid rgba(0,0,0,0.04)',
                         padding: '12px 16px',
                         display: 'flex', flexDirection: 'column', gap: 8,
                       }}>
@@ -2315,16 +2315,16 @@ export const Training: React.FC = () => {
                             <div key={ex.id} style={{
                               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                               padding: '8px 10px', borderRadius: 10,
-                              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.04)',
+                              background: 'rgba(0,0,0,0.02)', border: '1px solid rgba(0,0,0,0.03)',
                             }}>
                               <div>
-                                <div style={{ fontWeight: 700, fontSize: '0.8rem', color: 'rgba(255,255,255,0.8)' }}>{ex.name}</div>
-                                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, marginTop: 2 }}>
+                                <div style={{ fontWeight: 700, fontSize: '0.8rem', color: 'rgba(28,28,46,0.82)' }}>{ex.name}</div>
+                                <div style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600, marginTop: 2 }}>
                                   {ex.sets.length} sets · best {bestSet?.weight}kg × {bestSet?.reps}
                                 </div>
                               </div>
                               {vol > 0 && (
-                                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'rgba(255,255,255,0.35)', fontVariantNumeric: 'tabular-nums' }}>
+                                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'rgba(0,0,0,0.24)', fontVariantNumeric: 'tabular-nums' }}>
                                   {Math.round(vol)}kg
                                 </span>
                               )}

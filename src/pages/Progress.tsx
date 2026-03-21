@@ -21,7 +21,7 @@ const todayStr = () => new Date().toISOString().split('T')[0];
 const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '8px 12px' }}>
+    <div style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, padding: '8px 12px' }}>
       <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-tertiary)', marginBottom: 4 }}>{label}</div>
       {payload.map((p: any) => (
         <div key={p.name} style={{ fontSize: '0.78rem', fontWeight: 800, color: p.color }}>
@@ -70,7 +70,7 @@ const MeasurementSheet: React.FC<{ onClose: () => void; onSave: (m: BodyMeasurem
         transition={{ type: 'spring', damping: 26, stiffness: 300 }}
         style={{ position: 'relative', background: 'var(--bg-sheet)', borderRadius: '24px 24px 0 0', padding: '20px 20px', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))', maxHeight: '85dvh', overflowY: 'auto' }}
       >
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)', margin: '0 auto 18px' }} />
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(0,0,0,0.10)', margin: '0 auto 18px' }} />
         <div style={{ fontSize: '1rem', fontWeight: 800, fontFamily: 'var(--font-display)', marginBottom: 16 }}>Log measurements</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
           {MEASUREMENT_FIELDS.map(f => (
@@ -159,7 +159,7 @@ const MeasurementCard: React.FC<{
         </div>
       </div>
       {expanded && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.04)' }}>
           {MEASUREMENT_FIELDS.filter(f => f.key !== 'weight' && f.key !== 'bodyFat').map(f => {
             const val = (measurement as any)[f.key];
             if (!val) return null;
@@ -286,7 +286,7 @@ export const Progress: React.FC = () => {
             <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
               {(['2W', '1M', '3M', 'All'] as Timeframe[]).map(tf => (
                 <button key={tf} onClick={() => setTimeframe(tf)}
-                  style={{ flex: 1, padding: '6px', borderRadius: 8, border: 'none', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', background: timeframe === tf ? '#6366F1' : 'rgba(255,255,255,0.06)', color: timeframe === tf ? 'white' : 'var(--text-tertiary)', transition: 'all 0.15s' }}>
+                  style={{ flex: 1, padding: '6px', borderRadius: 8, border: 'none', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', background: timeframe === tf ? '#6366F1' : 'rgba(0,0,0,0.05)', color: timeframe === tf ? 'white' : 'var(--text-tertiary)', transition: 'all 0.15s' }}>
                   {tf}
                 </button>
               ))}
@@ -307,8 +307,8 @@ export const Progress: React.FC = () => {
                           <stop offset="100%" stopColor="#6366F1" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.35)', fontWeight: 600 }} tickLine={false} axisLine={false} interval={Math.max(1, Math.floor(trendData.length / 5))} />
-                      <YAxis tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.35)', fontWeight: 600 }} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+                      <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.24)', fontWeight: 600 }} tickLine={false} axisLine={false} interval={Math.max(1, Math.floor(trendData.length / 5))} />
+                      <YAxis tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.24)', fontWeight: 600 }} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
                       <Tooltip content={<CustomTooltip />} />
                       {user.goalWeight && (
                         <ReferenceLine y={user.goalWeight} stroke="#22C55E" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: 'Goal', fill: '#22C55E', fontSize: 9 }} />
@@ -340,8 +340,8 @@ export const Progress: React.FC = () => {
               <div style={{ height: 140 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={nutritionChartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} barCategoryGap="30%">
-                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.35)', fontWeight: 600 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.35)', fontWeight: 600 }} tickLine={false} axisLine={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.24)', fontWeight: 600 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.24)', fontWeight: 600 }} tickLine={false} axisLine={false} />
                     <Tooltip content={<CustomTooltip />} />
                     <ReferenceLine y={user.targets.calories} stroke="rgba(239,68,68,0.4)" strokeDasharray="3 3" strokeWidth={1.5} />
                     <Bar dataKey="calories" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Calories" />
@@ -355,8 +355,8 @@ export const Progress: React.FC = () => {
               <div style={{ height: 120 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={nutritionChartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }} barCategoryGap="30%">
-                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.35)', fontWeight: 600 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 9, fill: 'rgba(255,255,255,0.35)', fontWeight: 600 }} tickLine={false} axisLine={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.24)', fontWeight: 600 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.24)', fontWeight: 600 }} tickLine={false} axisLine={false} />
                     <Tooltip content={<CustomTooltip />} />
                     <ReferenceLine y={user.targets.protein} stroke="rgba(245,158,11,0.4)" strokeDasharray="3 3" strokeWidth={1.5} />
                     <Bar dataKey="protein" fill="#F59E0B" radius={[4, 4, 0, 0]} name="Protein" />

@@ -97,19 +97,19 @@ const ExercisePicker: React.FC<{
       display: 'flex', flexDirection: 'column',
     }}>
       <div style={{
-        background: '#0d0d1c', borderRadius: '24px 24px 0 0',
+        background: '#FFFFFF', borderRadius: '24px 24px 0 0',
         marginTop: 'auto', height: '80dvh',
         display: 'flex', flexDirection: 'column',
-        border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none',
+        border: '1px solid rgba(0,0,0,0.06)', borderBottom: 'none',
       }}>
         {/* Header */}
         <div style={{ padding: '16px 16px 10px', display: 'flex', gap: 10, alignItems: 'center' }}>
           <button
             onClick={onClose}
-            style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 99, padding: '6px 10px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}
+            style={{ background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: 99, padding: '6px 10px', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}
           >Cancel</button>
           <div style={{ flex: 1, position: 'relative' }}>
-            <Search size={13} color="rgba(255,255,255,0.3)" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
+            <Search size={13} color="rgba(0,0,0,0.20)" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
             <input
               autoFocus
               value={search}
@@ -117,7 +117,7 @@ const ExercisePicker: React.FC<{
               placeholder="Search exercises…"
               style={{
                 width: '100%', paddingLeft: 30, paddingRight: 12, paddingTop: 8, paddingBottom: 8,
-                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)',
                 borderRadius: 99, color: '#fff', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box',
               }}
             />
@@ -154,7 +154,7 @@ const ExercisePicker: React.FC<{
               >
                 <div style={{
                   width: 22, height: 22, borderRadius: 99, flexShrink: 0,
-                  border: `2px solid ${isSelected ? '#3B82F6' : 'rgba(255,255,255,0.15)'}`,
+                  border: `2px solid ${isSelected ? '#3B82F6' : 'rgba(0,0,0,0.10)'}`,
                   background: isSelected ? '#3B82F6' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.1s',
@@ -163,14 +163,14 @@ const ExercisePicker: React.FC<{
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</div>
-                  <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: 1 }}>{ex.targetMuscles.slice(0, 3).join(' · ')}</div>
+                  <div style={{ fontSize: '0.67rem', color: 'rgba(0,0,0,0.24)', fontWeight: 600, marginTop: 1 }}>{ex.targetMuscles.slice(0, 3).join(' · ')}</div>
                 </div>
-                {isAdded && <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>Added</span>}
+                {isAdded && <span style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.20)', fontWeight: 700 }}>Added</span>}
               </div>
             );
           })}
           {filtered.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem', fontWeight: 600 }}>
+            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'rgba(0,0,0,0.16)', fontSize: '0.85rem', fontWeight: 600 }}>
               No exercises found
             </div>
           )}
@@ -195,7 +195,7 @@ const ExerciseRow: React.FC<{
   const [expanded, setExpanded] = useState(false);
 
   const fieldStyle: React.CSSProperties = {
-    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)',
     borderRadius: 10, color: '#fff', fontSize: '0.8rem', fontWeight: 700,
     padding: '7px 10px', outline: 'none', width: '100%', boxSizing: 'border-box',
   };
@@ -211,8 +211,8 @@ const ExerciseRow: React.FC<{
 
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.03)', borderRadius: 14,
-      border: '1px solid rgba(255,255,255,0.06)', marginBottom: 6, overflow: 'hidden',
+      background: 'rgba(0,0,0,0.02)', borderRadius: 14,
+      border: '1px solid rgba(0,0,0,0.05)', marginBottom: 6, overflow: 'hidden',
     }}>
       {/* Main row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 10px 10px 8px' }}>
@@ -232,9 +232,9 @@ const ExerciseRow: React.FC<{
           title={ex.supersetGroup ? `Superset ${ex.supersetGroup} — tap to remove` : 'Tap to add superset group'}
           style={{
             width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-            background: ex.supersetGroup ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
-            border: `1px solid ${ex.supersetGroup ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.08)'}`,
-            color: ex.supersetGroup ? '#818CF8' : 'rgba(255,255,255,0.25)',
+            background: ex.supersetGroup ? 'rgba(99,102,241,0.2)' : 'rgba(0,0,0,0.04)',
+            border: `1px solid ${ex.supersetGroup ? 'rgba(99,102,241,0.4)' : 'rgba(0,0,0,0.06)'}`,
+            color: ex.supersetGroup ? '#818CF8' : 'rgba(0,0,0,0.16)',
             fontWeight: 900, fontSize: '0.7rem', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
@@ -245,7 +245,7 @@ const ExerciseRow: React.FC<{
         {/* Name */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</div>
-          <div style={{ fontSize: '0.67rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: 1 }}>
+          <div style={{ fontSize: '0.67rem', color: 'rgba(0,0,0,0.24)', fontWeight: 600, marginTop: 1 }}>
             {ex.sets} × {ex.reps} · {ex.rest}s rest
           </div>
         </div>
@@ -270,7 +270,7 @@ const ExerciseRow: React.FC<{
         <div style={{ padding: '0 10px 12px 10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
             <div>
-              <label style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>Sets</label>
+              <label style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.20)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>Sets</label>
               <input
                 type="number" min={1} max={20}
                 value={ex.sets}
@@ -279,7 +279,7 @@ const ExerciseRow: React.FC<{
               />
             </div>
             <div>
-              <label style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>Reps</label>
+              <label style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.20)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>Reps</label>
               <input
                 type="text"
                 value={ex.reps}
@@ -289,7 +289,7 @@ const ExerciseRow: React.FC<{
               />
             </div>
             <div>
-              <label style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>Rest (s)</label>
+              <label style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.20)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>Rest (s)</label>
               <input
                 type="number" min={0} max={600} step={15}
                 value={ex.rest}
@@ -299,7 +299,7 @@ const ExerciseRow: React.FC<{
             </div>
           </div>
           <div>
-            <label style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>Notes</label>
+            <label style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.20)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>Notes</label>
             <input
               type="text"
               value={ex.notes}
@@ -358,7 +358,7 @@ const DaySection: React.FC<{
   return (
     <div style={{
       background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
-      border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, overflow: 'hidden', marginBottom: 10,
+      border: '1px solid rgba(0,0,0,0.06)', borderRadius: 20, overflow: 'hidden', marginBottom: 10,
     }}>
       {/* Day header */}
       <div style={{ padding: '14px 14px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -395,7 +395,7 @@ const DaySection: React.FC<{
         />
 
         {/* Exercise count badge */}
-        <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, flexShrink: 0 }}>
+        <span style={{ fontSize: '0.68rem', color: 'rgba(0,0,0,0.20)', fontWeight: 700, flexShrink: 0 }}>
           {day.exercises.length} ex
         </span>
 
@@ -425,7 +425,7 @@ const DaySection: React.FC<{
             placeholder="Focus (e.g. Push, Pull, Lower…)"
             style={{
               width: '100%', boxSizing: 'border-box',
-              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+              background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)',
               borderRadius: 10, color: 'rgba(255,255,255,0.6)', fontSize: '0.78rem', fontWeight: 600,
               padding: '7px 12px', outline: 'none',
             }}
@@ -439,8 +439,8 @@ const DaySection: React.FC<{
           {day.exercises.length === 0 ? (
             <div style={{
               textAlign: 'center', padding: '1.5rem',
-              border: '1.5px dashed rgba(255,255,255,0.08)', borderRadius: 14,
-              color: 'rgba(255,255,255,0.25)', fontSize: '0.8rem', fontWeight: 600, marginBottom: 8,
+              border: '1.5px dashed rgba(0,0,0,0.06)', borderRadius: 14,
+              color: 'rgba(0,0,0,0.16)', fontSize: '0.8rem', fontWeight: 600, marginBottom: 8,
             }}>
               No exercises — add some below
             </div>
@@ -499,7 +499,7 @@ const ProgramCard: React.FC<{
   return (
     <div style={{
       background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
-      border: `1px solid ${isActive ? 'rgba(34,197,94,0.25)' : 'rgba(255,255,255,0.07)'}`,
+      border: `1px solid ${isActive ? 'rgba(34,197,94,0.25)' : 'rgba(0,0,0,0.06)'}`,
       borderRadius: 20, overflow: 'hidden', position: 'relative',
     }}>
       {isActive && (
@@ -516,7 +516,7 @@ const ProgramCard: React.FC<{
                 <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', fontWeight: 800, fontSize: '0.62rem', color: '#22C55E', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Active</span>
               )}
               {!isActive && (
-                <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', fontWeight: 700, fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{program.status}</span>
+                <span style={{ padding: '2px 8px', borderRadius: 99, background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)', fontWeight: 700, fontSize: '0.62rem', color: 'rgba(0,0,0,0.24)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{program.status}</span>
               )}
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -525,7 +525,7 @@ const ProgramCard: React.FC<{
                   {goal.emoji} {goal.label}
                 </span>
               )}
-              <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+              <span style={{ fontSize: '0.68rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600 }}>
                 {program.days.length} day{program.days.length !== 1 ? 's' : ''} · {totalExercises} exercises
               </span>
             </div>
@@ -535,16 +535,16 @@ const ProgramCard: React.FC<{
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setShowMenu(m => !m)}
-              style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: 8, padding: '6px 8px', cursor: 'pointer' }}
+              style={{ background: 'rgba(0,0,0,0.04)', border: 'none', borderRadius: 8, padding: '6px 8px', cursor: 'pointer' }}
             >
-              <MoreVertical size={15} color="rgba(255,255,255,0.5)" />
+              <MoreVertical size={15} color="rgba(0,0,0,0.35)" />
             </button>
             {showMenu && (
               <>
                 <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={() => setShowMenu(false)} />
                 <div style={{
                   position: 'absolute', right: 0, top: 36, zIndex: 101,
-                  background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)',
+                  background: '#1a1a2e', border: '1px solid rgba(0,0,0,0.07)',
                   borderRadius: 14, overflow: 'hidden', minWidth: 150, boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                 }}>
                   {[
@@ -566,7 +566,7 @@ const ProgramCard: React.FC<{
 
         {/* Description */}
         {program.description && (
-          <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, margin: '0 0 12px', lineHeight: 1.4 }}>{program.description}</p>
+          <p style={{ fontSize: '0.78rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600, margin: '0 0 12px', lineHeight: 1.4 }}>{program.description}</p>
         )}
 
         {/* Day pills */}
@@ -574,8 +574,8 @@ const ProgramCard: React.FC<{
           {program.days.map(d => (
             <span key={d.id} style={{
               padding: '4px 10px', borderRadius: 99,
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-              fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)',
+              background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)',
+              fontSize: '0.68rem', fontWeight: 700, color: 'rgba(0,0,0,0.35)',
             }}>{d.name}</span>
           ))}
         </div>
@@ -586,7 +586,7 @@ const ProgramCard: React.FC<{
             onClick={onEdit}
             style={{
               flex: 1, padding: '9px', borderRadius: 12,
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.07)',
               color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
             }}
           >Edit</button>
@@ -705,24 +705,24 @@ const ProgramEditorScreen: React.FC<{
 
   const fieldStyle: React.CSSProperties = {
     width: '100%', boxSizing: 'border-box',
-    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)',
     borderRadius: 12, color: '#fff', fontSize: '0.9rem', fontWeight: 700,
     padding: '12px 14px', outline: 'none', fontFamily: "'Outfit', sans-serif",
   };
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#07070f', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100dvh', background: '#F5F0E8', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <div style={{
         padding: '1rem 1.25rem 0.75rem',
         display: 'flex', alignItems: 'center', gap: 12,
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        borderBottom: '1px solid rgba(0,0,0,0.04)',
         background: 'rgba(7,7,15,0.95)', backdropFilter: 'blur(12px)',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
         <button
           onClick={handleSaveDraft}
-          style={{ background: 'rgba(255,255,255,0.07)', border: 'none', borderRadius: 99, padding: '7px 12px', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 5 }}
+          style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: 99, padding: '7px 12px', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 5 }}
         >
           <ArrowLeft size={13} /> Back
         </button>
@@ -730,15 +730,15 @@ const ProgramEditorScreen: React.FC<{
           <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1rem', color: '#fff' }}>
             {program ? 'Edit Program' : 'New Program'}
           </div>
-          <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, marginTop: 1 }}>
+          <div style={{ fontSize: '0.62rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600, marginTop: 1 }}>
             Auto-saving as draft
           </div>
         </div>
         <span style={{
           padding: '4px 10px', borderRadius: 99,
-          background: status === 'active' ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.05)',
-          border: `1px solid ${status === 'active' ? 'rgba(34,197,94,0.25)' : 'rgba(255,255,255,0.1)'}`,
-          color: status === 'active' ? '#22C55E' : 'rgba(255,255,255,0.35)',
+          background: status === 'active' ? 'rgba(34,197,94,0.12)' : 'rgba(0,0,0,0.04)',
+          border: `1px solid ${status === 'active' ? 'rgba(34,197,94,0.25)' : 'rgba(0,0,0,0.07)'}`,
+          color: status === 'active' ? '#22C55E' : 'rgba(0,0,0,0.24)',
           fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
         }}>{status}</span>
       </div>
@@ -749,9 +749,9 @@ const ProgramEditorScreen: React.FC<{
         {/* Program Details */}
         <div style={{
           background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
-          border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, padding: '18px 16px', marginBottom: 16,
+          border: '1px solid rgba(0,0,0,0.06)', borderRadius: 20, padding: '18px 16px', marginBottom: 16,
         }}>
-          <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Program Details</div>
+          <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.16)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Program Details</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <input
               value={name}
@@ -769,7 +769,7 @@ const ProgramEditorScreen: React.FC<{
 
             {/* Goal selector */}
             <div>
-              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Goal</div>
+              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.16)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Goal</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {(Object.entries(GOAL_CONFIG) as [ProgramGoal, typeof GOAL_CONFIG[ProgramGoal]][]).map(([key, cfg]) => (
                   <button
@@ -777,8 +777,8 @@ const ProgramEditorScreen: React.FC<{
                     onClick={() => setGoal(goal === key ? '' : key)}
                     style={{
                       padding: '10px 12px', borderRadius: 14, cursor: 'pointer', textAlign: 'left',
-                      background: goal === key ? `${cfg.color}15` : 'rgba(255,255,255,0.03)',
-                      border: `1px solid ${goal === key ? `${cfg.color}40` : 'rgba(255,255,255,0.07)'}`,
+                      background: goal === key ? `${cfg.color}15` : 'rgba(0,0,0,0.02)',
+                      border: `1px solid ${goal === key ? `${cfg.color}40` : 'rgba(0,0,0,0.06)'}`,
                       transition: 'all 0.15s',
                     }}
                   >
@@ -796,7 +796,7 @@ const ProgramEditorScreen: React.FC<{
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div>
               <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1rem' }}>Training Days</div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, marginTop: 1 }}>{days.length} day{days.length !== 1 ? 's' : ''} per week</div>
+              <div style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600, marginTop: 1 }}>{days.length} day{days.length !== 1 ? 's' : ''} per week</div>
             </div>
             <button
               onClick={addDay}
@@ -813,12 +813,12 @@ const ProgramEditorScreen: React.FC<{
 
           {days.length === 0 ? (
             <div style={{
-              border: '2px dashed rgba(255,255,255,0.08)', borderRadius: 20,
+              border: '2px dashed rgba(0,0,0,0.06)', borderRadius: 20,
               padding: '3rem', textAlign: 'center',
             }}>
-              <Dumbbell size={28} color="rgba(255,255,255,0.15)" style={{ margin: '0 auto 10px' }} />
-              <p style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 600, fontSize: '0.85rem', margin: 0 }}>No days yet</p>
-              <p style={{ color: 'rgba(255,255,255,0.18)', fontSize: '0.75rem', marginTop: 4 }}>Add your first training day above</p>
+              <Dumbbell size={28} color="rgba(0,0,0,0.10)" style={{ margin: '0 auto 10px' }} />
+              <p style={{ color: 'rgba(0,0,0,0.20)', fontWeight: 600, fontSize: '0.85rem', margin: 0 }}>No days yet</p>
+              <p style={{ color: 'rgba(0,0,0,0.12)', fontSize: '0.75rem', marginTop: 4 }}>Add your first training day above</p>
             </div>
           ) : (
             days.map((day, i) => (
@@ -840,14 +840,14 @@ const ProgramEditorScreen: React.FC<{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         padding: '12px 20px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
         background: 'rgba(7,7,15,0.95)', backdropFilter: 'blur(16px)',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
+        borderTop: '1px solid rgba(0,0,0,0.05)',
         display: 'flex', gap: 10,
       }}>
         <button
           onClick={handleSaveDraft}
           style={{
             flex: 1, padding: '13px', borderRadius: 14,
-            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.07)',
             color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer',
           }}
         >Save Draft</button>
@@ -897,24 +897,24 @@ const ProgramListScreen: React.FC<{
 
   return (
     <div style={{
-      minHeight: '100dvh', background: '#07070f',
+      minHeight: '100dvh', background: '#F5F0E8',
       paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
     }}>
       {/* Header */}
       <div style={{
         padding: '1.25rem 1.25rem 1rem',
         display: 'flex', alignItems: 'center', gap: 12,
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        borderBottom: '1px solid rgba(0,0,0,0.04)',
       }}>
         <button
           onClick={() => navigate('/training')}
-          style={{ background: 'rgba(255,255,255,0.07)', border: 'none', borderRadius: 99, padding: '7px 12px', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 5 }}
+          style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: 99, padding: '7px 12px', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 5 }}
         >
           <ArrowLeft size={13} /> Train
         </button>
         <div style={{ flex: 1 }}>
           <h1 style={{ fontFamily: "'Outfit',sans-serif", fontSize: '1.4rem', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>My Programs</h1>
-          <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600, margin: '2px 0 0' }}>Custom training programs</p>
+          <p style={{ fontSize: '0.68rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600, margin: '2px 0 0' }}>Custom training programs</p>
         </div>
         <button
           onClick={onNew}
@@ -934,7 +934,7 @@ const ProgramListScreen: React.FC<{
           /* Empty state */
           <div style={{
             background: 'linear-gradient(135deg, #0d0d1c, #0a0a18)',
-            border: '1.5px dashed rgba(255,255,255,0.08)', borderRadius: 24,
+            border: '1.5px dashed rgba(0,0,0,0.06)', borderRadius: 24,
             padding: '3.5rem 2rem', textAlign: 'center',
           }}>
             <div style={{
@@ -947,7 +947,7 @@ const ProgramListScreen: React.FC<{
               <Target size={32} color="#3B82F6" />
             </div>
             <h2 style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1.3rem', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Build your first program</h2>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem', fontWeight: 600, margin: '0 0 24px', lineHeight: 1.5 }}>
+            <p style={{ color: 'rgba(0,0,0,0.28)', fontSize: '0.82rem', fontWeight: 600, margin: '0 0 24px', lineHeight: 1.5 }}>
               Create a custom training program with your own exercises, sets, reps, and structure.
             </p>
             <button

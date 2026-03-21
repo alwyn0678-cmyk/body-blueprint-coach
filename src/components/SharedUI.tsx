@@ -39,11 +39,11 @@ const T = {
   bg:       '#000000',
   card:     '#0D0D0D',
   cardAlt:  '#141414',
-  border:   'rgba(255,255,255,0.08)',
-  borderMd: 'rgba(255,255,255,0.12)',
+  border:   'rgba(0,0,0,0.06)',
+  borderMd: 'rgba(0,0,0,0.08)',
   text:     '#FFFFFF',
-  muted:    'rgba(255,255,255,0.45)',
-  subtle:   'rgba(255,255,255,0.22)',
+  muted:    'rgba(0,0,0,0.30)',
+  subtle:   'rgba(0,0,0,0.14)',
   accent:   'var(--accent-blue, #3B82F6)',
   green:    'var(--accent-green, #22C55E)',
   red:      '#EF4444',
@@ -138,7 +138,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       <div style={{
         height,
         width: '100%',
-        backgroundColor: 'rgba(255,255,255,0.07)',
+        backgroundColor: 'rgba(0,0,0,0.06)',
         borderRadius: T.radius.full,
         overflow: 'hidden',
       }}>
@@ -175,7 +175,7 @@ export const MacroBar: React.FC<MacroBarProps> = ({ label, value, target, color,
           {Math.round(value)}<span style={{ opacity: 0.6 }}>{unit}</span>
         </span>
       </div>
-      <div style={{ height: 3, width: '100%', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: T.radius.full, overflow: 'hidden' }}>
+      <div style={{ height: 3, width: '100%', backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: T.radius.full, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${pct}%`, backgroundColor: color, borderRadius: T.radius.full, transition: 'width 0.5s ease' }} />
       </div>
     </div>
@@ -219,7 +219,7 @@ export const StatBlock: React.FC<StatBlockProps> = ({
           letterSpacing: '0.06em',
           color: badgeColor || 'var(--text-tertiary)',
           padding: '0.15rem 0.45rem',
-          backgroundColor: badgeColor ? `${badgeColor}18` : 'rgba(255,255,255,0.06)',
+          backgroundColor: badgeColor ? `${badgeColor}18` : 'rgba(0,0,0,0.05)',
           borderRadius: T.radius.full,
         }}>
           {badge}
@@ -285,7 +285,7 @@ export const MacroCircle: React.FC<{
     <div className="flex-col align-center gap-1">
       <div style={{ position: 'relative', width: size, height: size }}>
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={size/2} cy={size/2} r={radius} stroke="rgba(255,255,255,0.07)" strokeWidth={stroke} fill="transparent" />
+          <circle cx={size/2} cy={size/2} r={radius} stroke="rgba(0,0,0,0.06)" strokeWidth={stroke} fill="transparent" />
           <circle
             cx={size/2} cy={size/2} r={radius} stroke={color} strokeWidth={stroke} fill="transparent"
             strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
@@ -327,12 +327,12 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon, emoji, title, subt
         width: '56px',
         height: '56px',
         borderRadius: '9999px',
-        backgroundColor: 'rgba(255,255,255,0.06)',
+        backgroundColor: 'rgba(0,0,0,0.05)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: '0.25rem',
-        color: 'rgba(255,255,255,0.4)',
+        color: 'rgba(0,0,0,0.28)',
       }}>
         {icon}
       </div>
@@ -431,7 +431,7 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ rows = 3, type
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
         {Array.from({ length: rows }).map((_, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <Skeleton width="55%" height="14px" borderRadius={T.radius.xs} />
               <Skeleton width="35%" height="11px" borderRadius={T.radius.xs} />
@@ -483,7 +483,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
         alignItems: 'center',
         gap: '0.75rem',
         padding: '0.875rem 1rem',
-        backgroundColor: hovered && onPress ? 'rgba(255,255,255,0.04)' : 'transparent',
+        backgroundColor: hovered && onPress ? 'rgba(0,0,0,0.03)' : 'transparent',
         cursor: onPress ? 'pointer' : 'default',
         transition: 'background-color 0.15s ease',
         borderRadius: T.radius.sm,
@@ -495,7 +495,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
           width: '32px',
           height: '32px',
           borderRadius: T.radius.xs,
-          backgroundColor: 'rgba(255,255,255,0.06)',
+          backgroundColor: 'rgba(0,0,0,0.05)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -577,7 +577,7 @@ export const ToggleRow: React.FC<ToggleRowProps> = ({ label, subtitle, value, on
       width: '44px',
       height: '26px',
       borderRadius: T.radius.full,
-      backgroundColor: value ? T.green : 'rgba(255,255,255,0.15)',
+      backgroundColor: value ? T.green : 'rgba(0,0,0,0.10)',
       position: 'relative',
       flexShrink: 0,
       transition: 'background-color 0.2s ease',
@@ -703,7 +703,7 @@ export const ActionRow: React.FC<ActionRowProps> = ({ items }) => (
           alignItems: 'center',
           gap: '6px',
           padding: '0.5rem 1rem',
-          backgroundColor: item.color ? `${item.color}18` : 'rgba(255,255,255,0.07)',
+          backgroundColor: item.color ? `${item.color}18` : 'rgba(0,0,0,0.06)',
           border: `1px solid ${item.color ? `${item.color}35` : T.border}`,
           borderRadius: T.radius.full,
           color: item.color || T.text,
@@ -764,7 +764,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
         fontSize: '0.75rem',
         fontWeight: 600,
         color: T.muted,
-        backgroundColor: 'rgba(255,255,255,0.06)',
+        backgroundColor: 'rgba(0,0,0,0.05)',
         border: `1px solid ${T.border}`,
         borderRadius: T.radius.full,
         padding: '2px 8px',
@@ -775,7 +775,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
         fontSize: '0.75rem',
         fontWeight: 600,
         color: T.muted,
-        backgroundColor: 'rgba(255,255,255,0.06)',
+        backgroundColor: 'rgba(0,0,0,0.05)',
         border: `1px solid ${T.border}`,
         borderRadius: T.radius.full,
         padding: '2px 8px',
@@ -787,7 +787,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
           fontSize: '0.75rem',
           fontWeight: 600,
           color: T.muted,
-          backgroundColor: 'rgba(255,255,255,0.06)',
+          backgroundColor: 'rgba(0,0,0,0.05)',
           border: `1px solid ${T.border}`,
           borderRadius: T.radius.full,
           padding: '2px 8px',
@@ -930,11 +930,11 @@ interface StatusBadgeProps {
 }
 
 const STATUS_CONFIG: Record<ConnectionStatus, { label: string; color: string; bg: string; pulse?: boolean }> = {
-  disconnected: { label: 'Disconnected', color: 'rgba(255,255,255,0.45)', bg: 'rgba(255,255,255,0.08)' },
+  disconnected: { label: 'Disconnected', color: 'rgba(0,0,0,0.30)', bg: 'rgba(0,0,0,0.06)' },
   connecting:   { label: 'Connecting',   color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', pulse: true },
   connected:    { label: 'Connected',    color: '#22C55E', bg: 'rgba(34,197,94,0.15)' },
   failed:       { label: 'Failed',       color: '#EF4444', bg: 'rgba(239,68,68,0.15)' },
-  disabled:     { label: 'Disabled',     color: 'rgba(255,255,255,0.25)', bg: 'rgba(255,255,255,0.04)' },
+  disabled:     { label: 'Disabled',     color: 'rgba(0,0,0,0.16)', bg: 'rgba(0,0,0,0.03)' },
 };
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md' }) => {
@@ -1098,8 +1098,8 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         gap: '6px',
         padding: s.padding,
         height: s.height,
-        backgroundColor: disabled || loading ? 'rgba(255,255,255,0.12)' : '#FFFFFF',
-        color: disabled || loading ? 'rgba(255,255,255,0.4)' : '#000000',
+        backgroundColor: disabled || loading ? 'rgba(0,0,0,0.08)' : '#FFFFFF',
+        color: disabled || loading ? 'rgba(0,0,0,0.28)' : '#000000',
         border: 'none',
         borderRadius: T.radius.full,
         fontSize: s.fontSize,
@@ -1145,7 +1145,7 @@ export const SecondaryButton: React.FC<SecondaryButtonProps> = ({
         gap: '6px',
         padding: s.padding,
         height: s.height,
-        backgroundColor: isDisabled ? 'rgba(255,255,255,0.04)' : `${color}14`,
+        backgroundColor: isDisabled ? 'rgba(0,0,0,0.03)' : `${color}14`,
         color: isDisabled ? T.muted : color,
         border: `1px solid ${isDisabled ? T.border : `${color}50`}`,
         borderRadius: T.radius.full,
@@ -1248,11 +1248,11 @@ export const MacroRing: React.FC<MacroRingProps> = ({
     <div style={{ position: 'relative', width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         {/* Track rings */}
-        <circle cx={cx} cy={cy} r={outerR} stroke="rgba(255,255,255,0.06)" strokeWidth={outerStroke} fill="none" />
+        <circle cx={cx} cy={cy} r={outerR} stroke="rgba(0,0,0,0.05)" strokeWidth={outerStroke} fill="none" />
         {macros.map((m, i) => {
           const r = outerR - outerStroke - (i * (innerStroke + gap / 2)) - gap;
           return (
-            <circle key={i} cx={cx} cy={cy} r={r} stroke="rgba(255,255,255,0.06)" strokeWidth={innerStroke} fill="none" />
+            <circle key={i} cx={cx} cy={cy} r={r} stroke="rgba(0,0,0,0.05)" strokeWidth={innerStroke} fill="none" />
           );
         })}
 

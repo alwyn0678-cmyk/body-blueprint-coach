@@ -16,8 +16,8 @@ const C = {
   textPrimary: '#F2F2F7',
   textSecondary: 'rgba(242,242,247,0.6)',
   textTertiary: 'rgba(242,242,247,0.35)',
-  border: 'rgba(255,255,255,0.06)',
-  borderMd: 'rgba(255,255,255,0.1)',
+  border: 'rgba(0,0,0,0.05)',
+  borderMd: 'rgba(0,0,0,0.07)',
 };
 
 // ── Recovery Algorithm ────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ const ReadinessArc: React.FC<{ score: number; color: string }> = ({ score, color
   const endAngle = startAngle + sweepAngle * pct;
   return (
     <svg width="140" height="140" viewBox="0 0 140 140">
-      <path d={arcPath(startAngle, startAngle + sweepAngle)} stroke="rgba(255,255,255,0.06)" strokeWidth="10" fill="none" strokeLinecap="round" />
+      <path d={arcPath(startAngle, startAngle + sweepAngle)} stroke="rgba(0,0,0,0.05)" strokeWidth="10" fill="none" strokeLinecap="round" />
       {score > 0 && (
         <path d={arcPath(startAngle, endAngle)} stroke={color} strokeWidth="10" fill="none" strokeLinecap="round"
           style={{ filter: `drop-shadow(0 0 8px ${color}80)` }} />
@@ -120,7 +120,7 @@ const SecLabel: React.FC<{ text: string }> = ({ text }) => (
     fontWeight: 800,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.1em',
-    color: 'rgba(255,255,255,0.3)',
+    color: 'rgba(0,0,0,0.20)',
     marginBottom: 8,
   }}>
     {text}
@@ -304,7 +304,7 @@ export const Health: React.FC = () => {
         <div style={{
           background: C.bgCard,
           borderRadius: 20,
-          border: '1px dashed rgba(255,255,255,0.12)',
+          border: '1px dashed rgba(0,0,0,0.08)',
           padding: '2rem 1.5rem',
           display: 'flex',
           flexDirection: 'column',
@@ -348,9 +348,9 @@ export const Health: React.FC = () => {
           {/* Arc centered */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 16 }}>
             <div style={{ position: 'relative', width: 140, height: 140 }}>
-              <ReadinessArc score={currentRecovery} color={recInfo?.color || 'rgba(255,255,255,0.1)'} />
+              <ReadinessArc score={currentRecovery} color={recInfo?.color || 'rgba(0,0,0,0.07)'} />
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '3rem', fontWeight: 900, color: recInfo?.color || 'rgba(255,255,255,0.2)', lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
+                <span style={{ fontSize: '3rem', fontWeight: 900, color: recInfo?.color || 'rgba(0,0,0,0.13)', lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
                   {currentRecovery > 0 ? currentRecovery : '—'}
                 </span>
                 {currentRecovery > 0 && <span style={{ fontSize: '0.6rem', color: C.textTertiary, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>/100</span>}
@@ -412,7 +412,7 @@ export const Health: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginBottom: 4 }}>
                   <div style={{
                     width: 6, height: 6, borderRadius: '50%',
-                    background: chip.dot ? chip.color : 'rgba(255,255,255,0.15)',
+                    background: chip.dot ? chip.color : 'rgba(0,0,0,0.10)',
                   }} />
                   <span style={{ fontSize: '0.56rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: C.textTertiary }}>{chip.label}</span>
                 </div>
@@ -489,10 +489,10 @@ export const Health: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 {/* @ts-ignore */}
                 <LineChart data={trendData} margin={{ top: 5, right: 8, left: -22, bottom: 0 }}>
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.3)', fontWeight: 700 }} interval={1} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'rgba(0,0,0,0.20)', fontWeight: 700 }} interval={1} />
                   <Tooltip
                     contentStyle={{ borderRadius: 12, border: `1px solid ${C.border}`, background: '#1a1a2e', padding: '8px 12px', fontSize: '0.78rem' }}
-                    cursor={{ stroke: 'rgba(255,255,255,0.06)', strokeWidth: 1 }}
+                    cursor={{ stroke: 'rgba(0,0,0,0.05)', strokeWidth: 1 }}
                   />
                   <Line type="monotone" dataKey="recovery" stroke="#4ade80" strokeWidth={2.5} dot={{ r: 3, fill: '#4ade80', strokeWidth: 0 }} connectNulls name="Recovery %" />
                   <Line type="monotone" dataKey="hrv" stroke="#60a5fa" strokeWidth={1.5} dot={false} strokeDasharray="4 3" connectNulls name="HRV ms" />
@@ -520,8 +520,8 @@ export const Health: React.FC = () => {
         return (
           <div style={{ background: C.bgCard, borderRadius: 20, border: `1px solid ${C.border}`, padding: '16px 18px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <div style={{ padding: 6, borderRadius: 9, background: 'rgba(255,255,255,0.06)' }}>
-                <Brain size={14} color="rgba(255,255,255,0.5)" />
+              <div style={{ padding: 6, borderRadius: 9, background: 'rgba(0,0,0,0.05)' }}>
+                <Brain size={14} color="rgba(0,0,0,0.35)" />
               </div>
               <span style={{ fontWeight: 800, fontSize: '0.88rem', color: C.textPrimary }}>Score Breakdown</span>
             </div>
@@ -530,11 +530,11 @@ export const Health: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: '0.78rem', color: C.textSecondary, fontWeight: 600 }}>{item.label}</span>
-                    <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.2)', fontWeight: 700, background: 'rgba(255,255,255,0.05)', padding: '1px 5px', borderRadius: 4 }}>{item.weight}</span>
+                    <span style={{ fontSize: '0.6rem', color: 'rgba(0,0,0,0.13)', fontWeight: 700, background: 'rgba(0,0,0,0.04)', padding: '1px 5px', borderRadius: 4 }}>{item.weight}</span>
                   </div>
                   <span style={{ fontSize: '0.85rem', fontWeight: 800, color: item.color, fontVariantNumeric: 'tabular-nums' }}>{isNaN(item.value) ? '—' : item.value}%</span>
                 </div>
-                <div style={{ height: 5, background: 'rgba(255,255,255,0.05)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ height: 5, background: 'rgba(0,0,0,0.04)', borderRadius: 3, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${isNaN(item.value) ? 0 : item.value}%`, background: `linear-gradient(90deg, ${item.color}90, ${item.color})`, borderRadius: 3, transition: 'width 0.6s ease', boxShadow: `0 0 6px ${item.color}60` }} />
                 </div>
               </div>
@@ -558,7 +558,7 @@ export const Health: React.FC = () => {
               const dateLabel = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
               return (
                 <React.Fragment key={entry.date}>
-                  {i > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,0.04)', margin: '0 16px' }} />}
+                  {i > 0 && <div style={{ height: 1, background: 'rgba(0,0,0,0.03)', margin: '0 16px' }} />}
                   <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', gap: 12 }}>
                     <span style={{ fontSize: '0.82rem', fontWeight: 700, color: C.textTertiary, minWidth: 48 }}>{dateLabel}</span>
                     <span style={{
@@ -609,7 +609,7 @@ export const Health: React.FC = () => {
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: C.textPrimary }}>Morning Vitals</h2>
                 <p style={{ fontSize: '0.78rem', color: C.textTertiary, fontWeight: 600, marginTop: 2 }}>Log today's recovery data</p>
               </div>
-              <button onClick={() => setIsLoggingVitals(false)} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <button onClick={() => setIsLoggingVitals(false)} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '50%', width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <X size={16} color="rgba(255,255,255,0.7)" />
               </button>
             </div>

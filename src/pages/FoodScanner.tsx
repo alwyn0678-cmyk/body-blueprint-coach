@@ -148,8 +148,8 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
   };
 
   const bg = 'var(--bg-primary, #07070f)';
-  const card = 'rgba(255,255,255,0.04)';
-  const border = '1px solid rgba(255,255,255,0.07)';
+  const card = 'rgba(0,0,0,0.03)';
+  const border = '1px solid rgba(0,0,0,0.06)';
 
   return (
     <div style={{
@@ -167,12 +167,12 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.35rem', fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
             Scan Meal
           </h2>
-          <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', marginTop: 2, fontWeight: 600 }}>
+          <p style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.24)', marginTop: 2, fontWeight: 600 }}>
             {phase === 'review' ? 'Review & adjust before logging' : 'Take a photo or upload an image'}
           </p>
         </div>
         <button onClick={onClose} style={{
-          background: 'rgba(255,255,255,0.07)', border: 'none', borderRadius: '50%',
+          background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '50%',
           width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
         }}>
           <X size={18} color="rgba(255,255,255,0.6)" />
@@ -188,7 +188,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
             <div
               onClick={() => fileRef.current?.click()}
               style={{
-                borderRadius: 20, border: imagePreview ? 'none' : '2px dashed rgba(255,255,255,0.12)',
+                borderRadius: 20, border: imagePreview ? 'none' : '2px dashed rgba(0,0,0,0.08)',
                 background: card, overflow: 'hidden',
                 minHeight: 220, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', flexDirection: 'column', gap: 12,
@@ -207,7 +207,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                   </div>
                   <div style={{ textAlign: 'center' }}>
                     <p style={{ fontWeight: 800, fontSize: '0.95rem', margin: 0 }}>Take a photo of your meal</p>
-                    <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', marginTop: 4, fontWeight: 600 }}>
+                    <p style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.20)', marginTop: 4, fontWeight: 600 }}>
                       or tap to upload from your camera roll
                     </p>
                   </div>
@@ -228,8 +228,8 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
               <button
                 onClick={() => { setImagePreview(null); setImageBase64(''); }}
                 style={{
-                  background: 'rgba(255,255,255,0.05)', border,
-                  borderRadius: 12, padding: '0.6rem', color: 'rgba(255,255,255,0.5)',
+                  background: 'rgba(0,0,0,0.04)', border,
+                  borderRadius: 12, padding: '0.6rem', color: 'rgba(0,0,0,0.35)',
                   fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 }}
@@ -245,7 +245,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
               display: 'flex', alignItems: 'flex-start', gap: 10,
             }}>
               <AlertCircle size={14} color="#F59E0B" style={{ flexShrink: 0, marginTop: 1 }} />
-              <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.45)', fontWeight: 600, margin: 0, lineHeight: 1.5 }}>
+              <p style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.30)', fontWeight: 600, margin: 0, lineHeight: 1.5 }}>
                 AI estimates are based on visual appearance. Values may vary by ±20–30%. Always review before logging.
               </p>
             </div>
@@ -280,14 +280,14 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                 </div>
               </div>
             )}
-            <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'rgba(28,28,46,0.65)', textAlign: 'center' }}>
               Identifying foods and estimating macros…
             </p>
             <button
               onClick={() => setPhase('pick')}
               style={{
-                padding: '0.55rem 1.25rem', background: 'rgba(255,255,255,0.06)', border,
-                borderRadius: 12, color: 'rgba(255,255,255,0.45)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
+                padding: '0.55rem 1.25rem', background: 'rgba(0,0,0,0.05)', border,
+                borderRadius: 12, color: 'rgba(0,0,0,0.30)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
               }}
             >
               Cancel
@@ -307,12 +307,12 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
             </div>
             <div>
               <p style={{ fontWeight: 800, fontSize: '0.95rem', margin: '0 0 6px' }}>Analysis failed</p>
-              <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, margin: 0 }}>{errorMsg}</p>
+              <p style={{ fontSize: '0.78rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600, margin: 0 }}>{errorMsg}</p>
             </div>
             <button
               onClick={() => setPhase('pick')}
               style={{
-                padding: '0.7rem 1.5rem', background: 'rgba(255,255,255,0.07)', border,
+                padding: '0.7rem 1.5rem', background: 'rgba(0,0,0,0.06)', border,
                 borderRadius: 14, color: '#fff', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer',
               }}
             >
@@ -340,8 +340,8 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                   style={{
                     flexShrink: 0, padding: '6px 14px', borderRadius: 99, fontSize: '0.78rem', fontWeight: 800,
                     border: 'none', cursor: 'pointer',
-                    background: mealType === mt ? '#0A84FF' : 'rgba(255,255,255,0.07)',
-                    color: mealType === mt ? '#fff' : 'rgba(255,255,255,0.4)',
+                    background: mealType === mt ? '#0A84FF' : 'rgba(0,0,0,0.06)',
+                    color: mealType === mt ? '#fff' : 'rgba(0,0,0,0.28)',
                     transition: 'all 0.15s',
                   }}
                 >{MEAL_LABELS[mt]}</button>
@@ -358,7 +358,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                 <div style={{ fontSize: '1.6rem', fontWeight: 900, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
                   {totalNutrition.calories}
                 </div>
-                <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)', fontWeight: 700 }}>kcal total</div>
+                <div style={{ fontSize: '0.68rem', color: 'rgba(0,0,0,0.24)', fontWeight: 700 }}>kcal total</div>
               </div>
               <div style={{ display: 'flex', gap: 16 }}>
                 {[
@@ -368,7 +368,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                 ].map(m => (
                   <div key={m.label} style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '0.95rem', fontWeight: 900, color: m.color, fontVariantNumeric: 'tabular-nums' }}>{m.value}g</div>
-                    <div style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>{m.label}</div>
+                    <div style={{ fontSize: '0.58rem', color: 'rgba(0,0,0,0.20)', fontWeight: 700 }}>{m.label}</div>
                   </div>
                 ))}
               </div>
@@ -385,8 +385,8 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                   <div
                     key={i}
                     style={{
-                      background: isChecked ? 'rgba(255,255,255,0.05)' : card,
-                      border: isChecked ? '1px solid rgba(255,255,255,0.1)' : border,
+                      background: isChecked ? 'rgba(0,0,0,0.04)' : card,
+                      border: isChecked ? '1px solid rgba(0,0,0,0.07)' : border,
                       borderRadius: 16, overflow: 'hidden',
                       opacity: isChecked ? 1 : 0.4,
                       transition: 'opacity 0.15s',
@@ -403,8 +403,8 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                         })}
                         style={{
                           width: 22, height: 22, borderRadius: 6, flexShrink: 0, cursor: 'pointer',
-                          background: isChecked ? '#22C55E' : 'rgba(255,255,255,0.08)',
-                          border: isChecked ? 'none' : '1.5px solid rgba(255,255,255,0.2)',
+                          background: isChecked ? '#22C55E' : 'rgba(0,0,0,0.06)',
+                          border: isChecked ? 'none' : '1.5px solid rgba(0,0,0,0.13)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}
                       >
@@ -420,11 +420,11 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                           <span style={{ fontSize: '0.62rem', fontWeight: 700, color: CONFIDENCE_COLOR[food.confidence] }}>
                             {CONFIDENCE_LABEL[food.confidence]}
                           </span>
-                          <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)' }}>·</span>
+                          <span style={{ fontSize: '0.5rem', color: 'rgba(0,0,0,0.10)' }}>·</span>
                           <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#0A84FF', fontVariantNumeric: 'tabular-nums' }}>
                             {n.calories} kcal
                           </span>
-                          <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.15)' }}>·</span>
+                          <span style={{ fontSize: '0.5rem', color: 'rgba(0,0,0,0.10)' }}>·</span>
                           <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#F59E0B', fontVariantNumeric: 'tabular-nums' }}>
                             {n.protein}P
                           </span>
@@ -437,23 +437,23 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex' }}
                       >
                         {isExpanded
-                          ? <ChevronUp size={16} color="rgba(255,255,255,0.3)" />
-                          : <ChevronDown size={16} color="rgba(255,255,255,0.3)" />
+                          ? <ChevronUp size={16} color="rgba(0,0,0,0.20)" />
+                          : <ChevronDown size={16} color="rgba(0,0,0,0.20)" />
                         }
                       </button>
                     </div>
 
                     {/* Expanded: gram adjuster */}
                     {isExpanded && (
-                      <div style={{ padding: '0 14px 14px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ padding: '0 14px 14px', borderTop: '1px solid rgba(0,0,0,0.04)' }}>
                         <div style={{ paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
                           {/* Gram input */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>Portion (g)</span>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(0,0,0,0.28)', flexShrink: 0 }}>Portion (g)</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
                               <button
                                 onClick={() => setAmounts(prev => ({ ...prev, [i]: Math.max(10, (prev[i] ?? food.estimatedGrams) - 25) }))}
-                                style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border, color: '#fff', fontWeight: 900, fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(0,0,0,0.06)', border, color: '#fff', fontWeight: 900, fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                               >−</button>
                               <input
                                 type="number"
@@ -461,14 +461,14 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                                 onChange={e => setAmounts(prev => ({ ...prev, [i]: Math.max(1, parseInt(e.target.value) || 1) }))}
                                 style={{
                                   width: 72, textAlign: 'center', padding: '6px',
-                                  background: 'rgba(255,255,255,0.08)', border,
+                                  background: 'rgba(0,0,0,0.06)', border,
                                   borderRadius: 10, color: '#fff', fontWeight: 800, fontSize: '0.95rem', outline: 'none',
                                   fontVariantNumeric: 'tabular-nums',
                                 }}
                               />
                               <button
                                 onClick={() => setAmounts(prev => ({ ...prev, [i]: (prev[i] ?? food.estimatedGrams) + 25 }))}
-                                style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.08)', border, color: '#fff', fontWeight: 900, fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(0,0,0,0.06)', border, color: '#fff', fontWeight: 900, fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                               >+</button>
                             </div>
                           </div>
@@ -481,11 +481,11 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                               { label: 'Fats', value: n.fats, color: '#22C55E' },
                             ].map(m => (
                               <div key={m.label} style={{
-                                flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 10,
+                                flex: 1, background: 'rgba(0,0,0,0.03)', borderRadius: 10,
                                 padding: '6px 8px', textAlign: 'center',
                               }}>
                                 <div style={{ fontSize: '0.82rem', fontWeight: 900, color: m.color, fontVariantNumeric: 'tabular-nums' }}>{m.value}g</div>
-                                <div style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>{m.label}</div>
+                                <div style={{ fontSize: '0.58rem', color: 'rgba(0,0,0,0.20)', fontWeight: 700 }}>{m.label}</div>
                               </div>
                             ))}
                           </div>
@@ -504,7 +504,7 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
               display: 'flex', alignItems: 'flex-start', gap: 8,
             }}>
               <AlertCircle size={13} color="#F59E0B" style={{ flexShrink: 0, marginTop: 1 }} />
-              <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, margin: 0, lineHeight: 1.5 }}>
+              <p style={{ fontSize: '0.68rem', color: 'rgba(0,0,0,0.24)', fontWeight: 600, margin: 0, lineHeight: 1.5 }}>
                 {disclaimer}
               </p>
             </div>
@@ -517,9 +517,9 @@ export const FoodScanner: React.FC<FoodScannerProps> = ({ onLog, onClose, defaul
                 width: '100%', padding: '1.1rem',
                 background: selected.size > 0
                   ? 'linear-gradient(135deg, #22C55E, #16A34A)'
-                  : 'rgba(255,255,255,0.07)',
+                  : 'rgba(0,0,0,0.06)',
                 border: 'none', borderRadius: 18,
-                color: selected.size > 0 ? '#fff' : 'rgba(255,255,255,0.3)',
+                color: selected.size > 0 ? '#fff' : 'rgba(0,0,0,0.20)',
                 fontWeight: 900, fontSize: '1rem',
                 fontFamily: 'var(--font-display)', letterSpacing: '-0.01em',
                 cursor: selected.size > 0 ? 'pointer' : 'default',

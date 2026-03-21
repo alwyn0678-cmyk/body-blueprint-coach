@@ -197,14 +197,14 @@ export const LogFood: React.FC = () => {
     fontWeight: 800,
     textTransform: 'uppercase',
     letterSpacing: '0.1em',
-    color: 'rgba(255,255,255,0.3)',
+    color: 'rgba(0,0,0,0.20)',
   };
 
   const cardBase: React.CSSProperties = {
     background: 'var(--bg-card)',
     borderRadius: '20px',
-    border: '1px solid rgba(255,255,255,0.06)',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+    border: '1px solid rgba(0,0,0,0.05)',
+    boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.03)',
     overflow: 'hidden',
   };
 
@@ -239,10 +239,10 @@ export const LogFood: React.FC = () => {
             {/* Meal icon */}
             <div style={{
               fontSize: '1.1rem', width: 36, height: 36,
-              backgroundColor: 'rgba(255,255,255,0.05)',
+              backgroundColor: 'rgba(0,0,0,0.04)',
               borderRadius: '10px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              border: '1px solid rgba(255,255,255,0.05)',
+              border: '1px solid rgba(0,0,0,0.04)',
             }}>
               {MEAL_ICONS[mealType]}
             </div>
@@ -254,22 +254,22 @@ export const LogFood: React.FC = () => {
                 </span>
                 {hasItems && (
                   <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
-                    {Math.round(mealCals)} <span style={{ fontSize: '0.58rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>kcal</span>
+                    {Math.round(mealCals)} <span style={{ fontSize: '0.58rem', fontWeight: 700, color: 'rgba(0,0,0,0.20)' }}>kcal</span>
                   </span>
                 )}
               </div>
               {hasItems ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
                   <span style={{ fontSize: '0.63rem', fontWeight: 800, color: 'var(--color-protein)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(mealPro)}P</span>
-                  <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.12)' }}>·</span>
+                  <span style={{ fontSize: '0.5rem', color: 'rgba(0,0,0,0.08)' }}>·</span>
                   <span style={{ fontSize: '0.63rem', fontWeight: 700, color: 'var(--color-carbs)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(mealCarbs)}C</span>
-                  <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.12)' }}>·</span>
+                  <span style={{ fontSize: '0.5rem', color: 'rgba(0,0,0,0.08)' }}>·</span>
                   <span style={{ fontSize: '0.63rem', fontWeight: 700, color: 'var(--color-fats)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(mealFats)}F</span>
-                  <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.12)' }}>·</span>
-                  <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.22)', fontWeight: 600 }}>{items.length} item{items.length !== 1 ? 's' : ''}</span>
+                  <span style={{ fontSize: '0.5rem', color: 'rgba(0,0,0,0.08)' }}>·</span>
+                  <span style={{ fontSize: '0.6rem', color: 'rgba(0,0,0,0.14)', fontWeight: 600 }}>{items.length} item{items.length !== 1 ? 's' : ''}</span>
                 </div>
               ) : (
-                <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.2)', fontWeight: 600, marginTop: '2px', display: 'block' }}>Tap + to log food</span>
+                <span style={{ fontSize: '0.68rem', color: 'rgba(0,0,0,0.13)', fontWeight: 600, marginTop: '2px', display: 'block' }}>Tap + to log food</span>
               )}
             </div>
           </div>
@@ -290,7 +290,7 @@ export const LogFood: React.FC = () => {
             {/* Collapse chevron */}
             <ChevronDown
               size={16}
-              color="rgba(255,255,255,0.2)"
+              color="rgba(0,0,0,0.13)"
               style={{
                 transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                 transition: 'transform 0.25s ease',
@@ -301,17 +301,17 @@ export const LogFood: React.FC = () => {
 
         {/* Expanded content */}
         {isExpanded && (
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
 
             {/* Empty state */}
             {items.length === 0 && (
               <div style={{
                 margin: '0.75rem',
                 padding: '1rem',
-                border: '1.5px dashed rgba(255,255,255,0.08)',
+                border: '1.5px dashed rgba(0,0,0,0.06)',
                 borderRadius: '14px',
                 textAlign: 'center',
-                color: 'rgba(255,255,255,0.2)',
+                color: 'rgba(0,0,0,0.13)',
                 fontSize: '0.78rem',
                 fontWeight: 600,
               }}>
@@ -344,7 +344,7 @@ export const LogFood: React.FC = () => {
                     >
                       {/* Thin divider between entries (not above first) */}
                       {idx > 0 && !isEditing && (
-                        <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.04)', margin: '0 0.25rem' }} />
+                        <div style={{ height: '1px', backgroundColor: 'rgba(0,0,0,0.03)', margin: '0 0.25rem' }} />
                       )}
 
                       {isEditing ? (
@@ -352,7 +352,7 @@ export const LogFood: React.FC = () => {
                           <div style={{
                             display: 'flex', alignItems: 'center', gap: '8px',
                             padding: '0.6rem',
-                            backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '12px',
+                            backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '12px',
                           }}>
                             <span style={{
                               fontSize: '0.85rem', fontWeight: 600,
@@ -365,12 +365,12 @@ export const LogFood: React.FC = () => {
                               onKeyDown={e => { if (e.key === 'Enter') handleEditConfirm(); if (e.key === 'Escape') setEditingEntry(null); }}
                               style={{
                                 width: '64px', padding: '0.3rem 0.5rem', fontSize: '0.9rem', fontWeight: 700,
-                                textAlign: 'center', backgroundColor: 'rgba(255,255,255,0.1)',
-                                border: `1px solid ${hasError ? 'var(--accent-red)' : 'rgba(255,255,255,0.2)'}`,
+                                textAlign: 'center', backgroundColor: 'rgba(0,0,0,0.07)',
+                                border: `1px solid ${hasError ? 'var(--accent-red)' : 'rgba(0,0,0,0.13)'}`,
                                 borderRadius: '8px', color: '#fff', outline: 'none',
                               }}
                             />
-                            <span style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.35)' }}>srv</span>
+                            <span style={{ fontSize: '0.68rem', color: 'rgba(0,0,0,0.24)' }}>srv</span>
                             <button
                               onClick={handleEditConfirm}
                               disabled={!editingEntry.amount || parseFloat(editingEntry.amount) <= 0}
@@ -385,9 +385,9 @@ export const LogFood: React.FC = () => {
                             </button>
                             <button
                               onClick={() => setEditingEntry(null)}
-                              style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '7px', padding: '0.35rem', display: 'flex', cursor: 'pointer' }}
+                              style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '7px', padding: '0.35rem', display: 'flex', cursor: 'pointer' }}
                             >
-                              <X size={14} color="rgba(255,255,255,0.5)" />
+                              <X size={14} color="rgba(0,0,0,0.35)" />
                             </button>
                           </div>
                           {hasError && (
@@ -409,10 +409,10 @@ export const LogFood: React.FC = () => {
                               {item.foodName}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
-                              <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                              <span style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600 }}>
                                 {Math.round(item.amount * item.servingSize)}{item.servingUnit}
                               </span>
-                              <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.12)' }}>·</span>
+                              <span style={{ fontSize: '0.5rem', color: 'rgba(0,0,0,0.08)' }}>·</span>
                               <span style={{ fontSize: '0.63rem', fontWeight: 700, color: 'var(--color-protein)', fontVariantNumeric: 'tabular-nums' }}>
                                 {Math.round(item.nutrition.protein * item.amount)}P
                               </span>
@@ -423,9 +423,9 @@ export const LogFood: React.FC = () => {
                               <div style={{ fontSize: '0.92rem', fontWeight: 900, fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
                                 {Math.round(item.nutrition.calories * item.amount)}
                               </div>
-                              <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.22)', fontWeight: 700 }}>kcal</div>
+                              <div style={{ fontSize: '0.55rem', color: 'rgba(0,0,0,0.14)', fontWeight: 700 }}>kcal</div>
                             </div>
-                            <Pencil size={11} color="rgba(255,255,255,0.15)" />
+                            <Pencil size={11} color="rgba(0,0,0,0.10)" />
                           </div>
                         </div>
                       )}
@@ -436,7 +436,7 @@ export const LogFood: React.FC = () => {
             )}
 
             {/* Action row */}
-            <div style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: items.length > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+            <div style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: items.length > 0 ? '1px solid rgba(0,0,0,0.03)' : 'none' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   onClick={() => { setActiveMeal(mealType); setShowSearch(true); }}
@@ -457,8 +457,8 @@ export const LogFood: React.FC = () => {
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       padding: '0.7rem 1rem',
-                      color: 'rgba(255,255,255,0.55)', background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: 'rgba(0,0,0,0.38)', background: 'rgba(0,0,0,0.04)',
+                      border: '1px solid rgba(0,0,0,0.06)',
                       borderRadius: '14px', cursor: 'pointer', gap: '5px',
                       fontSize: '0.78rem', fontWeight: 700,
                     }}
@@ -490,8 +490,8 @@ export const LogFood: React.FC = () => {
                         onKeyDown={e => { if (e.key === 'Enter') handleSaveMeal(mealType); if (e.key === 'Escape') { setSavingMealType(null); setSaveMealError(''); } }}
                         style={{
                           flex: 1, padding: '0.6rem 0.75rem', fontSize: '0.85rem',
-                          backgroundColor: 'rgba(255,255,255,0.06)',
-                          border: `1px solid ${saveMealError ? 'var(--accent-red)' : 'rgba(255,255,255,0.12)'}`,
+                          backgroundColor: 'rgba(0,0,0,0.05)',
+                          border: `1px solid ${saveMealError ? 'var(--accent-red)' : 'rgba(0,0,0,0.08)'}`,
                           borderRadius: '10px', color: '#fff', outline: 'none',
                         }}
                       />
@@ -509,7 +509,7 @@ export const LogFood: React.FC = () => {
                       </button>
                       <button
                         onClick={() => { setSavingMealType(null); setSaveMealName(''); setSaveMealError(''); }}
-                        style={{ padding: '0.6rem 0.75rem', background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                        style={{ padding: '0.6rem 0.75rem', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '10px', fontSize: '0.8rem', color: 'rgba(0,0,0,0.35)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                       >
                         <X size={13} />
                       </button>
@@ -526,9 +526,9 @@ export const LogFood: React.FC = () => {
                     style={{
                       width: '100%', padding: '0.5rem',
                       background: 'transparent',
-                      border: '1px dashed rgba(255,255,255,0.08)',
+                      border: '1px dashed rgba(0,0,0,0.06)',
                       borderRadius: '10px',
-                      color: 'rgba(255,255,255,0.25)', fontWeight: 700, fontSize: '0.72rem', cursor: 'pointer',
+                      color: 'rgba(0,0,0,0.16)', fontWeight: 700, fontSize: '0.72rem', cursor: 'pointer',
                     }}
                   >
                     + Save as meal template
@@ -569,14 +569,14 @@ export const LogFood: React.FC = () => {
       <div style={{
         background: 'linear-gradient(180deg, rgba(10,132,255,0.09) 0%, transparent 100%)',
         padding: '14px 16px 16px',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        borderBottom: '1px solid rgba(0,0,0,0.04)',
       }}>
         {/* Date navigation row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={() => { setSelectedDate(d => offsetDate(d, -1)); setCopiedYesterday(false); }}
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(255,255,255,0.6)' }}
+              style={{ background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(28,28,46,0.65)' }}
             >
               <ChevronLeft size={16} />
             </button>
@@ -592,7 +592,7 @@ export const LogFood: React.FC = () => {
             <button
               onClick={() => { if (canGoForward) setSelectedDate(d => offsetDate(d, 1)); }}
               disabled={!canGoForward}
-              style={{ background: canGoForward ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${canGoForward ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)'}`, borderRadius: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: canGoForward ? 'pointer' : 'default', color: canGoForward ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)' }}
+              style={{ background: canGoForward ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.02)', border: `1px solid ${canGoForward ? 'rgba(0,0,0,0.07)' : 'rgba(0,0,0,0.03)'}`, borderRadius: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: canGoForward ? 'pointer' : 'default', color: canGoForward ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.10)' }}
             >
               <ChevronRight size={16} />
             </button>
@@ -621,12 +621,12 @@ export const LogFood: React.FC = () => {
             }}>
               {calLogged.toLocaleString()}
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600, marginTop: '4px' }}>
+            <div style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.24)', fontWeight: 600, marginTop: '4px' }}>
               kcal logged
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'rgba(255,255,255,0.5)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'rgba(0,0,0,0.35)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
               {isOver
                 ? <span style={{ color: 'var(--accent-red)' }}>+{Math.abs(calRemaining).toLocaleString()}</span>
                 : calRemaining.toLocaleString()
@@ -639,7 +639,7 @@ export const LogFood: React.FC = () => {
         </div>
 
         {/* Calorie progress bar */}
-        <div style={{ height: '5px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '14px' }}>
+        <div style={{ height: '5px', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '3px', overflow: 'hidden', marginBottom: '14px' }}>
           <div style={{
             height: '100%', width: `${Math.min(calPct, 100)}%`,
             background: isOver
@@ -664,18 +664,18 @@ export const LogFood: React.FC = () => {
               return (
                 <div key={m.key} style={{
                   flex: 1,
-                  background: 'rgba(255,255,255,0.04)',
+                  background: 'rgba(0,0,0,0.03)',
                   borderRadius: '12px',
                   padding: '8px 10px',
-                  border: '1px solid rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(0,0,0,0.04)',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.key}</span>
+                    <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.20)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.key}</span>
                     <span style={{ fontSize: '0.72rem', fontWeight: 800, color: over ? 'var(--accent-red)' : m.color, fontVariantNumeric: 'tabular-nums' }}>
-                      {m.logged}<span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>/{m.target}g</span>
+                      {m.logged}<span style={{ fontSize: '0.55rem', color: 'rgba(0,0,0,0.16)', fontWeight: 600 }}>/{m.target}g</span>
                     </span>
                   </div>
-                  <div style={{ height: '3px', backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ height: '3px', backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
                     <div style={{
                       height: '100%', width: `${pct}%`,
                       backgroundColor: over ? 'var(--accent-red)' : m.color,
@@ -689,8 +689,8 @@ export const LogFood: React.FC = () => {
         )}
         {/* Smart remaining hint — show if meaningful gap remains */}
         {targets && calPct < 95 && !isOver && (Math.round(proRemaining) > 5 || Math.round(carbRemaining) > 10 || Math.round(fatRemaining) > 5) && (
-          <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>
+          <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(0,0,0,0.02)', borderRadius: 12, border: '1px solid rgba(0,0,0,0.04)' }}>
+            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.14)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>
               Still to go
             </div>
             <div style={{ display: 'flex', gap: 14 }}>
@@ -722,19 +722,19 @@ export const LogFood: React.FC = () => {
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '0.65rem 0.9rem',
-            backgroundColor: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            backgroundColor: 'rgba(0,0,0,0.05)',
+            border: '1px solid rgba(0,0,0,0.07)',
             borderRadius: '14px',
           }}>
-            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'rgba(28,28,46,0.72)' }}>
               Removed {pendingDelete.foodName}
             </span>
             <button
               onClick={handleUndoDelete}
               style={{
                 padding: '0.35rem 0.85rem',
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.18)',
+                background: 'rgba(0,0,0,0.07)',
+                border: '1px solid rgba(0,0,0,0.12)',
                 borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', color: '#fff', cursor: 'pointer',
               }}
             >
@@ -794,12 +794,12 @@ export const LogFood: React.FC = () => {
                   style={{
                     background: 'var(--bg-elevated)',
                     borderRadius: '14px',
-                    border: '1px solid rgba(255,255,255,0.07)',
+                    border: '1px solid rgba(0,0,0,0.06)',
                     padding: '10px 14px',
                     minWidth: '120px',
                     flexShrink: 0,
                     display: 'flex', flexDirection: 'column', gap: '6px',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                    boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.03)',
                   }}
                 >
                   <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
@@ -837,7 +837,7 @@ export const LogFood: React.FC = () => {
             border: '1px solid rgba(10,132,255,0.15)',
             borderRadius: '14px',
           }}>
-            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.75)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(28,28,46,0.78)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               📋 Copy meals from {formatDateLabel(prevDate, todayDate).toLowerCase()}
             </span>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -854,9 +854,9 @@ export const LogFood: React.FC = () => {
               </button>
               <button
                 onClick={() => setShowCopyYesterday(false)}
-                style={{ padding: '0.35rem', background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                style={{ padding: '0.35rem', background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
               >
-                <X size={13} color="rgba(255,255,255,0.4)" />
+                <X size={13} color="rgba(0,0,0,0.28)" />
               </button>
             </div>
           </div>
@@ -870,17 +870,17 @@ export const LogFood: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
             <button
               onClick={() => setShowSavedMeals(false)}
-              style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', fontSize: '1rem' }}
+              style={{ background: 'rgba(0,0,0,0.06)', border: 'none', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(28,28,46,0.72)', fontSize: '1rem' }}
             >
               ←
             </button>
             <div>
               <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0 }}>Saved Meals</h2>
-              <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginTop: '1px' }}>Tap to log to {activeMeal}</p>
+              <p style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600, marginTop: '1px' }}>Tap to log to {activeMeal}</p>
             </div>
           </div>
           {state.savedMeals.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'rgba(255,255,255,0.3)' }}>
+            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'rgba(0,0,0,0.20)' }}>
               <BookOpen size={32} style={{ margin: '0 auto 0.75rem', opacity: 0.3 }} />
               <p style={{ fontSize: '0.88rem' }}>No saved meals yet.</p>
               <p style={{ fontSize: '0.75rem', marginTop: '4px', opacity: 0.7 }}>Log a full meal and tap "Save as meal template".</p>
@@ -898,7 +898,7 @@ export const LogFood: React.FC = () => {
                 >
                   <div>
                     <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{meal.name}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: '3px' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(0,0,0,0.28)', marginTop: '3px' }}>
                       {Math.round(meal.totalNutrition.calories)} kcal · {meal.entries.length} items · used {meal.timesUsed}×
                     </div>
                   </div>

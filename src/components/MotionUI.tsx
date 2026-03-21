@@ -106,13 +106,13 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
             }}
           >
             {/* Handle bar */}
-            <div style={{ width: '36px', height: '4px', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: '2px', margin: '0 auto 1.25rem auto' }} />
+            <div style={{ width: '36px', height: '4px', backgroundColor: 'rgba(0,0,0,0.10)', borderRadius: '2px', margin: '0 auto 1.25rem auto' }} />
 
             {(title || !!onClose) && (
               <div className="flex-row justify-between align-center mb-4">
                 {title ? <h2 className="text-h2 m-0">{title}</h2> : <div />}
                 {onClose && (
-                  <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', padding: '8px', borderRadius: '50%', display: 'flex', cursor: 'pointer' }}>
+                  <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.06)', border: 'none', padding: '8px', borderRadius: '50%', display: 'flex', cursor: 'pointer' }}>
                     <X size={18} color="rgba(255,255,255,0.7)" />
                   </button>
                 )}

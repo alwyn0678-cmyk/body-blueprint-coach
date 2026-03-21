@@ -21,7 +21,7 @@ export const SectionLabel: React.FC<{ children: React.ReactNode; style?: React.C
     fontWeight: 800,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.1em',
-    color: 'rgba(255,255,255,0.3)',
+    color: 'rgba(0,0,0,0.20)',
     ...style,
   }}>
     {children}
@@ -60,8 +60,8 @@ export const HeroRingCard: React.FC<HeroRingCardProps> = ({
       backgroundColor: 'var(--bg-card)',
       borderRadius: 24,
       padding: '20px 20px 16px',
-      border: '1px solid rgba(255,255,255,0.06)',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+      border: '1px solid rgba(0,0,0,0.05)',
+      boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.03)',
       position: 'relative',
       overflow: 'hidden',
     }}>
@@ -84,7 +84,7 @@ export const HeroRingCard: React.FC<HeroRingCardProps> = ({
           strokeWidth={10}
           progress={isNaN(calPct) ? 0 : calPct}
           color={isOver ? 'var(--accent-red)' : 'var(--color-calories)'}
-          trackColor="rgba(255,255,255,0.07)"
+          trackColor="rgba(0,0,0,0.06)"
         >
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
             <span style={{
@@ -100,7 +100,7 @@ export const HeroRingCard: React.FC<HeroRingCardProps> = ({
             <span style={{
               fontSize: '0.55rem',
               fontWeight: 700,
-              color: 'rgba(255,255,255,0.35)',
+              color: 'rgba(0,0,0,0.24)',
               letterSpacing: '0.06em',
               marginTop: 2,
             }}>
@@ -117,8 +117,8 @@ export const HeroRingCard: React.FC<HeroRingCardProps> = ({
           const over = m.value > m.target;
           return (
             <div key={m.label} style={{
-              backgroundColor: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)',
+              backgroundColor: 'rgba(0,0,0,0.02)',
+              border: '1px solid rgba(0,0,0,0.05)',
               borderRadius: 12,
               padding: '8px 10px',
             }}>
@@ -144,12 +144,12 @@ export const HeroRingCard: React.FC<HeroRingCardProps> = ({
                 }}>
                   {m.value}
                 </span>
-                <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                <span style={{ fontSize: '0.55rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600 }}>
                   /{m.target}g
                 </span>
               </div>
               {/* Bar */}
-              <div style={{ height: 3, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+              <div style={{ height: 3, borderRadius: 99, backgroundColor: 'rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                 <div style={{
                   height: '100%',
                   width: `${isNaN(pct) ? 0 : pct}%`,
@@ -208,8 +208,8 @@ export const QuickLogRow: React.FC<QuickLogRowProps> = ({
             flex: 1,
             padding: '10px 12px',
             borderRadius: 14,
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.07)',
+            background: 'rgba(0,0,0,0.04)',
+            border: '1px solid rgba(0,0,0,0.06)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -221,7 +221,7 @@ export const QuickLogRow: React.FC<QuickLogRowProps> = ({
           <span style={{
             fontSize: '0.75rem',
             fontWeight: 700,
-            color: 'rgba(255,255,255,0.8)',
+            color: 'rgba(28,28,46,0.82)',
             letterSpacing: '-0.01em',
             whiteSpace: 'nowrap' as const,
           }}>
@@ -249,12 +249,12 @@ export const ProgramSnapshotCard: React.FC<ProgramSnapshotCardProps> = ({
         backgroundColor: 'var(--bg-card)',
         borderRadius: 20,
         padding: '14px 16px',
-        border: '1px solid rgba(255,255,255,0.06)',
+        border: '1px solid rgba(0,0,0,0.05)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
       }}>
-        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>
+        <span style={{ fontSize: '0.8rem', color: 'rgba(0,0,0,0.20)', fontWeight: 500 }}>
           No workout assigned
         </span>
         <button
@@ -285,7 +285,7 @@ export const ProgramSnapshotCard: React.FC<ProgramSnapshotCardProps> = ({
       backgroundColor: 'var(--bg-card)',
       borderRadius: 20,
       overflow: 'hidden',
-      border: '1px solid rgba(255,255,255,0.07)',
+      border: '1px solid rgba(0,0,0,0.06)',
     }}>
       {/* Accent strip */}
       <div style={{
@@ -305,7 +305,7 @@ export const ProgramSnapshotCard: React.FC<ProgramSnapshotCardProps> = ({
             <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em', marginBottom: 2 }}>
               {programName}
             </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600 }}>
               {focus}
             </div>
             <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.28)', fontWeight: 600, marginTop: 1 }}>
@@ -371,7 +371,7 @@ export const CoachingInsightCard: React.FC<CoachingInsightCardProps> = ({
     <div style={{
       backgroundColor: 'var(--bg-card)',
       borderRadius: 20,
-      border: '1px solid rgba(255,255,255,0.07)',
+      border: '1px solid rgba(0,0,0,0.06)',
       borderLeft: `3px solid ${borderColor}`,
       overflow: 'hidden',
       padding: '14px 16px',
@@ -383,7 +383,7 @@ export const CoachingInsightCard: React.FC<CoachingInsightCardProps> = ({
           fontWeight: 800,
           textTransform: 'uppercase' as const,
           letterSpacing: '0.1em',
-          color: 'rgba(255,255,255,0.3)',
+          color: 'rgba(0,0,0,0.20)',
         }}>
           Coach
         </span>
@@ -403,7 +403,7 @@ export const CoachingInsightCard: React.FC<CoachingInsightCardProps> = ({
       {/* Body */}
       <p style={{
         fontSize: '0.875rem',
-        color: 'rgba(255,255,255,0.75)',
+        color: 'rgba(28,28,46,0.78)',
         lineHeight: 1.6,
         margin: 0,
         display: '-webkit-box',
@@ -427,7 +427,7 @@ export const CoachingInsightCard: React.FC<CoachingInsightCardProps> = ({
             border: 'none',
             padding: 0,
             cursor: 'pointer',
-            color: 'rgba(255,255,255,0.35)',
+            color: 'rgba(0,0,0,0.24)',
             fontSize: '0.7rem',
             fontWeight: 600,
           }}
@@ -449,10 +449,10 @@ export const CoachingInsightCard: React.FC<CoachingInsightCardProps> = ({
             width: '100%',
             padding: '0.75rem 1rem',
             borderRadius: 12,
-            border: `1px solid ${urgency === 'high' ? 'rgba(255,69,58,0.4)' : 'rgba(255,255,255,0.13)'}`,
+            border: `1px solid ${urgency === 'high' ? 'rgba(255,69,58,0.4)' : 'rgba(0,0,0,0.09)'}`,
             background: urgency === 'high'
               ? 'linear-gradient(135deg, rgba(255,69,58,0.12), rgba(255,69,58,0.05))'
-              : 'linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03))',
+              : 'linear-gradient(135deg, rgba(0,0,0,0.06), rgba(0,0,0,0.02))',
             color: '#fff',
             fontWeight: 700,
             fontSize: '0.875rem',
@@ -479,15 +479,15 @@ export const WeeklyPauseCard: React.FC = () => (
   <div style={{
     backgroundColor: 'var(--bg-card)',
     borderRadius: 20,
-    border: '1px solid rgba(255,255,255,0.06)',
+    border: '1px solid rgba(0,0,0,0.05)',
     padding: '14px 16px',
     display: 'flex',
     alignItems: 'center',
     gap: 10,
   }}>
-    <Zap size={16} color="rgba(255,255,255,0.2)" />
+    <Zap size={16} color="rgba(0,0,0,0.13)" />
     <div>
-      <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>
+      <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'rgba(0,0,0,0.35)' }}>
         Weekly Check-In Paused
       </div>
       <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.28)', marginTop: 2 }}>
@@ -528,14 +528,14 @@ export const WeeklyChartCard: React.FC<WeeklyChartCardProps> = ({ data, weekAvg,
     <div style={{
       backgroundColor: 'var(--bg-card)',
       borderRadius: 20,
-      border: '1px solid rgba(255,255,255,0.07)',
+      border: '1px solid rgba(0,0,0,0.06)',
       overflow: 'hidden',
     }}>
       <div style={{ padding: '16px 16px 12px' }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <SectionLabel>Weekly Calories</SectionLabel>
-          <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.02em' }}>
+          <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(0,0,0,0.20)', letterSpacing: '0.02em' }}>
             avg: {weekAvg > 0 ? weekAvg.toLocaleString() : '—'} kcal · {activeDays ?? daysLogged} days logged
           </span>
         </div>
@@ -548,13 +548,13 @@ export const WeeklyChartCard: React.FC<WeeklyChartCardProps> = ({ data, weekAvg,
                 dataKey="day"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: 'rgba(255,255,255,0.25)', fontSize: 9, fontWeight: 700 }}
+                tick={{ fill: 'rgba(0,0,0,0.16)', fontSize: 9, fontWeight: 700 }}
               />
               <Tooltip
-                cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                cursor={{ fill: 'rgba(0,0,0,0.02)' }}
                 contentStyle={{
                   borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.09)',
+                  border: '1px solid rgba(0,0,0,0.07)',
                   backgroundColor: '#0D0D0D',
                   padding: '8px 12px',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
@@ -565,7 +565,7 @@ export const WeeklyChartCard: React.FC<WeeklyChartCardProps> = ({ data, weekAvg,
               />
               <ReferenceLine
                 y={target}
-                stroke="rgba(255,255,255,0.2)"
+                stroke="rgba(0,0,0,0.13)"
                 strokeDasharray="3 3"
               />
               <Bar dataKey="calories" radius={[3, 3, 0, 0]} barSize={20}>
@@ -573,7 +573,7 @@ export const WeeklyChartCard: React.FC<WeeklyChartCardProps> = ({ data, weekAvg,
                   <Cell
                     key={i}
                     fill={
-                      e.isFuture            ? 'rgba(255,255,255,0.04)'
+                      e.isFuture            ? 'rgba(0,0,0,0.03)'
                       : e.calories > e.target ? 'var(--accent-red)'
                       : e.isToday           ? 'var(--accent-blue)'
                       : 'rgba(10,132,255,0.45)'
@@ -596,9 +596,9 @@ export const WeeklyChartCard: React.FC<WeeklyChartCardProps> = ({ data, weekAvg,
                 height: 6,
                 borderRadius: '50%',
                 backgroundColor: hasLog
-                  ? d.isToday ? 'var(--accent-blue)' : 'rgba(255,255,255,0.45)'
-                  : 'rgba(255,255,255,0.1)',
-                border: hasLog ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                  ? d.isToday ? 'var(--accent-blue)' : 'rgba(0,0,0,0.30)'
+                  : 'rgba(0,0,0,0.07)',
+                border: hasLog ? 'none' : '1px solid rgba(0,0,0,0.10)',
               }} />
             );
           })}
@@ -622,7 +622,7 @@ export const StreakCard: React.FC<StreakCardProps> = ({ streak }) => {
       padding: 16,
       borderRadius: 20,
       backgroundColor: 'var(--bg-card)',
-      border: '1px solid rgba(255,255,255,0.07)',
+      border: '1px solid rgba(0,0,0,0.06)',
       display: 'flex',
       flexDirection: 'column',
       gap: 4,
@@ -634,11 +634,11 @@ export const StreakCard: React.FC<StreakCardProps> = ({ streak }) => {
         letterSpacing: '-0.04em',
         lineHeight: 1,
         fontVariantNumeric: 'tabular-nums',
-        color: safeStreak > 0 ? 'var(--text-primary)' : 'rgba(255,255,255,0.35)',
+        color: safeStreak > 0 ? 'var(--text-primary)' : 'rgba(0,0,0,0.24)',
       }}>
         {safeStreak}
       </span>
-      <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+      <span style={{ fontSize: '0.7rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600 }}>
         day streak
       </span>
     </div>
@@ -679,7 +679,7 @@ export const RecoveryCard: React.FC<RecoveryCardProps> = ({
       padding: 16,
       borderRadius: 20,
       backgroundColor: 'var(--bg-card)',
-      border: '1px solid rgba(255,255,255,0.07)',
+      border: '1px solid rgba(0,0,0,0.06)',
       display: 'flex',
       flexDirection: 'column',
       gap: 4,
@@ -712,7 +712,7 @@ export const RecoveryCard: React.FC<RecoveryCardProps> = ({
           }}>
             {Math.round(validScore)}
           </span>
-          <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+          <span style={{ fontSize: '0.7rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600 }}>
             recovery
           </span>
         </>
@@ -723,11 +723,11 @@ export const RecoveryCard: React.FC<RecoveryCardProps> = ({
             fontWeight: 900,
             letterSpacing: '-0.04em',
             lineHeight: 1,
-            color: 'rgba(255,255,255,0.25)',
+            color: 'rgba(0,0,0,0.16)',
           }}>
             —
           </span>
-          <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+          <span style={{ fontSize: '0.7rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600 }}>
             recovery
           </span>
           <button
@@ -859,7 +859,7 @@ export const DailyHabitsCard: React.FC<DailyHabitsCardProps> = ({
         <span style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'rgba(255,159,10,0.8)', display: 'block', marginTop: 4 }}>Meals</span>
       </div>
       {/* Training */}
-      <div onClick={onTrainingPress} style={{ cursor: 'pointer', background: 'linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-md)', padding: '0.875rem' }}>
+      <div onClick={onTrainingPress} style={{ cursor: 'pointer', background: 'linear-gradient(145deg, rgba(0,0,0,0.03), rgba(255,255,255,0.01))', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 'var(--radius-md)', padding: '0.875rem' }}>
         <div style={{ fontSize: '1.625rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em', lineHeight: 1 }}>{Math.round(workoutsToday)}</div>
         <span style={{ fontSize: '0.5625rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.07em', color: 'var(--text-tertiary)', display: 'block', marginTop: 4 }}>Training</span>
       </div>

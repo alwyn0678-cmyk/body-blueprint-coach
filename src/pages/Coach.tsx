@@ -189,7 +189,7 @@ const WeeklyCheckInCard: React.FC<{
           { label: 'Protein avg', value: `${stats.avgProtein}g`, color: stats.proteinAdherence >= 80 ? '#22C55E' : '#F59E0B' },
           { label: 'Workouts', value: `${stats.workoutsCompleted}`, color: '#3B82F6' },
         ].map(({ label, value, color }) => (
-          <div key={label} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '10px 10px' }}>
+          <div key={label} style={{ background: 'rgba(0,0,0,0.04)', borderRadius: 12, padding: '10px 10px' }}>
             <div style={{ fontSize: '0.56rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginBottom: 3 }}>{label}</div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', fontWeight: 900, letterSpacing: '-0.03em', color }}>{value}</div>
           </div>
@@ -218,7 +218,7 @@ const WeeklyCheckInCard: React.FC<{
           className="btn btn-coach" style={{ width: '100%', justifyContent: 'center', gap: 8 }}
           onClick={onComplete} disabled={loading}
         >
-          {loading ? <span className="btn-spinner" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} /> : <Brain size={14} />}
+          {loading ? <span className="btn-spinner" style={{ borderColor: 'rgba(0,0,0,0.20)', borderTopColor: 'white' }} /> : <Brain size={14} />}
           {loading ? 'Analysing...' : 'Complete check-in'}
         </button>
       )}
@@ -614,7 +614,7 @@ export const Coach: React.FC = () => {
                               <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{v.muscle}</span>
                               <span style={{ fontSize: '0.65rem', fontWeight: 700, color: info.color }}>{v.currentVolume} sets · {info.label}</span>
                             </div>
-                            <div style={{ height: 4, borderRadius: 3, background: 'rgba(255,255,255,0.08)' }}>
+                            <div style={{ height: 4, borderRadius: 3, background: 'rgba(0,0,0,0.06)' }}>
                               <div style={{ height: '100%', width: `${pct}%`, borderRadius: 3, background: info.color, transition: 'width 0.5s ease' }} />
                             </div>
                           </div>
@@ -716,7 +716,7 @@ export const Coach: React.FC = () => {
                   {suggestedQuestions.map(q => (
                     <button key={q}
                       onClick={() => { if (!chatLoading && hasClaudeKey) sendMessage(q); else setChatInput(q); }}
-                      style={{ textAlign: 'left', padding: '9px 13px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                      style={{ textAlign: 'left', padding: '9px 13px', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 12, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }}>
                       {q}
                     </button>
                   ))}
@@ -737,7 +737,7 @@ export const Coach: React.FC = () => {
                     <div style={{
                       maxWidth: '86%', padding: '10px 14px', borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
                       background: m.role === 'user' ? 'var(--accent-blue)' : 'var(--bg-elevated)',
-                      border: m.role === 'assistant' ? '1px solid rgba(255,255,255,0.08)' : 'none',
+                      border: m.role === 'assistant' ? '1px solid rgba(0,0,0,0.06)' : 'none',
                       fontSize: '0.84rem', fontWeight: 500, lineHeight: 1.6, color: 'var(--text-primary)',
                       boxShadow: m.role === 'user' ? '0 4px 12px rgba(59,130,246,0.3)' : '0 2px 8px rgba(0,0,0,0.3)',
                     }}>
@@ -750,7 +750,7 @@ export const Coach: React.FC = () => {
                     <div style={{ width: 22, height: 22, borderRadius: 7, background: 'linear-gradient(135deg, #6366F1, #A855F7)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
                       <Brain size={11} color="white" />
                     </div>
-                    <div style={{ padding: '10px 16px', borderRadius: '4px 18px 18px 18px', background: 'var(--bg-elevated)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <div style={{ padding: '10px 16px', borderRadius: '4px 18px 18px 18px', background: 'var(--bg-elevated)', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 4, alignItems: 'center' }}>
                       {[0, 1, 2].map(i => (
                         <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366F1', animation: 'pulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />
                       ))}
@@ -777,8 +777,8 @@ export const Coach: React.FC = () => {
               <button
                 onClick={handleChat}
                 disabled={!chatInput.trim() || chatLoading || !hasClaudeKey}
-                style={{ width: 44, height: 44, borderRadius: 14, background: chatInput.trim() && !chatLoading && hasClaudeKey ? 'linear-gradient(135deg, #6366F1, #A855F7)' : 'rgba(255,255,255,0.07)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: chatInput.trim() && !chatLoading && hasClaudeKey ? 'pointer' : 'default', flexShrink: 0, transition: 'background 0.2s', boxShadow: chatInput.trim() && hasClaudeKey ? '0 4px 12px rgba(99,102,241,0.4)' : 'none' }}>
-                <Send size={16} color={chatInput.trim() && !chatLoading && hasClaudeKey ? 'white' : 'rgba(255,255,255,0.3)'} />
+                style={{ width: 44, height: 44, borderRadius: 14, background: chatInput.trim() && !chatLoading && hasClaudeKey ? 'linear-gradient(135deg, #6366F1, #A855F7)' : 'rgba(0,0,0,0.06)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: chatInput.trim() && !chatLoading && hasClaudeKey ? 'pointer' : 'default', flexShrink: 0, transition: 'background 0.2s', boxShadow: chatInput.trim() && hasClaudeKey ? '0 4px 12px rgba(99,102,241,0.4)' : 'none' }}>
+                <Send size={16} color={chatInput.trim() && !chatLoading && hasClaudeKey ? 'white' : 'rgba(0,0,0,0.20)'} />
               </button>
             </div>
           </motion.div>
@@ -864,7 +864,7 @@ export const Coach: React.FC = () => {
                 { label: 'Training', value: `${user.trainingFrequency}x / week` },
                 { label: 'Protein per kg', value: `${(user.targets.protein / user.weight).toFixed(1)} g/kg` },
               ].map(({ label, value }) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
                   <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{label}</span>
                   <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>{value}</span>
                 </div>

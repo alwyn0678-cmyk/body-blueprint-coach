@@ -25,13 +25,13 @@ export const Header: React.FC = () => {
                   <Icon
                     size={19}
                     strokeWidth={isActive ? 2.2 : 1.7}
-                    color={isActive ? activeColor : 'rgba(255,255,255,0.35)'}
+                    color={isActive ? activeColor : 'rgba(0,0,0,0.24)'}
                     className="nav-item-icon"
                   />
                 </div>
                 <span className="nav-label" style={{
                   fontWeight: isActive ? 800 : 500,
-                  color: isActive ? activeColor : 'rgba(255,255,255,0.3)',
+                  color: isActive ? activeColor : 'rgba(0,0,0,0.20)',
                 }}>
                   {label}
                 </span>
