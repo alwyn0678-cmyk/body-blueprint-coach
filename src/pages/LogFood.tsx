@@ -608,18 +608,6 @@ export const LogFood: React.FC = () => {
             }}>
               {isOver ? 'Over' : calPct >= 90 ? 'Nearly there' : `${Math.round(calPct)}% logged`}
             </span>
-            {/* Camera scan button */}
-            <button
-              onClick={() => setShowScanner(true)}
-              title="Scan a meal with AI"
-              style={{
-                width: 32, height: 32, borderRadius: 10,
-                background: 'rgba(10,132,255,0.12)', border: '1px solid rgba(10,132,255,0.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-              }}
-            >
-              <Camera size={15} color="var(--accent-blue)" />
-            </button>
           </div>
         </div>
 
@@ -754,6 +742,36 @@ export const LogFood: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* ── AI Scan CTA ── */}
+        <button
+          onClick={() => setShowScanner(true)}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+            padding: '13px 16px',
+            background: 'linear-gradient(135deg, rgba(10,132,255,0.12) 0%, rgba(90,200,250,0.06) 100%)',
+            border: '1px solid rgba(10,132,255,0.22)',
+            borderRadius: '18px', cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          <div style={{
+            width: 38, height: 38, borderRadius: 12, flexShrink: 0,
+            background: 'rgba(10,132,255,0.15)', border: '1px solid rgba(10,132,255,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Camera size={18} color="var(--accent-blue)" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              Scan a meal
+            </div>
+            <div style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-tertiary)', marginTop: 1 }}>
+              Photo → AI estimates calories & macros
+            </div>
+          </div>
+          <ChevronRight size={15} color="rgba(10,132,255,0.5)" />
+        </button>
 
         {/* ── MEAL SECTIONS ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
