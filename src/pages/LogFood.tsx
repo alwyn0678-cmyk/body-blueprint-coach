@@ -62,7 +62,7 @@ export const LogFood: React.FC = () => {
   const [activeMeal, setActiveMeal] = useState<MealType>(defaultMeal);
   const [showSearch, setShowSearch] = useState(false);
   const [showSavedMeals, setShowSavedMeals] = useState(false);
-  const [expandedMeals, setExpandedMeals] = useState<Partial<Record<MealType, boolean>>>({ [defaultMeal]: true });
+  const [expandedMeals, setExpandedMeals] = useState<Partial<Record<MealType, boolean>>>({});
   const [editingEntry, setEditingEntry] = useState<{ id: string; mealType: MealType; amount: string; error?: string } | null>(null);
   const [saveMealName, setSaveMealName] = useState('');
   const [saveMealError, setSaveMealError] = useState('');

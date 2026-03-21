@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -9,7 +9,7 @@ import { useApp } from '../context/AppContext';
 import {
   calculateStreak, computeWeeklyStats, calculateWeightTrend,
 } from '../utils/aiCoachingEngine';
-import { coachService } from '../services/aiCoach';
+import { coachService, generateAffirmation } from '../services/aiCoach';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -113,30 +113,27 @@ const LogSheet: React.FC<{
 
 // ─── Affirmations ─────────────────────────────────────────────────────────────
 
-const AFFIRMATIONS = [
-  "I am stronger than yesterday and building the body I deserve.",
-  "Every rep, every meal, every choice is shaping the best version of me.",
-  "I show up consistently because I respect my goals.",
-  "My body is capable of incredible things when I fuel it right.",
-  "Progress over perfection — I celebrate every step forward.",
-  "I am disciplined, focused, and unstoppable.",
-  "My commitment to health is the greatest investment I make daily.",
-  "I trust the process and embrace the journey.",
-  "Every workout is a promise kept to myself.",
-  "I choose strength, I choose health, I choose me.",
-];
-
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export const Dashboard: React.FC = () => {
   const { state, updateDailyLog, updateWeight, getNutritionTotals, showToast } = useApp();
   const navigate = useNavigate();
   const [activeSheet, setActiveSheet] = useState<'water' | 'steps' | 'weight' | null>(null);
-  const [affirmationIdx, setAffirmationIdx] = useState(() => new Date().getDay() % AFFIRMATIONS.length);
+  const [affirmation, setAffirmation] = useState('');
+  const [affirmationLoading, setAffirmationLoading] = useState(false);
 
   const dateStr = todayStr();
   const log = state.logs[dateStr];
   const user = state.user!;
+
+  const fetchAffirmation = useCallback(async () => {
+    setAffirmationLoading(true);
+    const text = await generateAffirmation(user.name);
+    setAffirmation(text);
+    setAffirmationLoading(false);
+  }, [user.name]);
+
+  useEffect(() => { fetchAffirmation(); }, [fetchAffirmation]);
 
   const totals = useMemo(() => getNutritionTotals(dateStr), [state.logs, dateStr]);
   const streak = useMemo(() => calculateStreak(state.logs), [state.logs]);
@@ -411,18 +408,19 @@ export const Dashboard: React.FC = () => {
                 </span>
               </div>
               <button
-                onClick={() => setAffirmationIdx(i => (i + 1) % AFFIRMATIONS.length)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', opacity: 0.5 }}
+                onClick={fetchAffirmation}
+                disabled={affirmationLoading}
+                style={{ background: 'none', border: 'none', cursor: affirmationLoading ? 'default' : 'pointer', padding: 4, display: 'flex', opacity: 0.5 }}
               >
-                <RefreshCw size={13} color="rgba(0,0,0,0.40)" />
+                <RefreshCw size={13} color="rgba(0,0,0,0.40)" style={{ animation: affirmationLoading ? 'spin 1s linear infinite' : 'none' }} />
               </button>
             </div>
             <p style={{
-              fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-primary)',
+              fontSize: '0.92rem', fontWeight: 600, color: affirmationLoading ? 'rgba(0,0,0,0.25)' : 'var(--text-primary)',
               lineHeight: 1.55, margin: 0, fontStyle: 'italic',
+              transition: 'color 0.3s ease',
             }}>
-              "{AFFIRMATIONS[affirmationIdx]}"
-            </p>
+              {affirmation ? `"${affirmation}"` : '…'}</p>
           </div>
         </motion.section>
 

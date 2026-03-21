@@ -89,6 +89,61 @@ async function claudeComplete(
   }
 }
 
+// ─── Affirmation generation ───────────────────────────────────────────────────
+
+const FALLBACK_AFFIRMATIONS = [
+  "I am stronger than yesterday and building the body I deserve.",
+  "Every rep, every meal, every choice is shaping the best version of me.",
+  "I show up consistently because I respect my goals.",
+  "My body is capable of incredible things when I fuel it right.",
+  "Progress over perfection — I celebrate every step forward.",
+  "I am disciplined, focused, and unstoppable.",
+  "My commitment to health is the greatest investment I make daily.",
+  "I trust the process and embrace the journey.",
+  "Every workout is a promise kept to myself.",
+  "I choose strength, I choose health, I choose me.",
+];
+
+let _fallbackIdx = new Date().getDay() % FALLBACK_AFFIRMATIONS.length;
+
+export async function generateAffirmation(userName?: string): Promise<string> {
+  const key = getClaudeKey();
+  if (!key) {
+    const text = FALLBACK_AFFIRMATIONS[_fallbackIdx % FALLBACK_AFFIRMATIONS.length];
+    _fallbackIdx++;
+    return text;
+  }
+  const firstName = userName ? userName.split(' ')[0] : 'you';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: CLAUDE_MODEL,
+        max_tokens: 100,
+        system: `You are a motivational coach for ${firstName}, a woman on a personal fitness and self-improvement journey. Generate exactly one powerful, unique fitness affirmation that feels personal, energising, and focused on strength, discipline, and progress. Make it different each time — vary the theme: mindset, nutrition, training, self-belief, resilience. Output only the affirmation text itself, no quotes, no explanation, no trailing punctuation beyond a period.`,
+        messages: [{ role: 'user', content: 'Generate a fresh affirmation for today.' }],
+      }),
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text?.trim();
+    if (text && text.length > 10 && !text.includes('API') && !text.includes('key')) return text;
+    // Fallback if response looks like an error
+    const fb = FALLBACK_AFFIRMATIONS[_fallbackIdx % FALLBACK_AFFIRMATIONS.length];
+    _fallbackIdx++;
+    return fb;
+  } catch {
+    const fb = FALLBACK_AFFIRMATIONS[_fallbackIdx % FALLBACK_AFFIRMATIONS.length];
+    _fallbackIdx++;
+    return fb;
+  }
+}
+
 const buildSystemPrompt = (user: UserProfile, ctx?: Partial<CoachContext>): string => {
   const stats = ctx?.weeklyStats;
   const ema = ctx?.currentEma;
