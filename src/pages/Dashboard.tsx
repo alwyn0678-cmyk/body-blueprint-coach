@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Flame, Dumbbell, Droplets, Footprints, TrendingUp,
-  Brain, Activity,
+  Brain, Activity, RefreshCw, Sparkles, Zap,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import {
@@ -111,12 +111,19 @@ const LogSheet: React.FC<{
   );
 };
 
-// ─── Quick Start workouts ─────────────────────────────────────────────────────
+// ─── Affirmations ─────────────────────────────────────────────────────────────
 
-const QUICK_START = [
-  { title: 'Strength Training', category: 'Hypertrophy', bg: '#576038', route: '/training' },
-  { title: 'HIIT Cardio', category: 'Cardio', bg: '#974400', route: '/training' },
-  { title: 'Mobility Flow', category: 'Recovery', bg: '#695a3e', route: '/training' },
+const AFFIRMATIONS = [
+  "I am stronger than yesterday and building the body I deserve.",
+  "Every rep, every meal, every choice is shaping the best version of me.",
+  "I show up consistently because I respect my goals.",
+  "My body is capable of incredible things when I fuel it right.",
+  "Progress over perfection — I celebrate every step forward.",
+  "I am disciplined, focused, and unstoppable.",
+  "My commitment to health is the greatest investment I make daily.",
+  "I trust the process and embrace the journey.",
+  "Every workout is a promise kept to myself.",
+  "I choose strength, I choose health, I choose me.",
 ];
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
@@ -125,6 +132,7 @@ export const Dashboard: React.FC = () => {
   const { state, updateDailyLog, updateWeight, getNutritionTotals, showToast } = useApp();
   const navigate = useNavigate();
   const [activeSheet, setActiveSheet] = useState<'water' | 'steps' | 'weight' | null>(null);
+  const [affirmationIdx, setAffirmationIdx] = useState(() => new Date().getDay() % AFFIRMATIONS.length);
 
   const dateStr = todayStr();
   const log = state.logs[dateStr];
@@ -333,38 +341,88 @@ export const Dashboard: React.FC = () => {
           ))}
         </motion.section>
 
-        {/* ── Quick Start ── */}
+        {/* ── Today's Training ── */}
         <motion.section
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }}
           style={{ marginTop: 36 }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.025em', color: '#576038' }}>Quick Start</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.025em', color: '#576038' }}>Strength Training</h2>
             <button onClick={() => navigate('/training')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(86,67,56,0.5)' }}>
-              See All
+              Open
             </button>
           </div>
-          <div style={{ display: 'flex', gap: 14, overflowX: 'auto', marginLeft: -24, marginRight: -24, paddingLeft: 24, paddingRight: 24, paddingBottom: 4 }}
-            className="hide-scrollbar">
-            {QUICK_START.map(({ title, category, bg, route }) => (
-              <div
-                key={title}
-                onClick={() => navigate(route)}
-                style={{
-                  flexShrink: 0, width: 200, height: 260, borderRadius: 24,
-                  background: bg, cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-                  padding: '20px 18px', position: 'relative', overflow: 'hidden',
-                  boxShadow: `0 12px 32px ${bg}40`,
-                }}
-              >
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 60%)', borderRadius: 24 }} />
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                  <div style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>{category}</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>{title}</div>
+          <div
+            onClick={() => navigate('/training')}
+            style={{
+              borderRadius: 24, padding: '20px 22px',
+              background: '#FFFFFF', boxShadow: '0 12px 40px rgba(26,28,26,0.06)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              cursor: 'pointer', border: '1px solid rgba(87,96,56,0.08)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg, rgba(87,96,56,0.12), rgba(87,96,56,0.05))', border: '1px solid rgba(87,96,56,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Dumbbell size={22} style={{ color: '#576038' }} strokeWidth={1.8} />
+              </div>
+              <div>
+                <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                  {workoutMinutesToday > 0 ? 'Session Complete' : "Today's Session"}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'rgba(87,96,56,0.65)', fontWeight: 600, marginTop: 2 }}>
+                  {workoutMinutesToday > 0
+                    ? `${workoutMinutesToday} min · ${(log?.workouts ?? []).length} workout${(log?.workouts ?? []).length !== 1 ? 's' : ''} logged`
+                    : weeklyStats.workoutsCompleted + '/' + user.trainingFrequency + ' sessions this week'}
                 </div>
               </div>
-            ))}
+            </div>
+            <button
+              onClick={e => { e.stopPropagation(); navigate('/training'); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '8px 16px', borderRadius: 99,
+                background: workoutMinutesToday > 0 ? 'rgba(87,96,56,0.08)' : '#576038',
+                border: 'none', cursor: 'pointer',
+                color: workoutMinutesToday > 0 ? '#576038' : '#FCFFE2',
+                fontSize: '0.78rem', fontWeight: 800, flexShrink: 0,
+              }}
+            >
+              <Zap size={13} fill="currentColor" />
+              {workoutMinutesToday > 0 ? 'Log More' : 'Start'}
+            </button>
+          </div>
+        </motion.section>
+
+        {/* ── Daily Affirmation ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22, duration: 0.4 }}
+          style={{ marginTop: 16 }}
+        >
+          <div style={{
+            borderRadius: 24, padding: '20px 22px',
+            background: 'linear-gradient(135deg, rgba(87,96,56,0.06) 0%, rgba(194,203,154,0.05) 100%)',
+            border: '1px solid rgba(87,96,56,0.12)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Sparkles size={13} color="#8B9467" />
+                <span style={{ fontSize: '0.58rem', fontWeight: 900, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: 'rgba(87,96,56,0.65)' }}>
+                  Daily Affirmation
+                </span>
+              </div>
+              <button
+                onClick={() => setAffirmationIdx(i => (i + 1) % AFFIRMATIONS.length)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', opacity: 0.5 }}
+              >
+                <RefreshCw size={13} color="rgba(0,0,0,0.40)" />
+              </button>
+            </div>
+            <p style={{
+              fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-primary)',
+              lineHeight: 1.55, margin: 0, fontStyle: 'italic',
+            }}>
+              "{AFFIRMATIONS[affirmationIdx]}"
+            </p>
           </div>
         </motion.section>
 

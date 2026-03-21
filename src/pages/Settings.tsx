@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
-  Bell, Calculator, Check, ChevronRight, Download, Edit2, Moon, Sun, Trash2, Upload, X,
+  Bell, Calculator, Check, ChevronRight, Download, Edit2, Trash2, Upload, X,
 } from 'lucide-react';
 import { calculateTargets, calculateTDEEBreakdown } from '../utils/macroEngine';
 import { kgToLbs, cmToFtIn } from '../utils/units';
@@ -539,41 +539,6 @@ export const Settings: React.FC = () => {
         <SecLabel text="Preferences" />
         <PageCard>
           {/* Units toggle pill */}
-          <PrefRow
-            icon={settings.theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />}
-            label="Appearance"
-            subtitle={settings.theme === 'dark' ? 'Dark mode' : 'Light mode'}
-            right={
-              <div style={{
-                display: 'flex', gap: 2, background: 'var(--bg-elevated)',
-                borderRadius: 9999, padding: 2, border: `1px solid ${C.border}`,
-              }}>
-                {(['Light', 'Dark'] as const).map(opt => {
-                  const active = opt === 'Light' ? settings.theme !== 'dark' : settings.theme === 'dark';
-                  return (
-                    <button
-                      key={opt}
-                      onClick={() => {
-                        updateSettings({ theme: opt === 'Dark' ? 'dark' : 'light' });
-                        showToast(`${opt} mode enabled`, 'info');
-                      }}
-                      style={{
-                        padding: '4px 10px', borderRadius: 9999, border: 'none',
-                        background: active ? 'var(--bg-card)' : 'transparent',
-                        color: active ? C.textPrimary : C.textTertiary,
-                        fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                        boxShadow: active ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
-                      }}
-                    >
-                      {opt}
-                    </button>
-                  );
-                })}
-              </div>
-            }
-          />
-          <RowDivider />
           <PrefRow
             icon={<span style={{ fontSize: 16 }}>📐</span>}
             label="Units"

@@ -242,8 +242,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // ── Theme application ─────────────────────────────────────────────────────
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', state.settings.theme ?? 'light');
-  }, [state.settings.theme]);
+    document.documentElement.setAttribute('data-theme', 'light');
+  }, []);
 
   // ── Local persistence ──────────────────────────────────────────────────────
   useEffect(() => {
