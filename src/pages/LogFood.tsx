@@ -104,12 +104,12 @@ export const LogFood: React.FC = () => {
   const isOver = calLogged > calTarget;
   const calPct = Math.min(100, (calLogged / calTarget) * 100);
 
-  const handleAddFood = (food: FoodItem, amount: number) => {
+  const handleAddFood = (food: FoodItem, amount: number, mealType?: MealType) => {
     if (amount <= 0) {
       showToast('Amount must be greater than 0', 'error');
       return;
     }
-    addFoodToLog(selectedDate, activeMeal, food, amount);
+    addFoodToLog(selectedDate, mealType ?? activeMeal, food, amount);
     showToast(`${food.name} added`, 'success');
     setShowSearch(false);
   };

@@ -598,8 +598,16 @@ const CATEGORIES: { id: Category; label: string; emoji: string }[] = [
 interface RecipeLibraryProps {
   activeMeal: MealType;
   selectedDate: string;
-  onAdd: (food: FoodItem, amount: number) => void;
+  onAdd: (food: FoodItem, amount: number, mealType?: MealType) => void;
 }
+
+const CATEGORY_TO_MEAL: Record<Category, MealType> = {
+  breakfast: 'breakfast',
+  lunch: 'lunch',
+  dinner: 'dinner',
+  snack: 'snacks',
+  'post-workout': 'snacks',
+};
 
 // ── Macro pill ─────────────────────────────────────────────────────────────────
 
@@ -643,7 +651,7 @@ export const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ activeMeal, select
       servingSize: 1,
       servingUnit: 'serving',
     };
-    onAdd(food, 1);
+    onAdd(food, 1, CATEGORY_TO_MEAL[activeCategory]);
     setSelectedRecipe(null);
   };
 
@@ -868,7 +876,7 @@ export const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ activeMeal, select
               }}
             >
               <ChefHat size={16} />
-              Add to {activeMeal.charAt(0).toUpperCase() + activeMeal.slice(1)}
+              Add to {CATEGORY_TO_MEAL[activeCategory].charAt(0).toUpperCase() + CATEGORY_TO_MEAL[activeCategory].slice(1)}
             </button>
 
             <p style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.22)', fontWeight: 600, textAlign: 'center', marginTop: 10 }}>
