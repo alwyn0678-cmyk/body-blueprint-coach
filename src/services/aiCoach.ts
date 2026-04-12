@@ -735,7 +735,7 @@ Rules:
       body: JSON.stringify({
         system_instruction: { parts: [{ text: 'You are an expert personal trainer. Output only valid JSON, nothing else.' }] },
         contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-        generationConfig: { maxOutputTokens: 1200 },
+        generationConfig: { maxOutputTokens: 2000 },
       }),
     }
   );
@@ -1418,7 +1418,7 @@ Return this exact JSON (no markdown, no code blocks):
 }
 Keep it achievable for a home cook. 5–10 ingredients, 4–8 steps.`,
     [],
-    900,
+    2000,
   );
 
   const cleaned = raw
@@ -1459,7 +1459,7 @@ export async function generateGroceryList(
 
   const dishList = mealDishes.join('\n');
   const raw = await geminiComplete(
-    'You are a professional meal prep nutritionist. Output only valid compact JSON, no markdown, no explanation.',
+    'You are a professional meal prep nutritionist. Output only valid compact JSON array, no markdown fences, no explanation, no preamble.',
     `The following meals are planned for the week. Generate a consolidated grocery shopping list with the real ingredients needed to make all of them.
 
 MEALS:
@@ -1480,17 +1480,22 @@ Return this exact JSON structure (no markdown, no code blocks):
 Categories to use: Produce, Proteins, Dairy & Eggs, Grains & Bread, Pantry & Dry Goods, Frozen, Condiments & Sauces, Other.
 Only include categories that have items. Consolidate duplicates (e.g. eggs across multiple meals → one egg line). Include realistic quantities for a week's worth of meals for 1 person. Output only the JSON array.`,
     [],
-    1200,
+    4000,
   );
 
+  // Strip markdown fences anywhere in the string
   const cleaned = raw
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/```\s*$/g, '')
+    .replace(/^```json\s*/im, '')
+    .replace(/^```\s*/im, '')
+    .replace(/```\s*$/gm, '')
     .trim();
 
+  // Extract JSON array even if surrounded by text
+  const arrayMatch = cleaned.match(/\[[\s\S]*\]/);
+  if (!arrayMatch) return null;
+
   try {
-    const parsed = JSON.parse(cleaned) as GroceryCategory[];
+    const parsed = JSON.parse(arrayMatch[0]) as GroceryCategory[];
     if (!Array.isArray(parsed) || parsed.length === 0) return null;
     return parsed;
   } catch {

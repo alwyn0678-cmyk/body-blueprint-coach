@@ -694,7 +694,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         <div style={{
           flexShrink: 0,
           padding: '0.875rem 1rem',
-          paddingBottom: 'calc(0.875rem + env(safe-area-inset-bottom))',
+          paddingBottom: 'max(1.25rem, calc(0.875rem + env(safe-area-inset-bottom)))',
           borderTop: '1px solid rgba(0,0,0,0.06)',
           backgroundColor: 'var(--bg-primary)',
         }}>
@@ -940,7 +940,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         {/* Manual fallback */}
         <div style={{
           padding: '1rem 1.25rem',
-          paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
+          paddingBottom: 'max(1.5rem, calc(1rem + env(safe-area-inset-bottom)))',
           borderTop: '1px solid rgba(0,0,0,0.07)',
         }}>
           <p style={{ fontSize: '0.68rem', color: 'rgba(0,0,0,0.28)', fontWeight: 600, marginBottom: '8px', textAlign: 'center', letterSpacing: '0.04em' }}>

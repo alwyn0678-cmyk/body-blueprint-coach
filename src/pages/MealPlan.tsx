@@ -386,16 +386,17 @@ const GroceryListModal: React.FC<{
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
   const mountedRef = useRef(true);
+  const dishes = extractDishNames(plan);
 
-  useEffect(() => {
-    mountedRef.current = true;
+  const load = useCallback(() => {
     const key = localStorage.getItem('bbc_gemini_api_key') ?? localStorage.getItem('bbc_claude_api_key');
     if (!key?.trim()) {
       setNoKey(true);
       setLoading(false);
       return;
     }
-    const dishes = extractDishNames(plan);
+    setLoading(true);
+    setCategories(null);
     generateGroceryList(dishes).then(result => {
       if (!mountedRef.current) return;
       setCategories(result);
@@ -403,6 +404,12 @@ const GroceryListModal: React.FC<{
     }).catch(() => {
       if (mountedRef.current) setLoading(false);
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    load();
     return () => { mountedRef.current = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -552,8 +559,23 @@ const GroceryListModal: React.FC<{
           )}
 
           {!loading && !noKey && !categories && (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(26,26,26,0.4)', fontSize: '0.85rem' }}>
-              Could not generate the grocery list. Try again.
+            <div style={{ textAlign: 'center', padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                Could not generate the grocery list.
+              </div>
+              <button
+                onClick={load}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '9px 20px', borderRadius: 20,
+                  border: '1.5px solid rgba(87,96,56,0.3)',
+                  background: 'transparent', color: '#576038',
+                  fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                }}
+              >
+                <RefreshCw size={13} />
+                Try Again
+              </button>
             </div>
           )}
 

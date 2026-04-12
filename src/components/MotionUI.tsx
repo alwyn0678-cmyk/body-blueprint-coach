@@ -35,7 +35,7 @@ export const SlideOver: React.FC<BottomSheetProps> = ({ isOpen, onClose, childre
             top: 0, left: 0, right: 0, bottom: 0,
             backgroundColor: 'var(--bg-primary)',
             zIndex: 9002,
-            overflowY: 'auto'
+            overflow: 'hidden',
           }}
         >
           {children}
