@@ -1192,18 +1192,18 @@ const ProfileEditSheet: React.FC<{
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div>
               <FieldLabel>Current weight (kg)</FieldLabel>
-              <input style={weightErr ? inputErrorStyle : inputStyle} type="number" inputMode="decimal" value={form.weight} onChange={e => set('weight', e.target.value)} placeholder="75" />
+              <input style={weightErr ? inputErrorStyle : inputStyle} type="text" inputMode="decimal" value={form.weight} onChange={e => set('weight', e.target.value.replace(',', '.'))} placeholder="75" />
               <FieldError msg={weightErr} />
             </div>
             <div>
               <FieldLabel>Goal weight (kg)</FieldLabel>
-              <input style={inputStyle} type="number" inputMode="decimal" value={form.goalWeight} onChange={e => set('goalWeight', e.target.value)} placeholder="70" />
+              <input style={inputStyle} type="text" inputMode="decimal" value={form.goalWeight} onChange={e => set('goalWeight', e.target.value.replace(',', '.'))} placeholder="70" />
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div>
               <FieldLabel>Height (cm)</FieldLabel>
-              <input style={heightErr ? inputErrorStyle : inputStyle} type="number" inputMode="decimal" value={form.height} onChange={e => set('height', e.target.value)} placeholder="175" />
+              <input style={heightErr ? inputErrorStyle : inputStyle} type="text" inputMode="decimal" value={form.height} onChange={e => set('height', e.target.value.replace(',', '.'))} placeholder="175" />
               <FieldError msg={heightErr} />
             </div>
             <div>

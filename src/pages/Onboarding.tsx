@@ -157,7 +157,10 @@ const FloatingInput: React.FC<{
         placeholder={floated ? placeholder : undefined}
         value={value}
         autoFocus={autoFocus}
-        onChange={e => onChange(e.target.value)}
+        onChange={e => {
+          const raw = e.target.value;
+          onChange(inputMode === 'decimal' ? raw.replace(',', '.') : raw);
+        }}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         onKeyDown={e => e.key === 'Enter' && onEnter?.()}
@@ -739,7 +742,7 @@ export const Onboarding: React.FC = () => {
               </div>
               {formData.heightUnit === 'cm' ? (
                 <>
-                  <FloatingInput label="Height" value={formData.height} onChange={v => set('height', v)} type="number" inputMode="decimal" placeholder="175" suffix="cm" hasError={attempted && !!heightErr} />
+                  <FloatingInput label="Height" value={formData.height} onChange={v => set('height', v)} type="text" inputMode="decimal" placeholder="175" suffix="cm" hasError={attempted && !!heightErr} />
                   {attempted && <FieldError msg={heightErr} />}
                 </>
               ) : (
@@ -760,7 +763,7 @@ export const Onboarding: React.FC = () => {
                 label="Current weight"
                 value={formData.weight}
                 onChange={v => set('weight', v)}
-                type="number"
+                type="text"
                 inputMode="decimal"
                 placeholder={formData.weightUnit === 'kg' ? '75' : '165'}
                 suffix={formData.weightUnit}
@@ -785,7 +788,7 @@ export const Onboarding: React.FC = () => {
                   label="Goal weight"
                   value={formData.goalWeight}
                   onChange={v => set('goalWeight', v)}
-                  type="number"
+                  type="text"
                   inputMode="decimal"
                   placeholder={formData.weightUnit === 'kg' ? '70' : '154'}
                   suffix={formData.weightUnit}

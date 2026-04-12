@@ -88,9 +88,9 @@ const MeasurementSheet: React.FC<{ onClose: () => void; onSave: (m: BodyMeasurem
               <div style={{ width: 72, fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{f.label}</div>
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input
-                  type="number" inputMode="decimal"
+                  type="text" inputMode="decimal"
                   value={form[f.key] ?? ''}
-                  onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                  onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value.replace(',', '.') }))}
                   className="input-field"
                   placeholder="—"
                   style={{ flex: 1, fontSize: '0.95rem', fontWeight: 700, padding: '8px 12px', textAlign: 'right' }}

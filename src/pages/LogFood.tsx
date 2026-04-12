@@ -117,7 +117,7 @@ export const LogFood: React.FC = () => {
   const handleEditConfirm = () => {
     if (!editingEntry) return;
     const newAmount = parseFloat(editingEntry.amount);
-    if (!newAmount || newAmount <= 0) {
+    if (!isFinite(newAmount) || newAmount <= 0) {
       setEditingEntry(prev => prev ? { ...prev, error: 'Amount must be greater than 0' } : null);
       return;
     }

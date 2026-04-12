@@ -187,9 +187,12 @@ const HealthMetricsCard: React.FC = () => {
               <div style={{ width: 80, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{m.label}</div>
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input
-                  type="number" inputMode="decimal"
+                  type="text" inputMode="numeric"
                   value={(form as any)[m.key] || ''}
-                  onChange={e => setForm(f => ({ ...f, [m.key]: parseFloat(e.target.value) || 0 }))}
+                  onChange={e => {
+                    const n = parseInt(e.target.value, 10);
+                    setForm(f => ({ ...f, [m.key]: isFinite(n) ? n : 0 }));
+                  }}
                   placeholder={m.placeholder}
                   className="input-field"
                   style={{ flex: 1, fontSize: '0.9rem', fontWeight: 700, padding: '8px 12px', textAlign: 'right' }}

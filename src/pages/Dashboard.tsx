@@ -91,8 +91,8 @@ const LogSheet: React.FC<{
         <div style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 16 }}>{labels[type]}</div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <input
-            className="input-field" type="number" inputMode="decimal"
-            value={val} onChange={e => setVal(e.target.value)}
+            className="input-field" type="text" inputMode="decimal"
+            value={val} onChange={e => setVal(e.target.value.replace(',', '.'))}
             placeholder="0"
             style={{ flex: 1, fontSize: '1.6rem', fontWeight: 900, textAlign: 'center', padding: '14px' }}
             autoFocus
