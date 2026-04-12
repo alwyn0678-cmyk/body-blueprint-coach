@@ -61,6 +61,14 @@ const getAIKey = (): string | null => {
   return runtime && runtime.trim() ? runtime.trim() : null;
 };
 
+/** Gemini 2.5 Flash includes thinking tokens as parts with `thought: true`.
+ *  Always skip those and grab the first real text part. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const extractGeminiText = (data: any): string => {
+  const parts: { thought?: boolean; text?: string }[] = data.candidates?.[0]?.content?.parts ?? [];
+  return parts.find(p => !p.thought)?.text ?? '';
+};
+
 async function geminiComplete(
   systemPrompt: string,
   userMessage: string,
@@ -103,7 +111,7 @@ async function geminiComplete(
       if (data.error.code === 429) return 'Rate limit hit. Wait 60 seconds and try again.';
       return `API error: ${data.error.message}`;
     }
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = extractGeminiText(data);
     if (!text) return 'Empty response from AI. Try again.';
     return text;
   } catch (e) {
@@ -151,7 +159,7 @@ export async function generateAffirmation(userName?: string): Promise<string> {
       }
     );
     const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    const text = extractGeminiText(data).trim();
     if (text && text.length > 10 && !text.includes('API') && !text.includes('key')) return text;
     const fb = FALLBACK_AFFIRMATIONS[_fallbackIdx % FALLBACK_AFFIRMATIONS.length];
     _fallbackIdx++;
@@ -654,7 +662,7 @@ Confidence levels: "high" = clearly identifiable food with well-known macros, "m
       return { error: `API error: ${data.error.message}` };
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    const text = extractGeminiText(data);
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return { error: 'Could not parse AI response. Try again.' };
 
@@ -733,7 +741,7 @@ Rules:
   );
 
   const data = await res.json();
-  const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+  const text: string = extractGeminiText(data).trim();
   const jsonStr = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
   return JSON.parse(jsonStr) as AIGeneratedWorkout;
 }
@@ -997,7 +1005,7 @@ Rules:
         }
       );
       const data = await res.json();
-      const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+      const text: string = extractGeminiText(data).trim();
       const jsonStr = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
       const parsed = JSON.parse(jsonStr) as PlannedDay[];
       // Ensure dessert slot exists even if AI omits it
@@ -1550,7 +1558,7 @@ Critical rules:
     throw new Error(`API error: ${data.error.message}`);
   }
 
-  const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  const text: string = extractGeminiText(data);
   const cleaned = text
     .replace(/^```json\s*/i, '')
     .replace(/^```\s*/i, '')
