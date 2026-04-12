@@ -36,10 +36,8 @@ const C = {
 // ── Local primitives ──────────────────────────────────────────────────────────
 
 const PageCard: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
-  <div style={{
-    background: C.bgCard,
+  <div className="glass-card" style={{
     borderRadius: 20,
-    border: `1px solid ${C.border}`,
     overflow: 'hidden',
     ...style,
   }}>
@@ -512,10 +510,8 @@ export const Settings: React.FC = () => {
             { label: 'Carbs',    value: user.targets.carbs,    unit: 'g',    accent: C.accentBlue },
             { label: 'Fats',     value: user.targets.fats,     unit: 'g',    accent: C.accentGreen },
           ].map(tile => (
-            <div key={tile.label} style={{
-              background: C.bgCard,
+            <div key={tile.label} className="glass-card" style={{
               borderRadius: 16,
-              border: `1px solid ${C.border}`,
               overflow: 'hidden',
               padding: 14,
             }}>

@@ -124,17 +124,23 @@
 
 [data-theme="dark"] body {
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(87,96,56,0.12) 0%, transparent 100%),
-    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(151,68,0,0.07) 0%, transparent 100%);
+    radial-gradient(ellipse 100% 60% at 50% -10%, rgba(87,96,56,0.18) 0%, transparent 65%),
+    radial-gradient(ellipse 70% 50% at 10% 30%, rgba(87,96,56,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 90% 70%, rgba(151,68,0,0.09) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 40% at 50% 100%, rgba(87,96,56,0.06) 0%, transparent 100%);
 }
 
 [data-theme="dark"] .card {
-  background: var(--bg-card);
-  border-color: var(--border-default);
-  box-shadow: 0 2px 16px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+  background: rgba(22,20,16,0.75);
+  border-color: rgba(255,255,255,0.09);
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.50),
+    0 1px 4px rgba(0,0,0,0.30),
+    inset 0 1.5px 0 rgba(255,255,255,0.07),
+    inset 0 -1px 0 rgba(0,0,0,0.25);
 }
 [data-theme="dark"] .card::after {
-  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 35%);
+  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
 }
 [data-theme="dark"] .card-elevated {
   background: var(--bg-elevated);
@@ -184,11 +190,15 @@
   box-shadow: 0 0 0 4px rgba(87,96,56,0.18);
 }
 [data-theme="dark"] .pill-tabs {
-  background: var(--bg-elevated);
-  border-color: var(--border-subtle);
+  background: rgba(22,20,16,0.72);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 [data-theme="dark"] .pill-tab.active {
-  background: var(--bg-card);
+  background: rgba(40,38,32,0.92);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.08);
 }
 [data-theme="dark"] .section-label {
   color: rgba(240,240,255,0.30);
@@ -199,12 +209,17 @@
 
 /* ── Dark: Glass cards ── */
 [data-theme="dark"] .card-glass {
-  background: rgba(28,28,40,0.95);
-  border-color: var(--border-default);
+  background: rgba(20,18,14,0.78);
+  border-color: rgba(255,255,255,0.09);
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.50),
+    inset 0 1.5px 0 rgba(255,255,255,0.07),
+    inset 0 -1px 0 rgba(0,0,0,0.25);
 }
 [data-theme="dark"] .glass-panel {
-  background: rgba(28,28,40,0.95);
-  border-color: var(--border-default);
+  background: rgba(20,18,14,0.88);
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.50);
 }
 
 /* ── Dark: Metric tile ── */
@@ -278,8 +293,10 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(87,96,56,0.07) 0%, transparent 100%),
-    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(151,68,0,0.04) 0%, transparent 100%);
+    radial-gradient(ellipse 100% 60% at 50% -10%, rgba(87,96,56,0.10) 0%, transparent 65%),
+    radial-gradient(ellipse 70% 50% at 10% 30%, rgba(139,148,103,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 90% 70%, rgba(151,68,0,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 40% at 50% 100%, rgba(87,96,56,0.04) 0%, transparent 100%);
 }
 
 /* Subtle grain texture overlay */
@@ -410,18 +427,24 @@ h1, h2, h3, h4, h5, h6 {
    ═══════════════════════════════════════════════════════════════════ */
 
 .card {
-  background: var(--bg-card);
+  background: rgba(255,255,255,0.78);
+  backdrop-filter: blur(28px) saturate(1.6);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
   border-radius: var(--radius-xl);
-  border: 1px solid rgba(0,0,0,0.07);
+  border: 1px solid rgba(255,255,255,0.85);
   overflow: hidden;
   position: relative;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03);
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.07),
+    0 1px 4px rgba(0,0,0,0.04),
+    inset 0 1.5px 0 rgba(255,255,255,0.95),
+    inset 0 -1px 0 rgba(0,0,0,0.02);
 }
 .card::after {
   content: '';
-  position: absolute; inset: 0;
+  position: absolute; top: 0; left: 0; right: 0; height: 42%;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 35%);
+  background: linear-gradient(180deg, rgba(255,255,255,0.42) 0%, transparent 100%);
   pointer-events: none; z-index: 1;
 }
 
@@ -434,11 +457,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .card-glass {
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(24px) saturate(1.5);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(40px) saturate(1.8) brightness(1.02);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8) brightness(1.02);
+  border: 1px solid rgba(255,255,255,0.88);
   border-radius: var(--radius-lg);
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.07),
+    inset 0 1.5px 0 rgba(255,255,255,0.96),
+    inset 0 -1px 0 rgba(0,0,0,0.03);
 }
 
 .card-interactive {
@@ -745,6 +772,13 @@ button:focus:not(:focus-visible) { outline: none; }
 .animate-slide-down { animation: slideDown 0.25s ease-out both; }
 .animate-slide-in   { animation: slideIn 0.3s cubic-bezier(0.16,1,0.3,1) both; }
 .animate-scale-in   { animation: scaleIn 0.2s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* Page tab content entrance — silky smooth */
+@keyframes tabEnter {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.99); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.tab-enter { animation: tabEnter 0.28s cubic-bezier(0.16,1,0.3,1) both; }
 .animate-shimmer   { animation: shimmer 1.5s ease-in-out infinite; }
 .animate-pulse     { animation: pulseGlow 2s infinite; }
 .animate-spin      { animation: spin 0.8s linear infinite; }
@@ -1048,9 +1082,12 @@ button:focus:not(:focus-visible) { outline: none; }
    ═══════════════════════════════════════════════════════════════════ */
 .pill-tabs {
   display: flex; gap: 3px;
-  background: rgba(0,0,0,0.06);
-  border: 1px solid rgba(0,0,0,0.07);
+  background: rgba(255,255,255,0.52);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,0.75);
   border-radius: 16px; padding: 3px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9);
 }
 .pill-tab {
   flex: 1; padding: 9px 12px; border: none; border-radius: 13px;
@@ -1060,9 +1097,12 @@ button:focus:not(:focus-visible) { outline: none; }
   letter-spacing: 0.02em;
 }
 .pill-tab.active {
-  background: #FFFFFF;
+  background: rgba(255,255,255,0.92);
   color: var(--text-primary);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04);
+  box-shadow:
+    0 2px 10px rgba(0,0,0,0.10),
+    0 1px 3px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.98);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -1141,6 +1181,116 @@ button:focus:not(:focus-visible) { outline: none; }
 .glow-green  { box-shadow: 0 0 20px rgba(87,96,56,0.20),    0 0 60px rgba(87,96,56,0.08); }
 .glow-coach  { box-shadow: 0 0 20px rgba(87,96,56,0.22),    0 0 60px rgba(87,96,56,0.08); }
 .glow-amber  { box-shadow: 0 0 20px rgba(151,68,0,0.18),    0 0 60px rgba(151,68,0,0.06); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   iOS LIQUID GLASS SYSTEM — primary glass classes
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Core iOS glass — use this for cards, panels, overlays */
+.glass-card {
+  background: rgba(255,255,255,0.68);
+  backdrop-filter: blur(40px) saturate(1.8) brightness(1.02);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8) brightness(1.02);
+  border: 1px solid rgba(255,255,255,0.82);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 8px 40px rgba(0,0,0,0.08),
+    0 2px 8px rgba(0,0,0,0.04),
+    inset 0 1.5px 0 rgba(255,255,255,0.95),
+    inset 0 -1px 0 rgba(0,0,0,0.03);
+  position: relative;
+  overflow: hidden;
+}
+/* Light refraction shimmer on top */
+.glass-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 40%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.38) 0%, transparent 100%);
+  pointer-events: none; border-radius: inherit; z-index: 1;
+}
+
+/* Warm brand-tinted glass */
+.glass-card-warm {
+  background: rgba(245,242,234,0.72);
+  backdrop-filter: blur(40px) saturate(1.8);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  border: 1px solid rgba(87,96,56,0.18);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 8px 40px rgba(87,96,56,0.10),
+    0 2px 8px rgba(0,0,0,0.04),
+    inset 0 1.5px 0 rgba(255,255,255,0.90);
+  position: relative; overflow: hidden;
+}
+.glass-card-warm::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 35%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.30) 0%, transparent 100%);
+  pointer-events: none; border-radius: inherit; z-index: 1;
+}
+
+/* Smaller glass pill / badge / row */
+.glass-row {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.80);
+  border-radius: 16px;
+  box-shadow:
+    0 2px 12px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.95),
+    inset 0 -1px 0 rgba(0,0,0,0.02);
+}
+
+/* Glass badge / pill */
+.glass-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.85);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9);
+  font-size: 0.65rem; font-weight: 800;
+}
+
+/* Macro pill variants */
+.macro-pill-protein { background: rgba(252,154,119,0.18); border: 1px solid rgba(252,154,119,0.35); color: #C05200; }
+.macro-pill-carbs   { background: rgba(194,203,154,0.20); border: 1px solid rgba(194,203,154,0.40); color: #576038; }
+.macro-pill-fats    { background: rgba(139,148,103,0.18); border: 1px solid rgba(139,148,103,0.35); color: #3E4528; }
+.macro-pill-cal     { background: rgba(151,68,0,0.12);   border: 1px solid rgba(151,68,0,0.25);    color: #974400; }
+
+/* Dark mode glass */
+[data-theme="dark"] .glass-card {
+  background: rgba(22,20,16,0.75);
+  border-color: rgba(255,255,255,0.09);
+  box-shadow:
+    0 8px 40px rgba(0,0,0,0.50),
+    0 2px 8px rgba(0,0,0,0.30),
+    inset 0 1.5px 0 rgba(255,255,255,0.08),
+    inset 0 -1px 0 rgba(0,0,0,0.25);
+}
+[data-theme="dark"] .glass-card::before {
+  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+}
+[data-theme="dark"] .glass-card-warm {
+  background: rgba(30,28,20,0.78);
+  border-color: rgba(87,96,56,0.22);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.50), inset 0 1.5px 0 rgba(255,255,255,0.07);
+}
+[data-theme="dark"] .glass-row {
+  background: rgba(30,28,20,0.75);
+  border-color: rgba(255,255,255,0.07);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+[data-theme="dark"] .glass-badge {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.13);
+}
+[data-theme="dark"] .macro-pill-protein { background: rgba(252,154,119,0.15); border-color: rgba(252,154,119,0.25); color: #FC9A77; }
+[data-theme="dark"] .macro-pill-carbs   { background: rgba(194,203,154,0.15); border-color: rgba(194,203,154,0.25); color: #C2CB9A; }
+[data-theme="dark"] .macro-pill-fats    { background: rgba(139,148,103,0.15); border-color: rgba(139,148,103,0.25); color: #8B9467; }
+[data-theme="dark"] .macro-pill-cal     { background: rgba(151,68,0,0.18);    border-color: rgba(151,68,0,0.30);    color: #D4732A; }
 
 /* Frosted glass panel */
 .glass-panel {
@@ -1295,10 +1445,68 @@ textarea:focus-visible {
    ═══════════════════════════════════════════════════════════════════ */
 @media (hover: hover) {
   .card-interactive:hover {
-    box-shadow: 0 6px 28px rgba(26,28,26,0.10);
+    box-shadow: 0 8px 36px rgba(26,28,26,0.12);
+    transform: translateY(-2px);
+    transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+  .glass-card:hover {
+    box-shadow:
+      0 12px 48px rgba(0,0,0,0.10),
+      0 4px 12px rgba(0,0,0,0.05),
+      inset 0 1.5px 0 rgba(255,255,255,0.98),
+      inset 0 -1px 0 rgba(0,0,0,0.02);
     transform: translateY(-1px);
     transition: transform 200ms ease, box-shadow 200ms ease;
   }
   .btn-primary:hover  { box-shadow: 0 6px 28px rgba(87,96,56,0.45); }
   .btn-green:hover    { box-shadow: 0 6px 24px rgba(87,96,56,0.38); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FOOD LOG ITEM CARDS
+   ═══════════════════════════════════════════════════════════════════ */
+.food-item-card {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px;
+  margin: 4px 0;
+  background: rgba(255,255,255,0.70);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,0.85);
+  border-radius: 14px;
+  box-shadow:
+    0 2px 10px rgba(0,0,0,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.95),
+    inset 0 -1px 0 rgba(0,0,0,0.02);
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.food-item-card:active {
+  transform: scale(0.975);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+[data-theme="dark"] .food-item-card {
+  background: rgba(28,26,20,0.78);
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Meal section card */
+.meal-section-card {
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(32px) saturate(1.7);
+  -webkit-backdrop-filter: blur(32px) saturate(1.7);
+  border: 1px solid rgba(255,255,255,0.82);
+  border-radius: 20px;
+  box-shadow:
+    0 4px 20px rgba(0,0,0,0.06),
+    0 1px 4px rgba(0,0,0,0.03),
+    inset 0 1.5px 0 rgba(255,255,255,0.96),
+    inset 0 -1px 0 rgba(0,0,0,0.02);
+  overflow: hidden;
+}
+[data-theme="dark"] .meal-section-card {
+  background: rgba(22,20,16,0.78);
+  border-color: rgba(255,255,255,0.09);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.45), inset 0 1.5px 0 rgba(255,255,255,0.07);
 }

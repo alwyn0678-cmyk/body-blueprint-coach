@@ -26,43 +26,51 @@ export const TopBar: React.FC = () => {
       position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
       width: '100%', maxWidth: 480,
       zIndex: 50,
-      background: 'rgba(250,249,246,0.75)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
+      background: 'rgba(250,249,246,0.72)',
+      backdropFilter: 'blur(40px) saturate(1.8)',
+      WebkitBackdropFilter: 'blur(40px) saturate(1.8)',
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      padding: '0 24px', height: 64,
-      borderBottom: '1px solid rgba(87,96,56,0.06)',
+      padding: '0 20px', height: 64,
+      borderBottom: '1px solid rgba(255,255,255,0.65)',
+      boxShadow: '0 1px 0 rgba(87,96,56,0.06), 0 4px 20px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.85)',
     }}>
       {/* Left: avatar + brand */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{
-          width: 36, height: 36, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #576038, #974400)',
+          width: 34, height: 34, borderRadius: 10,
+          background: 'linear-gradient(135deg, #576038, #8B9467)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '0.75rem', fontWeight: 900, color: '#fff',
+          fontSize: '0.72rem', fontWeight: 900, color: '#fff',
           flexShrink: 0,
+          boxShadow: '0 2px 8px rgba(87,96,56,0.35), inset 0 1px 0 rgba(255,255,255,0.20)',
         }}>
           {initials}
         </div>
         <span style={{
-          fontFamily: 'var(--font-sans)', fontSize: '1.2rem', fontWeight: 900,
-          color: '#576038', letterSpacing: '0.18em',
+          fontFamily: 'var(--font-sans)', fontSize: '1.05rem', fontWeight: 900,
+          color: '#576038', letterSpacing: '0.20em',
         }}>
           VITALITY
         </span>
       </div>
 
-      {/* Right: settings */}
+      {/* Right: settings — glass icon button */}
       <button
         onClick={() => navigate('/settings')}
         style={{
-          background: 'none', border: 'none', cursor: 'pointer', padding: 6,
-          color: '#576038', opacity: 0.85,
-          transition: 'opacity 0.15s',
+          width: 36, height: 36, borderRadius: 10,
+          background: 'rgba(255,255,255,0.70)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,0.82)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.95)',
+          cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#576038',
+          transition: 'transform 100ms ease, box-shadow 100ms ease',
         }}
       >
-        <Settings size={22} strokeWidth={1.8} />
+        <Settings size={18} strokeWidth={1.8} />
       </button>
     </header>
   );
@@ -75,12 +83,12 @@ export const Header: React.FC = () => {
       position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
       width: '100%', maxWidth: 480,
       display: 'flex', justifyContent: 'space-around', alignItems: 'center',
-      padding: '10px 16px',
-      paddingBottom: `calc(20px + env(safe-area-inset-bottom))`,
-      background: 'rgba(250,249,246,0.80)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      boxShadow: '0 -12px 40px rgba(26,28,26,0.06)',
+      padding: '10px 12px',
+      paddingBottom: `calc(18px + env(safe-area-inset-bottom))`,
+      background: 'rgba(250,249,246,0.78)',
+      backdropFilter: 'blur(40px) saturate(1.8)',
+      WebkitBackdropFilter: 'blur(40px) saturate(1.8)',
+      boxShadow: '0 -1px 0 rgba(255,255,255,0.70), 0 -4px 20px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.90)',
       borderTop: '1px solid rgba(87,96,56,0.06)',
       zIndex: 50,
     }}>
@@ -89,26 +97,31 @@ export const Header: React.FC = () => {
           {({ isActive }) => (
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              padding: isActive ? '7px 10px' : '7px 7px',
-              borderRadius: 9999,
-              background: isActive ? '#576038' : 'transparent',
-              transition: 'all 0.2s ease',
-              transform: isActive ? 'scale(1.05)' : 'scale(1)',
+              padding: isActive ? '8px 14px' : '7px 10px',
+              borderRadius: 14,
+              background: isActive
+                ? 'linear-gradient(145deg, #576038, #3E4528)'
+                : 'transparent',
+              boxShadow: isActive
+                ? '0 3px 12px rgba(87,96,56,0.35), inset 0 1px 0 rgba(255,255,255,0.18)'
+                : 'none',
+              transition: 'all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+              transform: isActive ? 'scale(1.06)' : 'scale(1)',
               gap: 3,
             }}
-              onTouchStart={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(87,96,56,0.08)'; }}
+              onTouchStart={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(87,96,56,0.07)'; }}
               onTouchEnd={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
             >
               <Icon
                 size={18}
-                strokeWidth={isActive ? 2.2 : 1.6}
-                style={{ color: isActive ? '#FAF9F6' : '#46483d' }}
+                strokeWidth={isActive ? 2.3 : 1.6}
+                style={{ color: isActive ? '#FAF9F6' : '#576038' }}
               />
               <span style={{
-                fontSize: '0.5rem', fontWeight: 800,
-                letterSpacing: '0.08em', textTransform: 'uppercase',
-                color: isActive ? '#FAF9F6' : '#46483d',
-                lineHeight: 1,
+                fontSize: '0.48rem', fontWeight: 900,
+                letterSpacing: '0.10em', textTransform: 'uppercase',
+                color: isActive ? '#FAF9F6' : '#576038',
+                lineHeight: 1, opacity: isActive ? 1 : 0.65,
               }}>
                 {label}
               </span>

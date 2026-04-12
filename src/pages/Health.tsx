@@ -301,8 +301,7 @@ export const Health: React.FC = () => {
 
       {/* ── Empty state ── */}
       {!hasEverLoggedVitals && (
-        <div style={{
-          background: C.bgCard,
+        <div className="glass-card" style={{
           borderRadius: 20,
           border: '1px dashed rgba(0,0,0,0.08)',
           padding: '2rem 1.5rem',
@@ -332,8 +331,7 @@ export const Health: React.FC = () => {
 
       {/* ══ 1. RECOVERY SCORE HERO ══════════════════════════════════════════ */}
       {health.recoveryScore != null && (
-        <div style={{
-          background: C.bgCard,
+        <div className="glass-card" style={{
           borderRadius: 24,
           border: `1px solid ${recInfo ? recInfo.color + '30' : C.border}`,
           padding: 24,
@@ -431,13 +429,12 @@ export const Health: React.FC = () => {
           <SecLabel text="Log Morning Vitals" />
           <button
             onClick={openVitals}
+            className="glass-card"
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               width: '100%',
-              background: C.bgCard,
-              border: `1px solid ${C.border}`,
               borderRadius: 20,
               padding: '16px 18px',
               cursor: 'pointer',
@@ -466,10 +463,8 @@ export const Health: React.FC = () => {
       {hasTrendData && (
         <div>
           <SecLabel text="14-Day Recovery Trend" />
-          <div style={{
-            background: C.bgCard,
+          <div className="glass-card" style={{
             borderRadius: 20,
-            border: `1px solid ${C.border}`,
             padding: '16px',
             position: 'relative',
             overflow: 'hidden',
@@ -517,7 +512,7 @@ export const Health: React.FC = () => {
           { label: 'Training Load', value: Math.min(100, Math.max(0, loadScore)), weight: hasHrv ? '20%' : '35%', color: '#974400' },
         ];
         return (
-          <div style={{ background: C.bgCard, borderRadius: 20, border: `1px solid ${C.border}`, padding: '16px 18px' }}>
+          <div className="glass-card" style={{ borderRadius: 20, padding: '16px 18px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <div style={{ padding: 6, borderRadius: 9, background: 'rgba(0,0,0,0.05)' }}>
                 <Brain size={14} color="rgba(0,0,0,0.35)" />
@@ -546,7 +541,7 @@ export const Health: React.FC = () => {
       {recentLogs.length > 0 && (
         <div>
           <SecLabel text="Recent Vitals" />
-          <div style={{ background: C.bgCard, borderRadius: 20, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
+          <div className="glass-card" style={{ borderRadius: 20, overflow: 'hidden' }}>
             {recentLogs.map((entry, i) => {
               const score = entry.health.recoveryScore ?? 0;
               const info = recoveryLabel(score);
@@ -616,7 +611,7 @@ export const Health: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
               {/* Sleep card */}
-              <div style={{ background: C.bgCard, borderRadius: 20, padding: '1.25rem', border: `1px solid ${C.border}` }}>
+              <div className="glass-card" style={{ borderRadius: 20, padding: '1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                   <div style={{ padding: 6, borderRadius: 9, background: 'rgba(87,96,56,0.10)' }}>
                     <Moon size={15} color="#576038" />
@@ -650,7 +645,7 @@ export const Health: React.FC = () => {
               </div>
 
               {/* HRV card */}
-              <div style={{ background: C.bgCard, borderRadius: 20, padding: '1.25rem', border: `1px solid ${hrvError ? 'rgba(248,113,113,0.4)' : C.border}` }}>
+              <div className="glass-card" style={{ borderRadius: 20, padding: '1.25rem', border: `1px solid ${hrvError ? 'rgba(248,113,113,0.4)' : 'transparent'}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                   <div style={{ padding: 6, borderRadius: 9, background: 'rgba(139,148,103,0.12)' }}>
                     <Activity size={15} color="#8B9467" />
@@ -675,7 +670,7 @@ export const Health: React.FC = () => {
               </div>
 
               {/* RHR card */}
-              <div style={{ background: C.bgCard, borderRadius: 20, padding: '1.25rem', border: `1px solid ${rhrError ? 'rgba(248,113,113,0.4)' : C.border}` }}>
+              <div className="glass-card" style={{ borderRadius: 20, padding: '1.25rem', border: `1px solid ${rhrError ? 'rgba(248,113,113,0.4)' : 'transparent'}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                   <div style={{ padding: 6, borderRadius: 9, background: 'rgba(151,68,0,0.10)' }}>
                     <Zap size={15} color="#974400" />

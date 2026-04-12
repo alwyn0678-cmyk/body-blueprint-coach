@@ -412,10 +412,9 @@ const WorkoutSummaryScreen: React.FC<{
             { label: 'Volume', value: summary.totalVolume > 1000 ? `${(summary.totalVolume / 1000).toFixed(1)}k` : String(Math.round(summary.totalVolume)), sub: 'kg', color: '#974400', icon: <BarChart2 size={14} color="#974400" /> },
             { label: 'PRs', value: String(summary.prCount), color: '#974400', icon: <Award size={14} color="#974400" /> },
           ].map(s => (
-            <div key={s.label} style={{
-              background: 'var(--bg-card)',
+            <div key={s.label} className="glass-card" style={{
               borderRadius: 18, padding: '16px 8px',
-              border: '1px solid rgba(0,0,0,0.05)', textAlign: 'center',
+              textAlign: 'center',
               position: 'relative', overflow: 'hidden',
             }}>
               <div style={{ marginBottom: 6 }}>{s.icon}</div>
@@ -494,11 +493,10 @@ const WorkoutSummaryScreen: React.FC<{
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {summary.exercises.map((ex, i) => (
-              <div key={i} style={{
+              <div key={i} className="glass-card" style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '12px 14px',
-                background: 'var(--bg-card)',
-                border: `1px solid ${ex.isPR ? 'rgba(151,68,0,0.22)' : 'rgba(0,0,0,0.05)'}`,
+                border: `1px solid ${ex.isPR ? 'rgba(151,68,0,0.22)' : 'transparent'}`,
                 borderRadius: 14,
               }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1625,9 +1623,10 @@ const TemplateLibraryModal: React.FC<{
                   <button
                     key={tpl.id}
                     onClick={() => setSelected(tpl)}
+                    className="glass-card"
                     style={{
-                      textAlign: 'left', padding: '16px', background: 'white',
-                      border: '1px solid rgba(0,0,0,0.06)', borderRadius: 18,
+                      textAlign: 'left', padding: '16px',
+                      borderRadius: 18,
                       cursor: 'pointer', position: 'relative', overflow: 'hidden',
                     }}
                   >
@@ -1655,7 +1654,7 @@ const TemplateLibraryModal: React.FC<{
                 ← Back to templates
               </button>
 
-              <div style={{ borderRadius: 18, background: 'white', border: '1px solid rgba(0,0,0,0.06)', padding: '16px' }}>
+              <div className="glass-card" style={{ borderRadius: 18, padding: '16px' }}>
                 <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1.2rem', letterSpacing: '-0.02em', marginBottom: 4 }}>{selected.name}</div>
                 <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(0,0,0,0.32)', marginBottom: 10 }}>
                   {DIFFICULTY_BADGE[selected.difficulty]} · {selected.daysPerWeek} days/week · {selected.sessionDuration}
@@ -1665,7 +1664,7 @@ const TemplateLibraryModal: React.FC<{
 
               {/* Day previews */}
               {selected.program.days.map(day => (
-                <div key={day.id} style={{ borderRadius: 14, background: 'white', border: '1px solid rgba(0,0,0,0.05)', padding: '12px 14px' }}>
+                <div key={day.id} className="glass-card" style={{ borderRadius: 14, padding: '12px 14px' }}>
                   <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)', marginBottom: 6 }}>
                     Day {day.dayNumber}: {day.name}
                     {day.focus && <span style={{ fontWeight: 600, fontSize: '0.72rem', color: 'rgba(0,0,0,0.35)', marginLeft: 8 }}>{day.focus}</span>}
@@ -2324,9 +2323,8 @@ export const Training: React.FC = () => {
 
         {/* Custom session options */}
         {showCustomOptions && (
-          <div style={{
-            background: 'var(--bg-card)',
-            border: '1px solid rgba(0,0,0,0.06)', borderRadius: 22, overflow: 'hidden',
+          <div className="glass-card" style={{
+            borderRadius: 22, overflow: 'hidden',
           }}>
             <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2538,9 +2536,9 @@ export const Training: React.FC = () => {
         {/* AI Coach card */}
         <button
           onClick={() => setShowAIBuilder(true)}
+          className="glass-card"
           style={{
             width: '100%', padding: '16px 20px',
-            background: 'var(--bg-card)',
             border: '1px solid rgba(87,96,56,0.18)', borderRadius: 20,
             cursor: 'pointer', textAlign: 'left',
             display: 'flex', alignItems: 'center', gap: 14,
@@ -2569,9 +2567,8 @@ export const Training: React.FC = () => {
         </button>
 
         {/* Week progress */}
-        <div style={{
-          background: 'var(--bg-card)',
-          border: '1px solid rgba(0,0,0,0.05)', borderRadius: 22, padding: '16px 20px',
+        <div className="glass-card" style={{
+          borderRadius: 22, padding: '16px 20px',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.16)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>This Week</span>
@@ -2632,10 +2629,9 @@ export const Training: React.FC = () => {
               { label: 'Last', value: recentWorkouts[0] ? `${recentWorkouts[0].durationMinutes}m` : '—', sub: 'duration', color: '#576038', icon: <Timer size={14} color="#576038" /> },
               { label: 'PRs', value: String(prsThisMonth), sub: 'this month', color: '#974400', icon: <Award size={14} color="#974400" /> },
             ].map(stat => (
-              <div key={stat.label} style={{
-                background: 'var(--bg-card)',
+              <div key={stat.label} className="glass-card" style={{
                 borderRadius: 16, padding: '12px 8px',
-                border: '1px solid rgba(0,0,0,0.05)', textAlign: 'center',
+                textAlign: 'center',
                 position: 'relative', overflow: 'hidden',
               }}>
                 <div style={{ position: 'absolute', top: -10, right: -10, width: 40, height: 40, borderRadius: '50%', background: `${stat.color}08`, filter: 'blur(15px)' }} />
@@ -2648,9 +2644,8 @@ export const Training: React.FC = () => {
         )}
 
         {/* Volume Chart — last 7 days */}
-        <div style={{
-          background: 'var(--bg-card)',
-          border: '1px solid rgba(0,0,0,0.05)', borderRadius: 22, padding: '16px 20px',
+        <div className="glass-card" style={{
+          borderRadius: 22, padding: '16px 20px',
         }}>
           <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
@@ -2686,8 +2681,7 @@ export const Training: React.FC = () => {
           </div>
 
           {recentWorkouts.length === 0 ? (
-            <div style={{
-              background: 'var(--bg-card)',
+            <div className="glass-card" style={{
               border: '1.5px dashed rgba(0,0,0,0.06)', borderRadius: 20,
               padding: '2.5rem', textAlign: 'center',
             }}>
@@ -2708,9 +2702,8 @@ export const Training: React.FC = () => {
                 const isExpanded = expandedWorkout === workout.id;
 
                 return (
-                  <div key={workout.id} style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid rgba(0,0,0,0.05)', borderRadius: 18,
+                  <div key={workout.id} className="glass-card" style={{
+                    borderRadius: 18,
                     overflow: 'hidden',
                     transition: 'all 0.2s',
                   }}>

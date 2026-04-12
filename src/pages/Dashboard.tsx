@@ -328,7 +328,7 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Protein */}
-          <div style={{ borderRadius: 24, padding: '20px', background: '#FFFFFF', boxShadow: '0 12px 40px rgba(26,28,26,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="glass-card" style={{ borderRadius: 24, padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <Dumbbell size={20} style={{ color: '#576038' }} strokeWidth={1.8} />
               <span style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(86,67,56,0.5)' }}>Protein</span>
@@ -344,7 +344,7 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Exercise */}
-          <div style={{ borderRadius: 24, padding: '20px', background: '#FFFFFF', boxShadow: '0 12px 40px rgba(26,28,26,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="glass-card" style={{ borderRadius: 24, padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <Activity size={20} style={{ color: '#576038' }} strokeWidth={1.8} />
               <span style={{ fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(86,67,56,0.5)' }}>Exercise</span>
@@ -362,9 +362,9 @@ export const Dashboard: React.FC = () => {
           {/* Steps — full width */}
           <div
             onClick={() => setActiveSheet('steps')}
+            className="glass-card"
             style={{
               gridColumn: '1 / -1', borderRadius: 24, padding: '18px 22px',
-              background: '#FFFFFF', boxShadow: '0 12px 40px rgba(26,28,26,0.06)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               cursor: 'pointer',
             }}
@@ -394,7 +394,8 @@ export const Dashboard: React.FC = () => {
             { key: 'weight' as const, Icon: TrendingUp, label: 'Weight', value: log?.weight ?? user.weight, unit: units === 'imperial' ? 'lbs' : 'kg' },
           ]).map(({ key, Icon, label, value, unit }) => (
             <div key={key} onClick={() => setActiveSheet(key)}
-              style={{ borderRadius: 24, padding: '18px 20px', background: '#F4F3F1', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+              className="glass-card"
+              style={{ borderRadius: 24, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon size={18} style={{ color: '#576038' }} strokeWidth={1.8} />
               </div>
@@ -421,11 +422,11 @@ export const Dashboard: React.FC = () => {
           </div>
           <div
             onClick={() => navigate('/training')}
+            className="glass-card"
             style={{
               borderRadius: 24, padding: '20px 22px',
-              background: '#FFFFFF', boxShadow: '0 12px 40px rgba(26,28,26,0.06)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              cursor: 'pointer', border: '1px solid rgba(87,96,56,0.08)',
+              cursor: 'pointer',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -542,9 +543,9 @@ export const Dashboard: React.FC = () => {
                 <div
                   key={i}
                   onClick={() => navigate('/training')}
+                  className="glass-card"
                   style={{
                     borderRadius: 20, padding: '16px 18px',
-                    background: '#F4F3F1',
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     cursor: 'pointer',
                   }}

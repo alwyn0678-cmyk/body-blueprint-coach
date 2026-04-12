@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTabPersist } from '../hooks/useTabPersist';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
@@ -202,7 +203,7 @@ export const Progress: React.FC = () => {
   const { state, addMeasurement, deleteMeasurement, showToast } = useApp();
   const user = state.user!;
 
-  const [activeTab, setActiveTab] = useState<'weight' | 'nutrition' | 'body' | 'strength'>('weight');
+  const [activeTab, setActiveTab] = useTabPersist<'weight' | 'nutrition' | 'body' | 'strength'>('progress', 'weight');
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<Timeframe>('1M');
   const [showMeasure, setShowMeasure] = useState(false);

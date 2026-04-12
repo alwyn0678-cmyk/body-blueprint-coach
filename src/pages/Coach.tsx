@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import { useTabPersist } from '../hooks/useTabPersist';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain, CheckCircle2, ChevronDown, ChevronUp,
@@ -315,7 +316,7 @@ export const Coach: React.FC = () => {
   const { state, dismissCoachInsight, saveWeeklyCheckIn, addCoachInsight, showToast, saveDailyCheckIn } = useApp();
   const user = state.user!;
 
-  const [activeTab, setActiveTab] = useState<'insights' | 'chat' | 'checkin' | 'plan'>('insights');
+  const [activeTab, setActiveTab] = useTabPersist<'insights' | 'chat' | 'checkin' | 'plan'>('coach', 'insights');
   const [weeklyLoading, setWeeklyLoading] = useState(false);
 
   // ── Daily Check-In state ───────────────────────────────────────────────────

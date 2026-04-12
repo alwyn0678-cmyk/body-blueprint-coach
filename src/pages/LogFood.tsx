@@ -202,10 +202,7 @@ export const LogFood: React.FC = () => {
   };
 
   const cardBase: React.CSSProperties = {
-    background: 'var(--bg-card)',
-    borderRadius: '20px',
-    border: '1px solid rgba(0,0,0,0.05)',
-    boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.03)',
+    // glass styles applied via className="meal-section-card"
     overflow: 'hidden',
   };
 
@@ -222,10 +219,11 @@ export const LogFood: React.FC = () => {
     return (
       <div
         key={mealType}
+        className="meal-section-card"
         style={{
           ...cardBase,
-          borderLeft: isExpanded && hasItems ? '3px solid rgba(87,96,56,0.35)' : undefined,
-          transition: 'border 0.2s ease',
+          borderLeft: isExpanded && hasItems ? '3px solid rgba(87,96,56,0.40)' : undefined,
+          transition: 'border-left 0.2s ease',
         }}
       >
         {/* Card Header */}
@@ -237,13 +235,16 @@ export const LogFood: React.FC = () => {
           onClick={() => setExpandedMeals(prev => ({ ...prev, [mealType]: !prev[mealType] }))}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-            {/* Meal icon */}
+            {/* Meal icon — glass badge */}
             <div style={{
-              fontSize: '1.1rem', width: 36, height: 36,
-              backgroundColor: 'rgba(0,0,0,0.04)',
-              borderRadius: '10px',
+              fontSize: '1.15rem', width: 40, height: 40,
+              background: 'rgba(255,255,255,0.72)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              borderRadius: '12px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              border: '1px solid rgba(0,0,0,0.04)',
+              border: '1px solid rgba(255,255,255,0.88)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.95)',
             }}>
               {MEAL_ICONS[mealType]}
             </div>
@@ -302,7 +303,7 @@ export const LogFood: React.FC = () => {
 
         {/* Expanded content */}
         {isExpanded && (
-          <div style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.45)' }}>
 
             {/* Empty state */}
             {items.length === 0 && (
@@ -322,7 +323,7 @@ export const LogFood: React.FC = () => {
 
             {/* Food entries */}
             {items.length > 0 && (
-              <div style={{ padding: '0.4rem 0.75rem 0' }}>
+              <div style={{ padding: '6px 10px 2px' }}>
                 {items.map((item, idx) => {
                   const isEditing = editingEntry?.id === item.id;
                   const hasError = editingEntry?.id === item.id && !!editingEntry?.error;
@@ -343,10 +344,7 @@ export const LogFood: React.FC = () => {
                         handleDeleteEntry(mealType, item.id, item.foodName, food, item.amount);
                       }}
                     >
-                      {/* Thin divider between entries (not above first) */}
-                      {idx > 0 && !isEditing && (
-                        <div style={{ height: '1px', backgroundColor: 'rgba(0,0,0,0.03)', margin: '0 0.25rem' }} />
-                      )}
+                      {/* Space handled by glass card margin — no divider needed */}
 
                       {isEditing ? (
                         <div style={{ marginBottom: '4px', paddingTop: idx > 0 ? '4px' : 0 }}>
@@ -398,35 +396,63 @@ export const LogFood: React.FC = () => {
                           )}
                         </div>
                       ) : (
+                        /* ── Glass food item card ── */
                         <div
-                          style={{
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '0.55rem 0.25rem', cursor: 'pointer',
-                          }}
+                          className="food-item-card"
                           onClick={() => setEditingEntry({ id: item.id, mealType, amount: String(item.amount) })}
                         >
+                          {/* Left: name + macro pills */}
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.87rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+                            <div style={{
+                              fontSize: '0.86rem', fontWeight: 700,
+                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                              color: 'var(--text-primary)', marginBottom: 5,
+                            }}>
                               {item.foodName}
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
-                              <span style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.20)', fontWeight: 600 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                              <span style={{
+                                fontSize: '0.6rem', fontWeight: 700,
+                                color: 'var(--text-tertiary)',
+                                background: 'rgba(0,0,0,0.05)',
+                                padding: '2px 6px', borderRadius: 6,
+                              }}>
                                 {Math.round(item.amount * item.servingSize)}{item.servingUnit}
                               </span>
-                              <span style={{ fontSize: '0.5rem', color: 'rgba(0,0,0,0.08)' }}>·</span>
-                              <span style={{ fontSize: '0.63rem', fontWeight: 700, color: 'var(--color-protein)', fontVariantNumeric: 'tabular-nums' }}>
+                              <span className="glass-badge macro-pill-protein" style={{ fontSize: '0.6rem', fontWeight: 800, padding: '2px 7px' }}>
                                 {Math.round(item.nutrition.protein * item.amount)}P
+                              </span>
+                              <span className="glass-badge macro-pill-carbs" style={{ fontSize: '0.6rem', fontWeight: 800, padding: '2px 7px' }}>
+                                {Math.round(item.nutrition.carbs * item.amount)}C
+                              </span>
+                              <span className="glass-badge macro-pill-fats" style={{ fontSize: '0.6rem', fontWeight: 800, padding: '2px 7px' }}>
+                                {Math.round(item.nutrition.fats * item.amount)}F
                               </span>
                             </div>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, paddingLeft: '8px' }}>
+
+                          {/* Right: calories + edit icon */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, paddingLeft: '10px' }}>
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '0.92rem', fontWeight: 900, fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                              <div style={{
+                                fontSize: '1.05rem', fontWeight: 900,
+                                fontVariantNumeric: 'tabular-nums',
+                                color: 'var(--accent-orange)',
+                                letterSpacing: '-0.02em', lineHeight: 1,
+                              }}>
                                 {Math.round(item.nutrition.calories * item.amount)}
                               </div>
-                              <div style={{ fontSize: '0.55rem', color: 'rgba(0,0,0,0.14)', fontWeight: 700 }}>kcal</div>
+                              <div style={{ fontSize: '0.52rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>kcal</div>
                             </div>
-                            <Pencil size={11} color="rgba(0,0,0,0.10)" />
+                            <div style={{
+                              width: 26, height: 26, borderRadius: 8,
+                              background: 'rgba(87,96,56,0.08)',
+                              border: '1px solid rgba(87,96,56,0.14)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                              <Pencil size={11} color="var(--accent-primary)" />
+                            </div>
                           </div>
                         </div>
                       )}
@@ -444,12 +470,14 @@ export const LogFood: React.FC = () => {
                   style={{
                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     gap: '6px', padding: '0.7rem',
-                    color: '#fff', background: 'rgba(87,96,56,0.12)',
-                    border: '1px solid rgba(87,96,56,0.22)',
+                    background: 'linear-gradient(135deg, #576038, #8B9467)',
+                    border: 'none',
                     borderRadius: '14px', fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer',
+                    color: '#fff',
+                    boxShadow: '0 3px 12px rgba(87,96,56,0.30), inset 0 1px 0 rgba(255,255,255,0.15)',
                   }}
                 >
-                  <Plus size={15} color="var(--accent-blue)" /> Add Food
+                  <Plus size={15} color="#fff" /> Add Food
                 </button>
                 {state.savedMeals.length > 0 && (
                   <button
@@ -702,23 +730,22 @@ export const LogFood: React.FC = () => {
 
         {/* ── Undo delete banner ── */}
         {pendingDelete && (
-          <div style={{
+          <div className="glass-card" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '0.65rem 0.9rem',
-            backgroundColor: 'rgba(0,0,0,0.05)',
-            border: '1px solid rgba(0,0,0,0.07)',
-            borderRadius: '14px',
+            padding: '0.7rem 1rem', borderRadius: 16,
           }}>
-            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'rgba(28,28,46,0.72)' }}>
-              Removed {pendingDelete.foodName}
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Removed <strong style={{ color: 'var(--text-primary)' }}>{pendingDelete.foodName}</strong>
             </span>
             <button
               onClick={handleUndoDelete}
               style={{
-                padding: '0.35rem 0.85rem',
-                background: 'rgba(0,0,0,0.07)',
-                border: '1px solid rgba(0,0,0,0.12)',
-                borderRadius: '8px', fontWeight: 800, fontSize: '0.78rem', color: '#fff', cursor: 'pointer',
+                padding: '0.4rem 1rem',
+                background: 'linear-gradient(135deg, #576038, #8B9467)',
+                border: 'none',
+                borderRadius: '10px', fontWeight: 800, fontSize: '0.78rem',
+                color: '#fff', cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(87,96,56,0.30)',
               }}
             >
               Undo
@@ -729,21 +756,20 @@ export const LogFood: React.FC = () => {
         {/* ── AI Scan CTA ── */}
         <button
           onClick={() => setShowScanner(true)}
+          className="glass-card"
           style={{
             width: '100%', display: 'flex', alignItems: 'center', gap: 12,
             padding: '13px 16px',
-            background: 'linear-gradient(135deg, rgba(87,96,56,0.10) 0%, rgba(90,200,250,0.06) 100%)',
-            border: '1px solid rgba(87,96,56,0.20)',
-            borderRadius: '18px', cursor: 'pointer',
-            textAlign: 'left',
+            cursor: 'pointer', textAlign: 'left', border: 'none',
           }}
         >
           <div style={{
-            width: 38, height: 38, borderRadius: 12, flexShrink: 0,
-            background: 'rgba(87,96,56,0.12)', border: '1px solid rgba(87,96,56,0.22)',
+            width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+            background: 'linear-gradient(135deg, #576038, #8B9467)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(87,96,56,0.30)',
           }}>
-            <Camera size={18} color="var(--accent-blue)" />
+            <Camera size={18} color="#fff" />
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
@@ -822,14 +848,12 @@ export const LogFood: React.FC = () => {
 
         {/* ── COPY FROM YESTERDAY BANNER ── */}
         {showCopyYesterday && !copiedYesterday && (
-          <div style={{
+          <div className="glass-card-warm" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            height: '44px', paddingLeft: '14px', paddingRight: '8px',
-            backgroundColor: 'rgba(87,96,56,0.07)',
-            border: '1px solid rgba(87,96,56,0.12)',
-            borderRadius: '14px',
+            height: '48px', paddingLeft: '14px', paddingRight: '8px',
+            borderRadius: '16px',
           }}>
-            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(28,28,46,0.78)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               📋 Copy meals from {formatDateLabel(prevDate, todayDate).toLowerCase()}
             </span>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
