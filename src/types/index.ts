@@ -73,7 +73,7 @@ export interface MealEntry {
   timestamp: string;
 }
 
-export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks' | 'dessert';
 
 // ─── Training ─────────────────────────────────────────────────────────────────
 
@@ -379,6 +379,7 @@ export interface PlannedDay {
     lunch: PlannedMealItem[];
     dinner: PlannedMealItem[];
     snacks: PlannedMealItem[];
+    dessert: PlannedMealItem[];
   };
   totalCalories: number;
   totalProtein: number;

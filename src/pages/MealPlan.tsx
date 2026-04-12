@@ -9,6 +9,7 @@ const MEAL_LABELS: Record<string, string> = {
   lunch: 'Lunch',
   dinner: 'Dinner',
   snacks: 'Snacks',
+  dessert: 'Dessert',
 };
 
 const MEAL_COLORS: Record<string, string> = {
@@ -16,6 +17,7 @@ const MEAL_COLORS: Record<string, string> = {
   lunch: '#576038',
   dinner: '#3E4528',
   snacks: '#8B9467',
+  dessert: '#7C3F8E',
 };
 
 const MacroBadge: React.FC<{ label: string; value: number; unit?: string; color: string }> = ({ label, value, unit = 'g', color }) => (

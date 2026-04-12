@@ -208,6 +208,15 @@ const defaultState: AppState = {
 
 function loadInitialState(): AppState {
   const loaded = safeLoadState('bbc_state', defaultState);
+  // Migrate old logs that lack the dessert meal slot
+  if (loaded.logs) {
+    for (const dateKey of Object.keys(loaded.logs)) {
+      const log = loaded.logs[dateKey];
+      if (log && !log.meals.dessert) {
+        log.meals.dessert = [];
+      }
+    }
+  }
   return {
     ...loaded,
     workoutLibrary: baseWorkoutLibrary,
@@ -277,7 +286,7 @@ const computeNutritionTotal = (entries: Array<{ food: FoodItem; amount: number }
 
 const emptyLog = (date: string): DailyLog => ({
   id: date, date, steps: 0, waterGlasses: 0,
-  meals: { breakfast: [], lunch: [], dinner: [], snacks: [] },
+  meals: { breakfast: [], lunch: [], dinner: [], snacks: [], dessert: [] },
   workouts: [], health: {}, adherenceScore: 0, habits: {},
 });
 
@@ -623,7 +632,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const getNutritionTotals = (date: string): NutritionTotals => {
     const log = state.logs[date];
     if (!log) return { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
-    const allEntries: MealEntry[] = [...log.meals.breakfast, ...log.meals.lunch, ...log.meals.dinner, ...log.meals.snacks];
+    const allEntries: MealEntry[] = [...log.meals.breakfast, ...log.meals.lunch, ...log.meals.dinner, ...log.meals.snacks, ...(log.meals.dessert ?? [])];
     const safeN = (v: any) => (typeof v === 'number' && isFinite(v) ? v : 0);
     return allEntries.reduce(
       (acc, entry) => ({

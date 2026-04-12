@@ -14,6 +14,7 @@ const MEAL_ICONS: Record<MealType, string> = {
   lunch: '☀️',
   dinner: '🌙',
   snacks: '🍎',
+  dessert: '🍰',
 };
 
 // Determine which meal to auto-expand based on time of day
@@ -85,7 +86,7 @@ export const LogFood: React.FC = () => {
 
   const todayLog = state.logs[selectedDate] ?? {
     id: selectedDate, date: selectedDate, steps: 0, waterGlasses: 0,
-    meals: { breakfast: [], lunch: [], dinner: [], snacks: [] },
+    meals: { breakfast: [], lunch: [], dinner: [], snacks: [], dessert: [] },
     workouts: [], health: {}, adherenceScore: 0,
   };
 
@@ -171,7 +172,7 @@ export const LogFood: React.FC = () => {
 
   const handleCopyFromYesterday = () => {
     if (!prevDateLog) return;
-    const meals: MealType[] = ['breakfast', 'lunch', 'dinner', 'snacks'];
+    const meals: MealType[] = ['breakfast', 'lunch', 'dinner', 'snacks', 'dessert'];
     let count = 0;
     meals.forEach(mealType => {
       const entries = prevDateLog.meals[mealType] || [];
@@ -784,7 +785,7 @@ export const LogFood: React.FC = () => {
 
         {/* ── MEAL SECTIONS ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {(['breakfast', 'lunch', 'dinner', 'snacks'] as MealType[]).map(renderMealCard)}
+          {(['breakfast', 'lunch', 'dinner', 'snacks', 'dessert'] as MealType[]).map(renderMealCard)}
         </div>
 
         {/* ── RECIPE LIBRARY ── */}

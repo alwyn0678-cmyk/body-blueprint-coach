@@ -24,6 +24,7 @@ const MEAL_LABELS: Record<MealType, string> = {
   lunch: 'Lunch',
   dinner: 'Dinner',
   snacks: 'Snacks',
+  dessert: 'Dessert',
 };
 
 const CONFIDENCE_COLOR: Record<DetectedFood['confidence'], string> = {

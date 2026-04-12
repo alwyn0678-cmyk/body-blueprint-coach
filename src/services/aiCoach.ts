@@ -720,74 +720,153 @@ function buildFallbackMealPlan(
   goalType: GoalType,
 ): PlannedDay[] {
   const isLoss = goalType === 'fat_loss';
-  const templates: Record<string, { breakfast: PlannedMealItem[]; lunch: PlannedMealItem[]; dinner: PlannedMealItem[]; snacks: PlannedMealItem[] }> = {
+  const templates: Record<string, { breakfast: PlannedMealItem[]; lunch: PlannedMealItem[]; dinner: PlannedMealItem[]; snacks: PlannedMealItem[]; dessert: PlannedMealItem[] }> = {
     A: {
       breakfast: [
-        { foodName: 'Oats with whey protein', calories: 380, protein: 32, carbs: 50, fats: 6, servingNote: '80g oats + 1 scoop' },
-        { foodName: 'Banana', calories: 90, protein: 1, carbs: 23, fats: 0, servingNote: '1 medium' },
+        { foodName: 'Smoothie bowl with granola & berries', calories: 380, protein: 18, carbs: 56, fats: 8, servingNote: '1 bowl' },
+        { foodName: 'Cold brew coffee', calories: 20, protein: 0, carbs: 4, fats: 0, servingNote: '250ml' },
       ],
       lunch: [
-        { foodName: 'Grilled chicken breast', calories: 250, protein: 48, carbs: 0, fats: 5, servingNote: '200g' },
-        { foodName: 'Brown rice', calories: 220, protein: 5, carbs: 46, fats: 2, servingNote: '150g cooked' },
-        { foodName: 'Broccoli (steamed)', calories: 55, protein: 4, carbs: 10, fats: 1, servingNote: '200g' },
+        { foodName: 'Chicken souvlaki wrap with tzatziki', calories: 520, protein: 42, carbs: 46, fats: 14, servingNote: '1 large wrap' },
+        { foodName: 'Greek salad', calories: 120, protein: 4, carbs: 10, fats: 7, servingNote: '1 side serve' },
       ],
       dinner: [
-        { foodName: 'Salmon fillet', calories: 350, protein: 40, carbs: 0, fats: 20, servingNote: '200g' },
-        { foodName: 'Sweet potato', calories: 130, protein: 2, carbs: 30, fats: 0, servingNote: '150g' },
-        { foodName: 'Mixed salad + olive oil', calories: 80, protein: 2, carbs: 6, fats: 5, servingNote: '1 tbsp oil' },
+        { foodName: 'Miso-glazed salmon with jasmine rice', calories: 490, protein: 40, carbs: 48, fats: 12, servingNote: '200g salmon + 150g rice' },
+        { foodName: 'Edamame & sesame bok choy', calories: 100, protein: 7, carbs: 8, fats: 3, servingNote: '150g' },
       ],
       snacks: [
-        { foodName: isLoss ? 'Greek yogurt (low-fat)' : 'Greek yogurt + honey', calories: isLoss ? 130 : 200, protein: isLoss ? 18 : 17, carbs: isLoss ? 9 : 28, fats: isLoss ? 0 : 0, servingNote: '200g' },
-        { foodName: 'Almonds', calories: 170, protein: 6, carbs: 6, fats: 15, servingNote: '30g' },
+        { foodName: 'Hummus with pita & veggie sticks', calories: 220, protein: 7, carbs: 28, fats: 9, servingNote: '3 tbsp hummus + pita' },
+      ],
+      dessert: [
+        { foodName: isLoss ? 'Mango sorbet' : 'Dark chocolate lava cake', calories: isLoss ? 120 : 280, protein: isLoss ? 1 : 6, carbs: isLoss ? 30 : 34, fats: isLoss ? 0 : 14, servingNote: isLoss ? '2 scoops' : '1 individual cake' },
       ],
     },
     B: {
       breakfast: [
-        { foodName: 'Whole eggs scrambled', calories: 280, protein: 21, carbs: 2, fats: 20, servingNote: '4 eggs' },
-        { foodName: 'Whole grain toast', calories: 140, protein: 6, carbs: 26, fats: 2, servingNote: '2 slices' },
+        { foodName: 'Shakshuka (eggs in spiced tomato)', calories: 340, protein: 22, carbs: 22, fats: 18, servingNote: '2 eggs + sauce' },
+        { foodName: 'Sourdough toast', calories: 160, protein: 6, carbs: 30, fats: 2, servingNote: '2 slices' },
       ],
       lunch: [
-        { foodName: 'Tuna (canned in water)', calories: 130, protein: 29, carbs: 0, fats: 1, servingNote: '150g drained' },
-        { foodName: 'Whole wheat wrap', calories: 200, protein: 7, carbs: 38, fats: 3, servingNote: '1 large wrap' },
-        { foodName: 'Avocado', calories: 160, protein: 2, carbs: 8, fats: 15, servingNote: '½ medium' },
+        { foodName: 'Prawn & avocado rice bowl', calories: 480, protein: 36, carbs: 44, fats: 14, servingNote: '1 bowl' },
+        { foodName: 'Miso soup', calories: 40, protein: 3, carbs: 5, fats: 1, servingNote: '1 cup' },
       ],
       dinner: [
-        { foodName: 'Lean ground beef (90%)', calories: 300, protein: 42, carbs: 0, fats: 14, servingNote: '200g cooked' },
-        { foodName: 'Pasta (whole wheat)', calories: 210, protein: 8, carbs: 42, fats: 2, servingNote: '120g dry' },
-        { foodName: 'Tomato sauce (low sugar)', calories: 60, protein: 2, carbs: 12, fats: 1, servingNote: '150ml' },
+        { foodName: 'Beef ragu pappardelle pasta', calories: 580, protein: 40, carbs: 58, fats: 16, servingNote: '120g pasta + 150g ragu' },
+        { foodName: 'Rocket & parmesan salad', calories: 90, protein: 4, carbs: 3, fats: 7, servingNote: '1 side serve' },
       ],
       snacks: [
-        { foodName: 'Cottage cheese', calories: 150, protein: 22, carbs: 6, fats: 4, servingNote: '200g' },
-        { foodName: 'Rice cakes', calories: 70, protein: 1, carbs: 15, fats: 0, servingNote: '2 cakes' },
+        { foodName: 'Smoked salmon blinis with cream cheese', calories: 200, protein: 14, carbs: 18, fats: 8, servingNote: '4 blinis' },
+      ],
+      dessert: [
+        { foodName: isLoss ? 'Greek yogurt with honey & walnuts' : 'Tiramisu', calories: isLoss ? 180 : 300, protein: isLoss ? 14 : 7, carbs: isLoss ? 16 : 32, fats: isLoss ? 5 : 16, servingNote: isLoss ? '200g yogurt' : '1 serving' },
       ],
     },
     C: {
       breakfast: [
-        { foodName: 'Protein pancakes (mix)', calories: 350, protein: 30, carbs: 44, fats: 6, servingNote: '3 pancakes' },
-        { foodName: 'Berries (mixed)', calories: 60, protein: 1, carbs: 14, fats: 0, servingNote: '100g' },
+        { foodName: 'Protein banana bread (homemade)', calories: 320, protein: 24, carbs: 38, fats: 6, servingNote: '2 slices' },
+        { foodName: 'Almond flat white', calories: 80, protein: 3, carbs: 8, fats: 4, servingNote: '1 large' },
       ],
       lunch: [
-        { foodName: 'Turkey breast sliced', calories: 200, protein: 38, carbs: 0, fats: 4, servingNote: '160g' },
-        { foodName: 'Quinoa cooked', calories: 185, protein: 7, carbs: 34, fats: 3, servingNote: '150g' },
-        { foodName: 'Spinach + cherry tomatoes', calories: 40, protein: 3, carbs: 6, fats: 0, servingNote: '150g' },
+        { foodName: 'Vietnamese beef pho', calories: 450, protein: 38, carbs: 46, fats: 8, servingNote: '1 bowl' },
+        { foodName: 'Spring rolls (2)', calories: 160, protein: 5, carbs: 22, fats: 5, servingNote: '2 fresh rolls' },
       ],
       dinner: [
-        { foodName: 'Chicken thigh (skinless)', calories: 270, protein: 35, carbs: 0, fats: 14, servingNote: '200g' },
-        { foodName: 'Roasted vegetables (mixed)', calories: 120, protein: 4, carbs: 22, fats: 3, servingNote: '300g' },
-        { foodName: 'Brown rice', calories: 180, protein: 4, carbs: 38, fats: 1, servingNote: '120g cooked' },
+        { foodName: 'Chicken tikka masala with basmati rice', calories: 560, protein: 44, carbs: 54, fats: 14, servingNote: '200g curry + 150g rice' },
+        { foodName: 'Garlic naan', calories: 160, protein: 5, carbs: 28, fats: 4, servingNote: '1 piece' },
       ],
       snacks: [
-        { foodName: 'Protein shake (whey)', calories: 130, protein: 25, carbs: 5, fats: 2, servingNote: '1 scoop in water' },
-        { foodName: 'Apple', calories: 80, protein: 0, carbs: 21, fats: 0, servingNote: '1 medium' },
+        { foodName: 'Trail mix (nuts, seeds, dried mango)', calories: 220, protein: 6, carbs: 22, fats: 13, servingNote: '40g' },
+      ],
+      dessert: [
+        { foodName: isLoss ? 'Coconut chia pudding' : 'Protein brownie with ice cream', calories: isLoss ? 160 : 320, protein: isLoss ? 5 : 18, carbs: isLoss ? 20 : 32, fats: isLoss ? 7 : 12, servingNote: isLoss ? '1 jar' : '1 brownie + 1 scoop' },
+      ],
+    },
+    D: {
+      breakfast: [
+        { foodName: 'Acai bowl with banana, granola & coconut', calories: 420, protein: 12, carbs: 62, fats: 14, servingNote: '1 bowl' },
+      ],
+      lunch: [
+        { foodName: 'Grilled halloumi & roasted veg pita', calories: 480, protein: 22, carbs: 50, fats: 20, servingNote: '1 pita' },
+        { foodName: 'Tabbouleh', calories: 110, protein: 3, carbs: 16, fats: 4, servingNote: '1 side' },
+      ],
+      dinner: [
+        { foodName: 'Coconut prawn laksa', calories: 520, protein: 36, carbs: 48, fats: 16, servingNote: '1 bowl' },
+        { foodName: 'Steamed jasmine rice', calories: 200, protein: 4, carbs: 44, fats: 0, servingNote: '150g cooked' },
+      ],
+      snacks: [
+        { foodName: 'Cheese & crackers with grapes', calories: 240, protein: 9, carbs: 24, fats: 12, servingNote: '30g cheese + crackers' },
+      ],
+      dessert: [
+        { foodName: isLoss ? 'Passionfruit panna cotta (light)' : 'Warm apple crumble with custard', calories: isLoss ? 140 : 350, protein: isLoss ? 5 : 6, carbs: isLoss ? 18 : 52, fats: isLoss ? 5 : 12, servingNote: '1 serving' },
+      ],
+    },
+    E: {
+      breakfast: [
+        { foodName: 'Avocado & feta toast with poached eggs', calories: 420, protein: 24, carbs: 34, fats: 20, servingNote: '2 eggs on 2 slices' },
+        { foodName: 'Fresh orange juice', calories: 90, protein: 1, carbs: 21, fats: 0, servingNote: '200ml' },
+      ],
+      lunch: [
+        { foodName: 'Korean bibimbap bowl', calories: 520, protein: 32, carbs: 62, fats: 12, servingNote: '1 bowl' },
+        { foodName: 'Kimchi (side)', calories: 25, protein: 1, carbs: 4, fats: 0, servingNote: '50g' },
+      ],
+      dinner: [
+        { foodName: 'Seared duck breast with cherry jus & polenta', calories: 560, protein: 42, carbs: 36, fats: 22, servingNote: '180g duck + polenta' },
+        { foodName: 'Broccolini with almonds', calories: 80, protein: 4, carbs: 6, fats: 4, servingNote: '150g' },
+      ],
+      snacks: [
+        { foodName: 'Protein iced coffee', calories: 180, protein: 20, carbs: 14, fats: 4, servingNote: '350ml' },
+      ],
+      dessert: [
+        { foodName: isLoss ? 'Frozen yogurt bark with berries' : 'Crème brûlée', calories: isLoss ? 130 : 290, protein: isLoss ? 6 : 6, carbs: isLoss ? 20 : 34, fats: isLoss ? 3 : 14, servingNote: '1 serving' },
+      ],
+    },
+    F: {
+      breakfast: [
+        { foodName: 'Bircher muesli with apple & cinnamon', calories: 380, protein: 14, carbs: 56, fats: 10, servingNote: '1 bowl (overnight oats)' },
+        { foodName: 'Matcha latte (oat milk)', calories: 90, protein: 2, carbs: 12, fats: 3, servingNote: '1 large' },
+      ],
+      lunch: [
+        { foodName: 'Spicy tuna poke bowl', calories: 480, protein: 36, carbs: 50, fats: 12, servingNote: '1 bowl' },
+        { foodName: 'Edamame (side)', calories: 80, protein: 7, carbs: 6, fats: 3, servingNote: '100g shelled' },
+      ],
+      dinner: [
+        { foodName: 'Slow-cooked lamb shoulder with couscous', calories: 580, protein: 46, carbs: 42, fats: 22, servingNote: '200g lamb + 100g couscous' },
+        { foodName: 'Harissa roasted carrots', calories: 90, protein: 2, carbs: 18, fats: 2, servingNote: '150g' },
+      ],
+      snacks: [
+        { foodName: 'Date & almond energy balls (2)', calories: 190, protein: 5, carbs: 24, fats: 9, servingNote: '2 balls' },
+      ],
+      dessert: [
+        { foodName: isLoss ? 'Strawberries with whipped ricotta' : 'Sticky date pudding with caramel sauce', calories: isLoss ? 150 : 380, protein: isLoss ? 8 : 7, carbs: isLoss ? 18 : 52, fats: isLoss ? 5 : 16, servingNote: '1 serving' },
+      ],
+    },
+    G: {
+      breakfast: [
+        { foodName: 'French toast with maple syrup & berries', calories: 440, protein: 18, carbs: 60, fats: 14, servingNote: '2 slices thick bread' },
+        { foodName: 'Flat white', calories: 70, protein: 4, carbs: 6, fats: 3, servingNote: '1 small' },
+      ],
+      lunch: [
+        { foodName: 'Smashed burger with sweet potato fries', calories: 620, protein: 40, carbs: 58, fats: 22, servingNote: '1 burger + fries' },
+        { foodName: 'Slaw (side)', calories: 80, protein: 2, carbs: 10, fats: 3, servingNote: '1 side' },
+      ],
+      dinner: [
+        { foodName: 'Pad Thai with tofu & prawns', calories: 520, protein: 34, carbs: 58, fats: 14, servingNote: '1 plate' },
+        { foodName: 'Thai cucumber salad', calories: 60, protein: 1, carbs: 12, fats: 1, servingNote: '1 side' },
+      ],
+      snacks: [
+        { foodName: 'Yogurt parfait with granola & mango', calories: 220, protein: 10, carbs: 32, fats: 5, servingNote: '1 jar' },
+      ],
+      dessert: [
+        { foodName: isLoss ? 'Protein ice cream (1 scoop)' : 'Chocolate fondant with vanilla gelato', calories: isLoss ? 160 : 400, protein: isLoss ? 15 : 8, carbs: isLoss ? 20 : 46, fats: isLoss ? 4 : 20, servingNote: '1 serving' },
       ],
     },
   };
 
-  const rotation = ['A', 'B', 'C', 'A', 'B', 'C', 'A'];
+  const rotation = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
   return rotation.map((key, i) => {
     const t = templates[key];
-    const allItems = [...t.breakfast, ...t.lunch, ...t.dinner, ...t.snacks];
+    const allItems = [...t.breakfast, ...t.lunch, ...t.dinner, ...t.snacks, ...t.dessert];
     const totalCalories = allItems.reduce((a, x) => a + x.calories, 0);
     const totalProtein = allItems.reduce((a, x) => a + x.protein, 0);
     const totalCarbs = allItems.reduce((a, x) => a + x.carbs, 0);
@@ -812,6 +891,7 @@ function buildFallbackMealPlan(
         lunch: scaledItems(t.lunch),
         dinner: scaledItems(t.dinner),
         snacks: scaledItems(t.snacks),
+        dessert: scaledItems(t.dessert),
       },
       totalCalories: Math.round(totalCalories * scale),
       totalProtein: Math.round(totalProtein * scale),
@@ -834,7 +914,7 @@ export async function generateMealPlan(user: UserProfile): Promise<MealPlan> {
   let days: PlannedDay[];
 
   if (key) {
-    const prompt = `Create a 7-day meal plan for a ${user.sex}, age ${user.age}, goal: ${user.goalType}.
+    const prompt = `Create a 7-day balanced, enjoyable meal plan for a ${user.sex}, age ${user.age}, goal: ${user.goalType}.
 Daily targets: ${calories} kcal, ${protein}g protein, ${carbs}g carbs, ${fats}g fat.
 
 Return ONLY a JSON array of 7 objects with this exact structure:
@@ -845,7 +925,8 @@ Return ONLY a JSON array of 7 objects with this exact structure:
     "breakfast": [{"foodName":"...","calories":0,"protein":0,"carbs":0,"fats":0,"servingNote":"..."}],
     "lunch": [...],
     "dinner": [...],
-    "snacks": [...]
+    "snacks": [...],
+    "dessert": [{"foodName":"...","calories":0,"protein":0,"carbs":0,"fats":0,"servingNote":"..."}]
   },
   "totalCalories": 0,
   "totalProtein": 0,
@@ -853,12 +934,20 @@ Return ONLY a JSON array of 7 objects with this exact structure:
   "totalFats": 0
 }]
 
+PHILOSOPHY — This app promotes a balanced lifestyle where no food is off-limits:
+- NEVER generate generic diet food like plain chicken + rice + broccoli
+- Include real-world diverse meals: pasta dishes, stir fries, curries, wraps, burgers, tacos, sushi, risotto, noodle bowls, pizza, sandwiches, shakshuka, frittata, smoothie bowls, acai bowls, grain bowls, poke bowls, souvlaki, dahl, laksa, pad thai, banh mi, etc.
+- Draw from multiple cuisines: Mediterranean, Asian, Mexican, Middle Eastern, Indian, Australian, Italian, etc.
+- ALWAYS include a dessert option each day — things like yogurt parfait, chocolate mousse, protein ice cream, fruit crumble, banana bread, protein brownie, mochi, cheesecake bar, tiramisu, panna cotta, sorbet, etc.
+- Food is a pleasure — make meals sound genuinely delicious and satisfying
+- Use flavourful preparations: marinated, roasted, grilled, pan-seared, braised, slow-cooked
+- Snacks should be interesting: cheese & crackers, hummus & veggies, smoked salmon blinis, energy balls, trail mix, edamame, protein bars, etc.
+- Vary meals across days — no exact repeats on consecutive days
+
 Rules:
 - Each day should total approximately ${calories} kcal and ${protein}g protein
-- Use realistic, whole foods available in most supermarkets
-- Vary meals across days (no exact repeats on consecutive days)
-- Include serving amounts in "servingNote" (e.g. "150g", "1 cup")
-- Breakfast: 25-30% calories, Lunch: 30-35%, Dinner: 30-35%, Snacks: 10-15%
+- Breakfast: 25-30% calories, Lunch: 30-35%, Dinner: 30-35%, Snacks: 5-10%, Dessert: 5-10%
+- Include serving amounts in "servingNote" (e.g. "150g", "1 cup", "2 pieces")
 - Output ONLY the JSON array, no markdown, no explanation`;
 
     try {
@@ -877,7 +966,9 @@ Rules:
       const data = await res.json();
       const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
       const jsonStr = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-      days = JSON.parse(jsonStr) as PlannedDay[];
+      const parsed = JSON.parse(jsonStr) as PlannedDay[];
+      // Ensure dessert slot exists even if AI omits it
+      days = parsed.map(d => ({ ...d, meals: { ...d.meals, dessert: d.meals.dessert ?? [] } }));
     } catch {
       days = buildFallbackMealPlan(calories, protein, user.goalType);
     }
