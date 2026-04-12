@@ -23,7 +23,7 @@ const MEAL_COLORS: Record<string, string> = {
 const MacroBadge: React.FC<{ label: string; value: number; unit?: string; color: string }> = ({ label, value, unit = 'g', color }) => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 48 }}>
     <span style={{ fontSize: '0.72rem', fontWeight: 700, color, letterSpacing: '0.04em' }}>{label}</span>
-    <span style={{ fontSize: '0.88rem', fontWeight: 900, color: '#1A1A1A' }}>{Math.round(value)}{unit === 'kcal' ? '' : unit}</span>
+    <span style={{ fontSize: '0.88rem', fontWeight: 900, color: 'var(--text-primary)' }}>{Math.round(value)}{unit === 'kcal' ? '' : unit}</span>
   </div>
 );
 
@@ -33,8 +33,8 @@ const MealItemRow: React.FC<{ item: PlannedMealItem }> = ({ item }) => (
     padding: '10px 0', borderBottom: '1px solid rgba(87,96,56,0.07)',
   }}>
     <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1A1A1A', lineHeight: 1.3 }}>{item.foodName}</div>
-      <div style={{ fontSize: '0.73rem', color: 'rgba(26,26,26,0.5)', marginTop: 2 }}>{item.servingNote}</div>
+      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>{item.foodName}</div>
+      <div style={{ fontSize: '0.73rem', color: 'var(--text-tertiary)', marginTop: 2 }}>{item.servingNote}</div>
     </div>
     <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexShrink: 0, marginLeft: 12 }}>
       <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#974400' }}>{item.protein}g P</span>
@@ -56,10 +56,10 @@ const DayCard: React.FC<{
 
   return (
     <div style={{
-      background: '#FFFFFF',
+      background: 'var(--bg-card)',
       borderRadius: 18,
       boxShadow: '0 2px 16px rgba(26,26,26,0.05)',
-      border: '1px solid rgba(87,96,56,0.08)',
+      border: '1px solid var(--border-subtle)',
       overflow: 'hidden',
     }}>
       {/* Day header */}
@@ -71,7 +71,7 @@ const DayCard: React.FC<{
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontWeight: 900, fontSize: '0.95rem', color: '#1A1A1A' }}>{day.dayLabel}</span>
+          <span style={{ fontWeight: 900, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{day.dayLabel}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ display: 'flex', gap: 12 }}>
               <MacroBadge label="kcal" value={day.totalCalories} unit="kcal" color="#974400" />
@@ -122,7 +122,7 @@ const DayCard: React.FC<{
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
                     <span style={{ fontWeight: 800, fontSize: '0.82rem', color }}>{MEAL_LABELS[mealKey]}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'rgba(26,26,26,0.4)', fontWeight: 600 }}>{Math.round(mealCalories)} kcal</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{Math.round(mealCalories)} kcal</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <button
@@ -209,11 +209,11 @@ export const MealPlan: React.FC = () => {
   const todayPlan = currentPlan?.days.find(d => d.dayIndex === todayIndex) ?? currentPlan?.days[0] ?? null;
 
   return (
-    <div style={{ padding: '20px 16px', paddingBottom: 120, maxWidth: 480, margin: '0 auto' }}>
+    <div className="animate-fade-in" style={{ padding: '20px 16px', paddingBottom: 120, maxWidth: 480, margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1A1A1A', marginBottom: 4 }}>Meal Plan</h1>
-        <p style={{ fontSize: '0.82rem', color: 'rgba(26,26,26,0.5)' }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: 4 }}>Meal Plan</h1>
+        <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>
           {state.user ? `${targets.calories} kcal · ${targets.protein}g protein target` : 'Set up your profile to personalise'}
         </p>
       </div>
@@ -252,7 +252,7 @@ export const MealPlan: React.FC = () => {
         }}>
           <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🥗</div>
           <div style={{ fontWeight: 800, fontSize: '1rem', color: '#576038', marginBottom: 6 }}>No meal plan yet</div>
-          <div style={{ fontSize: '0.82rem', color: 'rgba(26,26,26,0.5)' }}>
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>
             Tap the button above to generate a personalised 7-day plan based on your targets
           </div>
         </div>
@@ -268,8 +268,8 @@ export const MealPlan: React.FC = () => {
                 onClick={() => setActiveTab(tab)}
                 style={{
                   flex: 1, padding: '8px 0', borderRadius: 9, border: 'none',
-                  background: activeTab === tab ? '#fff' : 'transparent',
-                  fontWeight: 800, fontSize: '0.8rem', color: activeTab === tab ? '#576038' : 'rgba(26,26,26,0.5)',
+                  background: activeTab === tab ? 'var(--bg-card)' : 'transparent',
+                  fontWeight: 800, fontSize: '0.8rem', color: activeTab === tab ? '#576038' : 'var(--text-tertiary)',
                   cursor: 'pointer',
                   boxShadow: activeTab === tab ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
                   transition: 'all 0.2s',

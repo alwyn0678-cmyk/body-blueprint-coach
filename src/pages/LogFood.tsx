@@ -367,7 +367,7 @@ export const LogFood: React.FC = () => {
                                 width: '64px', padding: '0.3rem 0.5rem', fontSize: '0.9rem', fontWeight: 700,
                                 textAlign: 'center', backgroundColor: 'rgba(0,0,0,0.07)',
                                 border: `1px solid ${hasError ? 'var(--accent-red)' : 'rgba(0,0,0,0.13)'}`,
-                                borderRadius: '8px', color: '#fff', outline: 'none',
+                                borderRadius: '8px', color: 'var(--text-primary)', outline: 'none',
                               }}
                             />
                             <span style={{ fontSize: '0.68rem', color: 'rgba(0,0,0,0.24)' }}>srv</span>
@@ -381,7 +381,7 @@ export const LogFood: React.FC = () => {
                                 display: 'flex', cursor: 'pointer',
                               }}
                             >
-                              <Check size={14} color="#000" />
+                              <Check size={14} color="#fff" />
                             </button>
                             <button
                               onClick={() => setEditingEntry(null)}
@@ -522,7 +522,7 @@ export const LogFood: React.FC = () => {
                           flex: 1, padding: '0.6rem 0.75rem', fontSize: '0.85rem',
                           backgroundColor: 'rgba(0,0,0,0.05)',
                           border: `1px solid ${saveMealError ? 'var(--accent-red)' : 'rgba(0,0,0,0.08)'}`,
-                          borderRadius: '10px', color: '#fff', outline: 'none',
+                          borderRadius: '10px', color: 'var(--text-primary)', outline: 'none',
                         }}
                       />
                       <button
@@ -531,7 +531,7 @@ export const LogFood: React.FC = () => {
                         style={{
                           padding: '0.6rem 0.9rem', background: 'var(--accent-green)',
                           border: 'none', borderRadius: '10px', fontWeight: 800,
-                          fontSize: '0.8rem', color: '#000', cursor: 'pointer',
+                          fontSize: '0.8rem', color: '#fff', cursor: 'pointer',
                           opacity: saveMealName.trim().length >= 3 ? 1 : 0.4,
                         }}
                       >

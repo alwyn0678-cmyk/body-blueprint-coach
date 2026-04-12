@@ -135,7 +135,7 @@ interface SwipeRevealProps {
 
 export const SwipeReveal: React.FC<SwipeRevealProps> = ({ onDelete, children }) => {
   const handleDragEnd = (event: any, info: any) => {
-    if (info.offset.x < -100) {
+    if (info.offset.x < -60 || info.velocity.x < -400) {
       Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       onDelete();
     }
@@ -147,7 +147,7 @@ export const SwipeReveal: React.FC<SwipeRevealProps> = ({ onDelete, children }) 
       <div style={{
         position: 'absolute',
         top: 0, right: 0, bottom: 0, left: 0,
-        backgroundColor: 'var(--accent-primary)',
+        backgroundColor: '#DC2626',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'flex-end',
@@ -161,8 +161,9 @@ export const SwipeReveal: React.FC<SwipeRevealProps> = ({ onDelete, children }) 
       {/* Foreground Draggable Item */}
       <motion.div
         drag="x"
-        dragConstraints={{ left: -100, right: 0 }}
-        dragElastic={0.1}
+        dragConstraints={{ left: -90, right: 0 }}
+        dragElastic={0.05}
+        dragMomentum={false}
         onDragEnd={handleDragEnd}
         style={{
           position: 'relative',

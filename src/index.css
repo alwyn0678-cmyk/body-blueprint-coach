@@ -1462,6 +1462,14 @@ textarea:focus-visible {
   .btn-green:hover    { box-shadow: 0 6px 24px rgba(87,96,56,0.38); }
 }
 
+/* ── Mobile press feedback on tappable glass cards ── */
+button.glass-card:active,
+a.glass-card:active,
+.glass-card-interactive:active {
+  transform: scale(0.984);
+  transition: transform 80ms ease;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    FOOD LOG ITEM CARDS
    ═══════════════════════════════════════════════════════════════════ */
