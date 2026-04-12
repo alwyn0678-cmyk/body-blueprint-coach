@@ -5,6 +5,7 @@ import {
   NutritionTotals, ProgressionRecord, ConnectionStatus,
   BodyMeasurement, ProgressPhoto, HabitDefinition, HabitLog,
   CoachInsight, WeeklyCheckIn, Mesocycle, Recipe, CustomProgram,
+  MealPlan, XPEvent, XPEventType, Milestone, PersonalRecord,
 } from '../types';
 import { additionalExercises } from '../data/workoutPrograms';
 import { safeLoadState } from '../utils/persistence';
@@ -107,6 +108,12 @@ interface AppContextType {
   addCoachInsight: (insight: CoachInsight) => void;
   dismissCoachInsight: (id: string) => void;
   saveWeeklyCheckIn: (checkIn: WeeklyCheckIn) => void;
+  // Meal plans
+  saveMealPlan: (plan: MealPlan) => void;
+  deleteMealPlan: (id: string) => void;
+  // Gamification
+  awardXP: (type: XPEventType, amount: number, label: string) => void;
+  markMilestoneSeen: (id: string) => void;
   // Toast
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   // Reset
@@ -188,6 +195,12 @@ const defaultState: AppState = {
   habitDefinitions: DEFAULT_HABITS,
   coachInsights: [],
   weeklyCheckIns: [],
+  mealPlans: [],
+  xp: 0,
+  level: 1,
+  xpHistory: [],
+  milestones: [],
+  personalRecords: [],
 };
 
 function loadInitialState(): AppState {
@@ -206,8 +219,43 @@ function loadInitialState(): AppState {
     customPrograms: loaded.customPrograms ?? [],
     activeCustomProgramId: loaded.activeCustomProgramId ?? null,
     favoriteExerciseIds: loaded.favoriteExerciseIds ?? [],
+    mealPlans: loaded.mealPlans ?? [],
+    xp: loaded.xp ?? 0,
+    level: loaded.level ?? 1,
+    xpHistory: loaded.xpHistory ?? [],
+    milestones: loaded.milestones ?? [],
+    personalRecords: loaded.personalRecords ?? [],
   };
 }
+
+// ─── XP / Leveling helpers ────────────────────────────────────────────────────
+
+const XP_THRESHOLDS = [0, 100, 250, 500, 1000, 2000, 3500, 5500, 8000, 11000];
+
+export const computeLevel = (xp: number): number => {
+  let level = 1;
+  for (let i = 1; i < XP_THRESHOLDS.length; i++) {
+    if (xp >= XP_THRESHOLDS[i]) level = i + 1;
+    else break;
+  }
+  return level;
+};
+
+export const xpToNextLevel = (xp: number): { current: number; needed: number; level: number } => {
+  const level = computeLevel(xp);
+  const currentThreshold = XP_THRESHOLDS[level - 1] ?? 0;
+  const nextThreshold = XP_THRESHOLDS[level] ?? XP_THRESHOLDS[XP_THRESHOLDS.length - 1];
+  return { current: xp - currentThreshold, needed: nextThreshold - currentThreshold, level };
+};
+
+export const LEVEL_NAMES = [
+  '', 'Beginner', 'Dedicated', 'Athlete', 'Warrior',
+  'Champion', 'Elite', 'Legend', 'Master', 'Grand Master', 'Immortal',
+];
+
+// Estimate e1RM using Epley formula: weight * (1 + reps/30)
+const estimateE1RM = (weight: number, reps: number): number =>
+  reps === 1 ? weight : parseFloat((weight * (1 + reps / 30)).toFixed(1));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -368,8 +416,109 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const clampedCalories = Math.max(0, Math.min(2000, workout.caloriesBurned || 0));
     setState(prev => {
       const log = prev.logs[date] || emptyLog(date);
+      let newXP = prev.xp + 25;
+      const xpEvent: XPEvent = {
+        id: `xp_${Date.now()}`,
+        type: 'workout_completed',
+        amount: 25,
+        label: `Completed workout: ${workout.name}`,
+        date,
+      };
+
+      // ── PR detection ──────────────────────────────────────────────────────
+      const newPRs: PersonalRecord[] = [];
+      const newMilestones: Milestone[] = [...prev.milestones];
+      const updatedRecords = [...prev.personalRecords];
+
+      for (const exercise of workout.exercises) {
+        if (!exercise.sets.length) continue;
+        let bestE1RM = 0;
+        let bestSet = { weight: 0, reps: 0 };
+        for (const set of exercise.sets) {
+          if (!set.completed) continue;
+          const e1rm = estimateE1RM(set.weight, set.reps);
+          if (e1rm > bestE1RM) {
+            bestE1RM = e1rm;
+            bestSet = { weight: set.weight, reps: set.reps };
+          }
+        }
+        if (bestE1RM === 0) continue;
+
+        const existing = updatedRecords.find(r => r.exerciseId === exercise.exerciseId);
+        const existingE1RM = existing ? estimateE1RM(existing.weight, existing.reps) : 0;
+
+        if (bestE1RM > existingE1RM) {
+          const pr: PersonalRecord = {
+            exerciseId: exercise.exerciseId,
+            exerciseName: exercise.name,
+            weight: bestSet.weight,
+            reps: bestSet.reps,
+            volume: bestSet.weight * bestSet.reps,
+            achievedAt: new Date().toISOString(),
+          };
+          newPRs.push(pr);
+          const idx = updatedRecords.findIndex(r => r.exerciseId === exercise.exerciseId);
+          if (idx >= 0) updatedRecords[idx] = pr;
+          else updatedRecords.push(pr);
+          newXP += 15;
+          newMilestones.push({
+            id: `ms_pr_${exercise.exerciseId}_${Date.now()}`,
+            type: 'badge',
+            label: 'New Personal Record!',
+            description: `${exercise.name}: ${bestSet.weight}kg × ${bestSet.reps} reps`,
+            icon: '🏆',
+            achievedAt: new Date().toISOString(),
+            seen: false,
+          });
+        }
+      }
+
+      // ── Workout count milestones ──────────────────────────────────────────
+      const totalWorkouts = Object.values(prev.logs).reduce((a, l) => a + (l.workouts?.length ?? 0), 0) + 1;
+      const workoutMilestones: Array<[number, string, string, string]> = [
+        [1, 'First Workout!', 'You started your fitness journey', '🏋️'],
+        [10, '10 Workouts!', 'A solid foundation is forming', '💪'],
+        [25, '25 Workouts!', 'You are becoming unstoppable', '🔥'],
+        [50, '50 Workouts!', 'Elite dedication achieved', '⚡'],
+        [100, '100 Workouts!', 'You are a legend', '👑'],
+      ];
+      for (const [count, label, desc, icon] of workoutMilestones) {
+        if (totalWorkouts === count) {
+          newMilestones.push({
+            id: `ms_wc_${count}`,
+            type: 'workout_count',
+            label,
+            description: desc,
+            icon,
+            achievedAt: new Date().toISOString(),
+            seen: false,
+          });
+          newXP += 50;
+        }
+      }
+
+      // ── Level up check ────────────────────────────────────────────────────
+      const oldLevel = computeLevel(prev.xp);
+      const newLevel = computeLevel(newXP);
+      if (newLevel > oldLevel) {
+        newMilestones.push({
+          id: `ms_lvl_${newLevel}_${Date.now()}`,
+          type: 'level_up',
+          label: `Level ${newLevel} — ${LEVEL_NAMES[newLevel] ?? 'Max'}!`,
+          description: `You've reached a new power level`,
+          icon: '⬆️',
+          achievedAt: new Date().toISOString(),
+          seen: false,
+        });
+      }
+
       return {
         ...prev,
+        xp: newXP,
+        level: newLevel,
+        xpHistory: [xpEvent, ...prev.xpHistory].slice(0, 200),
+        personalRecords: updatedRecords,
+        milestones: newMilestones,
         logs: {
           ...prev.logs,
           [date]: { ...log, workouts: [...log.workouts, { ...workout, caloriesBurned: clampedCalories }] },
@@ -620,8 +769,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const logHabit = (date: string, habitId: string, log: HabitLog) => {
     setState(prev => {
       const dayLog = prev.logs[date] || emptyLog(date);
+      const wasCompleted = dayLog.habits?.[habitId]?.completed;
+      const nowCompleted = log.completed;
+      let newXP = prev.xp;
+      const newXPHistory = [...prev.xpHistory];
+      const newMilestones = [...prev.milestones];
+
+      if (nowCompleted && !wasCompleted) {
+        newXP += 5;
+        newXPHistory.unshift({
+          id: `xp_h_${Date.now()}`,
+          type: 'habit_completed',
+          amount: 5,
+          label: `Habit completed`,
+          date,
+        });
+
+        // Level up check
+        const oldLevel = computeLevel(prev.xp);
+        const newLevel = computeLevel(newXP);
+        if (newLevel > oldLevel) {
+          newMilestones.push({
+            id: `ms_lvl_${newLevel}_${Date.now()}`,
+            type: 'level_up',
+            label: `Level ${newLevel} — ${LEVEL_NAMES[newLevel] ?? 'Max'}!`,
+            description: `You've reached a new power level`,
+            icon: '⬆️',
+            achievedAt: new Date().toISOString(),
+            seen: false,
+          });
+        }
+      }
+
       return {
         ...prev,
+        xp: newXP,
+        level: computeLevel(newXP),
+        xpHistory: newXPHistory.slice(0, 200),
+        milestones: newMilestones,
         logs: {
           ...prev.logs,
           [date]: { ...dayLog, habits: { ...(dayLog.habits ?? {}), [habitId]: log } },
@@ -661,6 +846,62 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setState(prev => ({
       ...prev,
       weeklyCheckIns: [checkIn, ...prev.weeklyCheckIns.filter(c => c.id !== checkIn.id)],
+    }));
+  };
+
+  // ── Meal Plans ───────────────────────────────────────────────────────────────
+
+  const saveMealPlan = (plan: MealPlan) => {
+    setState(prev => ({
+      ...prev,
+      mealPlans: [plan, ...prev.mealPlans.filter(p => p.id !== plan.id)].slice(0, 20),
+    }));
+  };
+
+  const deleteMealPlan = (id: string) => {
+    setState(prev => ({ ...prev, mealPlans: prev.mealPlans.filter(p => p.id !== id) }));
+  };
+
+  // ── Gamification ─────────────────────────────────────────────────────────────
+
+  const awardXP = (type: XPEventType, amount: number, label: string) => {
+    setState(prev => {
+      const newXP = prev.xp + amount;
+      const oldLevel = computeLevel(prev.xp);
+      const newLevel = computeLevel(newXP);
+      const xpEvent: XPEvent = {
+        id: `xp_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        type,
+        amount,
+        label,
+        date: new Date().toISOString().split('T')[0],
+      };
+      const newMilestones = [...prev.milestones];
+      if (newLevel > oldLevel) {
+        newMilestones.push({
+          id: `ms_lvl_${newLevel}_${Date.now()}`,
+          type: 'level_up',
+          label: `Level ${newLevel} — ${LEVEL_NAMES[newLevel] ?? 'Max'}!`,
+          description: `You've reached a new power level`,
+          icon: '⬆️',
+          achievedAt: new Date().toISOString(),
+          seen: false,
+        });
+      }
+      return {
+        ...prev,
+        xp: newXP,
+        level: newLevel,
+        xpHistory: [xpEvent, ...prev.xpHistory].slice(0, 200),
+        milestones: newMilestones,
+      };
+    });
+  };
+
+  const markMilestoneSeen = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      milestones: prev.milestones.map(m => m.id === id ? { ...m, seen: true } : m),
     }));
   };
 
@@ -731,6 +972,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addProgressPhoto, deleteProgressPhoto,
       logHabit, addHabitDefinition, removeHabitDefinition,
       addCoachInsight, dismissCoachInsight, saveWeeklyCheckIn,
+      saveMealPlan, deleteMealPlan,
+      awardXP, markMilestoneSeen,
       showToast, resetApp,
     }}>
       {children}

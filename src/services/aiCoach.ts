@@ -8,7 +8,7 @@
  * VITE_CLAUDE_API_KEY=your-key-here (in .env)
  */
 
-import { UserProfile, DailyLog, WeeklyStats, WorkoutSession, CoachInsight, GoalType } from '../types';
+import { UserProfile, DailyLog, WeeklyStats, WorkoutSession, CoachInsight, GoalType, MealPlan, PlannedDay, PlannedMealItem } from '../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -716,3 +716,193 @@ Rules:
 // ─── Singleton ────────────────────────────────────────────────────────────────
 
 export const coachService = new AICoachService();
+
+// ─── Meal Plan Generator ──────────────────────────────────────────────────────
+
+const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+/** Fallback algorithmic meal plan when no API key is set */
+function buildFallbackMealPlan(
+  targetCalories: number,
+  targetProtein: number,
+  goalType: GoalType,
+): PlannedDay[] {
+  const isLoss = goalType === 'fat_loss';
+  const templates: Record<string, { breakfast: PlannedMealItem[]; lunch: PlannedMealItem[]; dinner: PlannedMealItem[]; snacks: PlannedMealItem[] }> = {
+    A: {
+      breakfast: [
+        { foodName: 'Oats with whey protein', calories: 380, protein: 32, carbs: 50, fats: 6, servingNote: '80g oats + 1 scoop' },
+        { foodName: 'Banana', calories: 90, protein: 1, carbs: 23, fats: 0, servingNote: '1 medium' },
+      ],
+      lunch: [
+        { foodName: 'Grilled chicken breast', calories: 250, protein: 48, carbs: 0, fats: 5, servingNote: '200g' },
+        { foodName: 'Brown rice', calories: 220, protein: 5, carbs: 46, fats: 2, servingNote: '150g cooked' },
+        { foodName: 'Broccoli (steamed)', calories: 55, protein: 4, carbs: 10, fats: 1, servingNote: '200g' },
+      ],
+      dinner: [
+        { foodName: 'Salmon fillet', calories: 350, protein: 40, carbs: 0, fats: 20, servingNote: '200g' },
+        { foodName: 'Sweet potato', calories: 130, protein: 2, carbs: 30, fats: 0, servingNote: '150g' },
+        { foodName: 'Mixed salad + olive oil', calories: 80, protein: 2, carbs: 6, fats: 5, servingNote: '1 tbsp oil' },
+      ],
+      snacks: [
+        { foodName: isLoss ? 'Greek yogurt (low-fat)' : 'Greek yogurt + honey', calories: isLoss ? 130 : 200, protein: isLoss ? 18 : 17, carbs: isLoss ? 9 : 28, fats: isLoss ? 0 : 0, servingNote: '200g' },
+        { foodName: 'Almonds', calories: 170, protein: 6, carbs: 6, fats: 15, servingNote: '30g' },
+      ],
+    },
+    B: {
+      breakfast: [
+        { foodName: 'Whole eggs scrambled', calories: 280, protein: 21, carbs: 2, fats: 20, servingNote: '4 eggs' },
+        { foodName: 'Whole grain toast', calories: 140, protein: 6, carbs: 26, fats: 2, servingNote: '2 slices' },
+      ],
+      lunch: [
+        { foodName: 'Tuna (canned in water)', calories: 130, protein: 29, carbs: 0, fats: 1, servingNote: '150g drained' },
+        { foodName: 'Whole wheat wrap', calories: 200, protein: 7, carbs: 38, fats: 3, servingNote: '1 large wrap' },
+        { foodName: 'Avocado', calories: 160, protein: 2, carbs: 8, fats: 15, servingNote: '½ medium' },
+      ],
+      dinner: [
+        { foodName: 'Lean ground beef (90%)', calories: 300, protein: 42, carbs: 0, fats: 14, servingNote: '200g cooked' },
+        { foodName: 'Pasta (whole wheat)', calories: 210, protein: 8, carbs: 42, fats: 2, servingNote: '120g dry' },
+        { foodName: 'Tomato sauce (low sugar)', calories: 60, protein: 2, carbs: 12, fats: 1, servingNote: '150ml' },
+      ],
+      snacks: [
+        { foodName: 'Cottage cheese', calories: 150, protein: 22, carbs: 6, fats: 4, servingNote: '200g' },
+        { foodName: 'Rice cakes', calories: 70, protein: 1, carbs: 15, fats: 0, servingNote: '2 cakes' },
+      ],
+    },
+    C: {
+      breakfast: [
+        { foodName: 'Protein pancakes (mix)', calories: 350, protein: 30, carbs: 44, fats: 6, servingNote: '3 pancakes' },
+        { foodName: 'Berries (mixed)', calories: 60, protein: 1, carbs: 14, fats: 0, servingNote: '100g' },
+      ],
+      lunch: [
+        { foodName: 'Turkey breast sliced', calories: 200, protein: 38, carbs: 0, fats: 4, servingNote: '160g' },
+        { foodName: 'Quinoa cooked', calories: 185, protein: 7, carbs: 34, fats: 3, servingNote: '150g' },
+        { foodName: 'Spinach + cherry tomatoes', calories: 40, protein: 3, carbs: 6, fats: 0, servingNote: '150g' },
+      ],
+      dinner: [
+        { foodName: 'Chicken thigh (skinless)', calories: 270, protein: 35, carbs: 0, fats: 14, servingNote: '200g' },
+        { foodName: 'Roasted vegetables (mixed)', calories: 120, protein: 4, carbs: 22, fats: 3, servingNote: '300g' },
+        { foodName: 'Brown rice', calories: 180, protein: 4, carbs: 38, fats: 1, servingNote: '120g cooked' },
+      ],
+      snacks: [
+        { foodName: 'Protein shake (whey)', calories: 130, protein: 25, carbs: 5, fats: 2, servingNote: '1 scoop in water' },
+        { foodName: 'Apple', calories: 80, protein: 0, carbs: 21, fats: 0, servingNote: '1 medium' },
+      ],
+    },
+  };
+
+  const rotation = ['A', 'B', 'C', 'A', 'B', 'C', 'A'];
+
+  return rotation.map((key, i) => {
+    const t = templates[key];
+    const allItems = [...t.breakfast, ...t.lunch, ...t.dinner, ...t.snacks];
+    const totalCalories = allItems.reduce((a, x) => a + x.calories, 0);
+    const totalProtein = allItems.reduce((a, x) => a + x.protein, 0);
+    const totalCarbs = allItems.reduce((a, x) => a + x.carbs, 0);
+    const totalFats = allItems.reduce((a, x) => a + x.fats, 0);
+
+    // Scale to hit calorie target
+    const scale = targetCalories / Math.max(totalCalories, 1);
+    const scaledItems = (items: PlannedMealItem[]): PlannedMealItem[] =>
+      items.map(item => ({
+        ...item,
+        calories: Math.round(item.calories * scale),
+        protein: Math.round(item.protein * scale),
+        carbs: Math.round(item.carbs * scale),
+        fats: Math.round(item.fats * scale),
+      }));
+
+    return {
+      dayIndex: i,
+      dayLabel: DAY_NAMES[i],
+      meals: {
+        breakfast: scaledItems(t.breakfast),
+        lunch: scaledItems(t.lunch),
+        dinner: scaledItems(t.dinner),
+        snacks: scaledItems(t.snacks),
+      },
+      totalCalories: Math.round(totalCalories * scale),
+      totalProtein: Math.round(totalProtein * scale),
+      totalCarbs: Math.round(totalCarbs * scale),
+      totalFats: Math.round(totalFats * scale),
+    };
+  });
+}
+
+export async function generateMealPlan(user: UserProfile): Promise<MealPlan> {
+  const { calories, protein, carbs, fats } = user.targets;
+  const weekStart = (() => {
+    const d = new Date();
+    const day = d.getDay();
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    return d.toISOString().split('T')[0];
+  })();
+
+  const key = getClaudeKey();
+  let days: PlannedDay[];
+
+  if (key) {
+    const prompt = `Create a 7-day meal plan for a ${user.sex}, age ${user.age}, goal: ${user.goalType}.
+Daily targets: ${calories} kcal, ${protein}g protein, ${carbs}g carbs, ${fats}g fat.
+
+Return ONLY a JSON array of 7 objects with this exact structure:
+[{
+  "dayIndex": 0,
+  "dayLabel": "Monday",
+  "meals": {
+    "breakfast": [{"foodName":"...","calories":0,"protein":0,"carbs":0,"fats":0,"servingNote":"..."}],
+    "lunch": [...],
+    "dinner": [...],
+    "snacks": [...]
+  },
+  "totalCalories": 0,
+  "totalProtein": 0,
+  "totalCarbs": 0,
+  "totalFats": 0
+}]
+
+Rules:
+- Each day should total approximately ${calories} kcal and ${protein}g protein
+- Use realistic, whole foods available in most supermarkets
+- Vary meals across days (no exact repeats on consecutive days)
+- Include serving amounts in "servingNote" (e.g. "150g", "1 cup")
+- Breakfast: 25-30% calories, Lunch: 30-35%, Dinner: 30-35%, Snacks: 10-15%
+- Output ONLY the JSON array, no markdown, no explanation`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: CLAUDE_MODEL,
+          max_tokens: 4000,
+          system: 'You are a nutrition expert. Output only valid JSON arrays, nothing else.',
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+      const data = await res.json();
+      const text: string = data.content?.[0]?.text?.trim() ?? '';
+      const jsonStr = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+      days = JSON.parse(jsonStr) as PlannedDay[];
+    } catch {
+      days = buildFallbackMealPlan(calories, protein, user.goalType);
+    }
+  } else {
+    days = buildFallbackMealPlan(calories, protein, user.goalType);
+  }
+
+  return {
+    id: `mp_${Date.now()}`,
+    name: `Week of ${weekStart}`,
+    createdAt: new Date().toISOString(),
+    weekStart,
+    days,
+    targetCalories: calories,
+    targetProtein: protein,
+  };
+}

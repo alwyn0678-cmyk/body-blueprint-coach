@@ -5,11 +5,12 @@ import {
   Flame, Dumbbell, Droplets, Footprints, TrendingUp,
   Brain, Activity, RefreshCw, Sparkles, Zap,
 } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useApp, computeLevel, xpToNextLevel, LEVEL_NAMES } from '../context/AppContext';
 import {
   calculateStreak, computeWeeklyStats, calculateWeightTrend,
 } from '../utils/aiCoachingEngine';
 import { coachService, generateAffirmation } from '../services/aiCoach';
+import { MilestoneModal } from '../components/MilestoneModal';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -167,6 +168,9 @@ export const Dashboard: React.FC = () => {
   const stepsTarget = user.stepsTarget ?? 8000;
   const units = state.settings.units;
 
+  const xpInfo = xpToNextLevel(state.xp);
+  const levelName = LEVEL_NAMES[xpInfo.level] ?? 'Max';
+
   // Evolved score: weighted average of adherence metrics (0–100)
   const evolvedScore = useMemo(() => {
     const calAdherence = Math.min(totals.calories / Math.max(user.targets.calories, 1), 1);
@@ -194,6 +198,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <>
+      <MilestoneModal />
       {/* ── Page ── */}
       <div style={{
         minHeight: '100dvh',
@@ -209,16 +214,18 @@ export const Dashboard: React.FC = () => {
         >
           <EvolvedRing score={evolvedScore} />
 
-          {/* Streaks below ring */}
+          {/* Streaks + XP below ring */}
           <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
             {streak > 0 && (
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 5,
                 padding: '6px 14px', borderRadius: 9999,
-                background: '#F4F3F1', fontSize: '0.75rem', fontWeight: 700, color: '#576038',
+                background: streak >= 7 ? 'rgba(151,68,0,0.1)' : '#F4F3F1',
+                fontSize: '0.75rem', fontWeight: 700,
+                color: streak >= 7 ? '#974400' : '#576038',
               }}>
-                <Flame size={13} color="#974400" />
-                {streak} day streak
+                {streak >= 3 ? '🔥' : <Flame size={13} color="#974400" />}
+                {streak} day{streak !== 1 ? 's' : ''}
               </div>
             )}
             <div style={{
@@ -226,6 +233,36 @@ export const Dashboard: React.FC = () => {
               background: '#F4F3F1', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(86,67,56,0.55)',
             }}>
               Goal: 100
+            </div>
+          </div>
+
+          {/* XP / Level bar */}
+          <div style={{
+            width: '100%', marginTop: 18,
+            background: '#F4F3F1', borderRadius: 16, padding: '12px 16px',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, #576038, #8B9467)',
+                  borderRadius: 8, padding: '3px 8px',
+                  fontSize: '0.65rem', fontWeight: 900, color: '#fff', letterSpacing: '0.06em',
+                }}>
+                  LVL {xpInfo.level}
+                </div>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#576038' }}>{levelName}</span>
+              </div>
+              <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(26,26,26,0.45)' }}>
+                {xpInfo.current} / {xpInfo.needed} XP
+              </span>
+            </div>
+            <div style={{ height: 6, borderRadius: 6, background: 'rgba(87,96,56,0.15)', overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', borderRadius: 6,
+                background: 'linear-gradient(90deg, #576038, #8B9467)',
+                width: `${Math.min((xpInfo.current / xpInfo.needed) * 100, 100)}%`,
+                transition: 'width 0.8s ease',
+              }} />
             </div>
           </div>
         </motion.section>

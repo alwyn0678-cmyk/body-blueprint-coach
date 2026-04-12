@@ -13,6 +13,7 @@ import { getProgramById, WorkoutProgram, ProgramDay } from '../data/workoutProgr
 import { coachService } from '../services/aiCoach';
 import { computeEarnedBadges } from '../utils/aiCoachingEngine';
 import { AIWorkoutBuilder, BuiltExercise } from '../components/AIWorkoutBuilder';
+import { RestTimer } from '../components/RestTimer';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type SetType = 'W' | 'N' | 'D'; // Warm-up / Normal / Drop-set
@@ -845,20 +846,19 @@ const ActiveWorkoutScreen: React.FC<{
   showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
 }> = ({ workoutName, exercises, elapsed, logs, today, goalType, onUpdateExercises, onAddExercise, onFinish, onCancel, showToast }) => {
   const { state, toggleFavoriteExercise } = useApp();
-  const [restTimer, setRestTimer] = useState<number | null>(null);
+  const [showRestTimer, setShowRestTimer] = useState(false);
+  const [restTimerDefault, setRestTimerDefault] = useState(120);
   const restRef = useRef<ReturnType<typeof setTimeout>>();
   const [activeInput, setActiveInput] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [swapExIdx, setSwapExIdx] = useState<number | null>(null);
   const [swapMuscles, setSwapMuscles] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (restTimer === null || restTimer <= 0) return;
-    const t = setTimeout(() => setRestTimer(prev => (prev !== null && prev > 0 ? prev - 1 : null)), 1000);
-    return () => clearTimeout(t);
-  }, [restTimer]);
-
-  const startRest = (s: number) => { setRestTimer(s); clearTimeout(restRef.current); };
+  const startRest = (s: number) => {
+    setRestTimerDefault(s);
+    setShowRestTimer(true);
+    clearTimeout(restRef.current);
+  };
 
   const updateSet = (exIdx: number, setIdx: number, field: 'weight' | 'reps', value: string) => {
     onUpdateExercises(prev => prev.map((ex, i) => i !== exIdx ? ex : {
@@ -993,42 +993,12 @@ const ActiveWorkoutScreen: React.FC<{
         </div>
       </div>
 
-      {/* Rest Timer Banner */}
-      {restTimer !== null && restTimer > 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'rgba(87,96,56,0.07)', border: '1px solid rgba(87,96,56,0.15)',
-          margin: '12px 16px 0', padding: '12px 16px', borderRadius: 16,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: '50%',
-              border: '2px solid rgba(87,96,56,0.35)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <RotateCcw size={16} color="#576038" />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(87,96,56,0.60)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Rest</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#576038', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{formatDuration(restTimer)}</div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {[30, 60].map(s => (
-              <button key={s} onClick={() => setRestTimer(t => (t ?? 0) + s)} style={{
-                background: 'rgba(87,96,56,0.10)', border: '1px solid rgba(87,96,56,0.15)',
-                borderRadius: 99, padding: '4px 10px', color: '#576038',
-                fontWeight: 800, fontSize: '0.72rem', cursor: 'pointer',
-              }}>+{s}s</button>
-            ))}
-            <button onClick={() => setRestTimer(null)} style={{
-              background: 'rgba(0,0,0,0.05)', border: 'none', cursor: 'pointer',
-              borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <X size={14} color="rgba(0,0,0,0.28)" />
-            </button>
-          </div>
-        </div>
+      {/* Rest Timer Modal */}
+      {showRestTimer && (
+        <RestTimer
+          defaultSeconds={restTimerDefault}
+          onClose={() => setShowRestTimer(false)}
+        />
       )}
 
       {/* Exercise Cards */}
@@ -1166,6 +1136,32 @@ const ActiveWorkoutScreen: React.FC<{
                   </div>
                 </div>
               </div>
+
+              {/* Volume summary for done sets */}
+              {(() => {
+                const doneSetsData = ex.sets.filter(s => s.done);
+                if (doneSetsData.length === 0) return null;
+                const vol = doneSetsData.reduce((a, s) => a + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0);
+                const maxW = Math.max(...doneSetsData.map(s => parseFloat(s.weight) || 0));
+                return (
+                  <div style={{
+                    display: 'flex', gap: 12, padding: '0 16px 8px', alignItems: 'center',
+                  }}>
+                    <div style={{
+                      fontSize: '0.68rem', fontWeight: 700, color: '#576038',
+                      background: 'rgba(87,96,56,0.08)', padding: '3px 8px', borderRadius: 8,
+                    }}>
+                      Vol: {vol.toLocaleString()}kg
+                    </div>
+                    <div style={{
+                      fontSize: '0.68rem', fontWeight: 700, color: 'rgba(26,26,26,0.45)',
+                      background: 'rgba(0,0,0,0.04)', padding: '3px 8px', borderRadius: 8,
+                    }}>
+                      Top: {maxW}kg
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Column headers */}
               <div style={{ display: 'flex', padding: '0 16px', marginBottom: 6, alignItems: 'center' }}>

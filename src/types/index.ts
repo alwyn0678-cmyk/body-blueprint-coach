@@ -359,6 +359,83 @@ export interface CustomProgram {
   updatedAt: string;
 }
 
+// ─── Meal Planning ────────────────────────────────────────────────────────────
+
+export interface PlannedMealItem {
+  foodName: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  servingNote: string; // e.g. "150g", "1 cup"
+}
+
+export interface PlannedDay {
+  dayIndex: number; // 0 = Monday ... 6 = Sunday
+  dayLabel: string;
+  meals: {
+    breakfast: PlannedMealItem[];
+    lunch: PlannedMealItem[];
+    dinner: PlannedMealItem[];
+    snacks: PlannedMealItem[];
+  };
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFats: number;
+}
+
+export interface MealPlan {
+  id: string;
+  name: string;
+  createdAt: string;
+  weekStart: string; // YYYY-MM-DD Monday
+  days: PlannedDay[];
+  targetCalories: number;
+  targetProtein: number;
+}
+
+// ─── Gamification / XP ───────────────────────────────────────────────────────
+
+export type XPEventType =
+  | 'food_logged'
+  | 'workout_completed'
+  | 'habit_completed'
+  | 'protein_target_hit'
+  | 'calorie_target_hit'
+  | 'streak_milestone'
+  | 'badge_earned'
+  | 'workout_pr';
+
+export interface XPEvent {
+  id: string;
+  type: XPEventType;
+  amount: number;
+  label: string;
+  date: string; // YYYY-MM-DD
+}
+
+export interface Milestone {
+  id: string;
+  type: 'streak' | 'workout_count' | 'badge' | 'level_up' | 'xp';
+  label: string;
+  description: string;
+  icon: string;
+  achievedAt: string;
+  seen: boolean;
+}
+
+// ─── Personal Records ─────────────────────────────────────────────────────────
+
+export interface PersonalRecord {
+  exerciseId: string;
+  exerciseName: string;
+  weight: number;
+  reps: number;
+  volume: number; // weight × reps (e1RM proxy)
+  achievedAt: string; // ISO date string
+}
+
 // ─── App State ────────────────────────────────────────────────────────────────
 
 export interface AppState {
@@ -383,6 +460,14 @@ export interface AppState {
   coachInsights: CoachInsight[];
   weeklyCheckIns: WeeklyCheckIn[];
   activeMesocycle?: Mesocycle;
+  // Meal planning
+  mealPlans: MealPlan[];
+  // Gamification
+  xp: number;
+  level: number;
+  xpHistory: XPEvent[];
+  milestones: Milestone[];
+  personalRecords: PersonalRecord[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

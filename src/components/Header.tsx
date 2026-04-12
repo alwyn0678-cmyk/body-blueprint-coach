@@ -1,14 +1,15 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, ClipboardList, Dumbbell, Brain, TrendingUp, Settings } from 'lucide-react';
+import { Home, ClipboardList, Dumbbell, Brain, TrendingUp, Settings, UtensilsCrossed } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const NAV_ITEMS = [
-  { to: '/',         Icon: Home,          label: 'Home'     },
-  { to: '/log',      Icon: ClipboardList, label: 'Log'      },
-  { to: '/training', Icon: Dumbbell,      label: 'Train'    },
-  { to: '/coach',    Icon: Brain,         label: 'Coach'    },
-  { to: '/progress', Icon: TrendingUp,    label: 'Progress' },
+  { to: '/',          Icon: Home,             label: 'Home'     },
+  { to: '/log',       Icon: ClipboardList,    label: 'Log'      },
+  { to: '/meal-plan', Icon: UtensilsCrossed,  label: 'Plan'     },
+  { to: '/training',  Icon: Dumbbell,         label: 'Train'    },
+  { to: '/coach',     Icon: Brain,            label: 'Coach'    },
+  { to: '/progress',  Icon: TrendingUp,       label: 'Progress' },
 ];
 
 // ── Top App Bar ────────────────────────────────────────────────────────────────
@@ -88,7 +89,7 @@ export const Header: React.FC = () => {
           {({ isActive }) => (
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              padding: isActive ? '8px 16px' : '8px 12px',
+              padding: isActive ? '7px 10px' : '7px 7px',
               borderRadius: 9999,
               background: isActive ? '#576038' : 'transparent',
               transition: 'all 0.2s ease',
@@ -99,13 +100,13 @@ export const Header: React.FC = () => {
               onTouchEnd={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
             >
               <Icon
-                size={20}
+                size={18}
                 strokeWidth={isActive ? 2.2 : 1.6}
                 style={{ color: isActive ? '#FAF9F6' : '#46483d' }}
               />
               <span style={{
-                fontSize: '0.55rem', fontWeight: 800,
-                letterSpacing: '0.1em', textTransform: 'uppercase',
+                fontSize: '0.5rem', fontWeight: 800,
+                letterSpacing: '0.08em', textTransform: 'uppercase',
                 color: isActive ? '#FAF9F6' : '#46483d',
                 lineHeight: 1,
               }}>

@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
+  AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
-import { Plus, Ruler, Trash2 } from 'lucide-react';
+import { Plus, Ruler, Trash2, TrendingUp, Award } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { calculateWeightTrend, computeWeeklyStats } from '../utils/aiCoachingEngine';
 import { BodyMeasurement } from '../types';
@@ -197,7 +197,8 @@ export const Progress: React.FC = () => {
   const { state, addMeasurement, deleteMeasurement, showToast } = useApp();
   const user = state.user!;
 
-  const [activeTab, setActiveTab] = useState<'weight' | 'nutrition' | 'body'>('weight');
+  const [activeTab, setActiveTab] = useState<'weight' | 'nutrition' | 'body' | 'strength'>('weight');
+  const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<Timeframe>('1M');
   const [showMeasure, setShowMeasure] = useState(false);
 
@@ -242,6 +243,49 @@ export const Progress: React.FC = () => {
     [...state.measurements].sort((a, b) => b.date.localeCompare(a.date))
   , [state.measurements]);
 
+  // Strength: exercises logged, sorted by frequency
+  const exerciseList = useMemo(() => {
+    const counts: Record<string, { id: string; name: string; count: number }> = {};
+    for (const log of Object.values(state.logs)) {
+      for (const workout of log.workouts ?? []) {
+        for (const ex of workout.exercises) {
+          if (!counts[ex.exerciseId]) counts[ex.exerciseId] = { id: ex.exerciseId, name: ex.name, count: 0 };
+          counts[ex.exerciseId].count += 1;
+        }
+      }
+    }
+    return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 20);
+  }, [state.logs]);
+
+  const exerciseChartData = useMemo(() => {
+    if (!selectedExercise) return [];
+    const points: { date: string; maxWeight: number; volume: number; e1rm: number }[] = [];
+    for (const [date, log] of Object.entries(state.logs).sort((a, b) => a[0].localeCompare(b[0]))) {
+      for (const workout of log.workouts ?? []) {
+        const ex = workout.exercises.find(e => e.exerciseId === selectedExercise);
+        if (!ex || !ex.sets.length) continue;
+        let maxW = 0, vol = 0, bestE1RM = 0;
+        for (const set of ex.sets) {
+          const w = set.weight ?? 0;
+          const r = set.reps ?? 0;
+          vol += w * r;
+          if (w > maxW) maxW = w;
+          const e1rm = r === 1 ? w : w * (1 + r / 30);
+          if (e1rm > bestE1RM) bestE1RM = e1rm;
+        }
+        points.push({
+          date: new Date(date).toLocaleDateString('en-AU', { month: 'short', day: 'numeric' }),
+          maxWeight: maxW,
+          volume: vol,
+          e1rm: parseFloat(bestE1RM.toFixed(1)),
+        });
+      }
+    }
+    return points.slice(-20); // last 20 sessions
+  }, [selectedExercise, state.logs]);
+
+  const selectedExName = exerciseList.find(e => e.id === selectedExercise)?.name ?? '';
+
   return (
     <div className="page page-top-pad safe-bottom" style={{ gap: 14 }}>
 
@@ -279,9 +323,9 @@ export const Progress: React.FC = () => {
       {/* ── Tabs ── */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
         <div className="pill-tabs">
-          {(['weight', 'nutrition', 'body'] as const).map(tab => (
+          {(['weight', 'nutrition', 'body', 'strength'] as const).map(tab => (
             <button key={tab} className={`pill-tab${activeTab === tab ? ' active' : ''}`} onClick={() => setActiveTab(tab)}>
-              {tab === 'weight' ? 'Weight' : tab === 'nutrition' ? 'Nutrition' : 'Body'}
+              {tab === 'weight' ? 'Weight' : tab === 'nutrition' ? 'Nutrition' : tab === 'body' ? 'Body' : 'Strength'}
             </button>
           ))}
         </div>
@@ -434,6 +478,127 @@ export const Progress: React.FC = () => {
             )}
           </motion.div>
         )}
+        {/* ── STRENGTH TAB ── */}
+        {activeTab === 'strength' && (
+          <motion.div key="strength" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+
+            {exerciseList.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">💪</div>
+                <div className="empty-state-title">No workouts yet</div>
+                <div className="empty-state-body">Log workouts in the Train tab to see your strength progress here.</div>
+              </div>
+            ) : (
+              <>
+                {/* Exercise picker */}
+                <div style={{ marginBottom: 16 }}>
+                  <div className="section-label" style={{ marginBottom: 8 }}>Select exercise</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {exerciseList.map(ex => (
+                      <button
+                        key={ex.id}
+                        onClick={() => setSelectedExercise(ex.id === selectedExercise ? null : ex.id)}
+                        style={{
+                          padding: '6px 12px', borderRadius: 20,
+                          border: `1.5px solid ${ex.id === selectedExercise ? '#576038' : 'rgba(87,96,56,0.18)'}`,
+                          background: ex.id === selectedExercise ? '#576038' : 'transparent',
+                          color: ex.id === selectedExercise ? '#fff' : '#576038',
+                          fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {ex.name} <span style={{ opacity: 0.6, fontSize: '0.65rem' }}>×{ex.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Charts */}
+                {selectedExercise && exerciseChartData.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {/* e1RM chart */}
+                    <div style={{ background: 'var(--bg-card)', borderRadius: 18, padding: '16px', border: '1px solid var(--border-color)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <div>
+                          <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>
+                            Est. 1-Rep Max
+                          </div>
+                          <div style={{ fontSize: '1rem', fontWeight: 900, color: '#576038' }}>{selectedExName}</div>
+                        </div>
+                        <TrendingUp size={18} color="#576038" />
+                      </div>
+                      <ResponsiveContainer width="100%" height={160}>
+                        <LineChart data={exerciseChartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                          <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.3)' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                          <YAxis tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.3)' }} tickLine={false} axisLine={false} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Line
+                            type="monotone" dataKey="e1rm" name="e1RM (kg)"
+                            stroke="#576038" strokeWidth={2.5} dot={false}
+                            activeDot={{ r: 5, fill: '#576038' }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Volume chart */}
+                    <div style={{ background: 'var(--bg-card)', borderRadius: 18, padding: '16px', border: '1px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: 12 }}>
+                        Session Volume (kg)
+                      </div>
+                      <ResponsiveContainer width="100%" height={120}>
+                        <BarChart data={exerciseChartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                          <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.3)' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                          <YAxis tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.3)' }} tickLine={false} axisLine={false} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Bar dataKey="volume" name="Volume (kg)" fill="#8B9467" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* PR summary */}
+                    {state.personalRecords.find(r => r.exerciseId === selectedExercise) && (() => {
+                      const pr = state.personalRecords.find(r => r.exerciseId === selectedExercise)!;
+                      return (
+                        <div style={{
+                          background: 'rgba(151,68,0,0.06)', border: '1px solid rgba(151,68,0,0.15)',
+                          borderRadius: 16, padding: '14px 16px',
+                          display: 'flex', alignItems: 'center', gap: 12,
+                        }}>
+                          <Award size={22} color="#974400" />
+                          <div>
+                            <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#974400' }}>Personal Record</div>
+                            <div style={{ fontSize: '1rem', fontWeight: 900, color: '#1A1A1A', marginTop: 1 }}>
+                              {pr.weight}kg × {pr.reps} reps
+                            </div>
+                            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(26,26,26,0.45)', marginTop: 1 }}>
+                              e1RM ≈ {(pr.reps === 1 ? pr.weight : pr.weight * (1 + pr.reps / 30)).toFixed(1)}kg
+                              {' · '}{new Date(pr.achievedAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ) : selectedExercise ? (
+                  <div className="empty-state">
+                    <div className="empty-state-icon">📊</div>
+                    <div className="empty-state-title">Not enough data</div>
+                    <div className="empty-state-body">Log at least one session of {selectedExName} to see your chart.</div>
+                  </div>
+                ) : (
+                  <div style={{
+                    textAlign: 'center', padding: '32px 16px',
+                    color: 'rgba(26,26,26,0.4)', fontSize: '0.85rem',
+                  }}>
+                    Select an exercise above to view its progress chart
+                  </div>
+                )}
+              </>
+            )}
+          </motion.div>
+        )}
+
       </AnimatePresence>
 
       {/* ── Measurement sheet ── */}

@@ -80,9 +80,19 @@ const HabitRow: React.FC<{
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {streak > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                <Flame size={10} color="#974400" />
-                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#974400' }}>{streak}d streak</span>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 3,
+                background: streak >= 7 ? 'rgba(151,68,0,0.12)' : 'transparent',
+                borderRadius: 9999,
+                padding: streak >= 7 ? '1px 6px' : 0,
+              }}>
+                <span style={{ fontSize: streak >= 7 ? '0.7rem' : '0.62rem' }}>
+                  {streak >= 30 ? '🔥🔥🔥' : streak >= 14 ? '🔥🔥' : streak >= 7 ? '🔥' : ''}
+                </span>
+                {streak < 7 && <Flame size={10} color="#974400" />}
+                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#974400' }}>
+                  {streak}d{streak >= 7 ? '' : ' streak'}
+                </span>
               </div>
             )}
             <span style={{ fontSize: '0.62rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'capitalize' }}>
