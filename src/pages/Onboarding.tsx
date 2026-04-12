@@ -303,6 +303,11 @@ export const Onboarding: React.FC = () => {
     return { weightErr, heightErr, ageErr, goalWeightErr };
   };
 
+  // Goals where a separate target weight doesn't apply
+  const skipGoalWeight = formData.goalType === 'maintenance' || formData.goalType === 'recomposition';
+  // Maintenance stays at TDEE — no deficit/surplus speed to pick
+  const skipDietSpeed = formData.goalType === 'maintenance';
+
   const canProceed = (): boolean => {
     const { weightErr, heightErr, ageErr, goalWeightErr } = getFieldErrors();
     switch (step) {
@@ -319,11 +324,15 @@ export const Onboarding: React.FC = () => {
         return hasName && hasAge && hasHeight && hasWeight && !weightErr && !heightErr && !ageErr;
       }
       case 5: {
+        if (skipGoalWeight) return true;
         const gw = parseFloat(formData.goalWeight);
         return gw > 0 && !goalWeightErr;
       }
       case 6: return !!formData.activityLevel;
-      case 7: return !!formData.preferredDietSpeed;
+      case 7: {
+        if (skipDietSpeed) return true;
+        return !!formData.preferredDietSpeed;
+      }
       default: return true;
     }
   };
@@ -352,7 +361,13 @@ export const Onboarding: React.FC = () => {
     if (!canProceed()) return;
     setAttempted(false);
     setDirection('forward');
-    if (step < FORM_STEPS) {
+    if (step === 4 && skipGoalWeight) {
+      // maintenance/recomp: jump over goal-weight step
+      setStep(6);
+    } else if (step === 6 && skipDietSpeed) {
+      // maintenance: jump over diet-speed step
+      setStep(STEP_CALCULATING);
+    } else if (step < FORM_STEPS) {
       setStep(s => s + 1);
     } else if (step === FORM_STEPS) {
       setStep(STEP_CALCULATING);
@@ -364,7 +379,9 @@ export const Onboarding: React.FC = () => {
     if (step <= 1) return;
     setDirection('back');
     if (step === STEP_CALCULATING || step === STEP_PLAN) {
-      setStep(FORM_STEPS);
+      setStep(skipDietSpeed ? 6 : FORM_STEPS);
+    } else if (step === 6 && skipGoalWeight) {
+      setStep(4);
     } else {
       setStep(s => s - 1);
     }
@@ -385,6 +402,12 @@ export const Onboarding: React.FC = () => {
     const weightKg = resolvedWeightKg();
     const goalWeightKg = resolvedGoalWeightKg();
 
+    // maintenance/recomp → goal weight = current weight; maintenance → diet speed = 'moderate'
+    const effectiveGoalWeight = (formData.goalType === 'maintenance' || formData.goalType === 'recomposition')
+      ? weightKg : (goalWeightKg || undefined);
+    const effectiveDietSpeed = formData.goalType === 'maintenance'
+      ? 'moderate' : (formData.preferredDietSpeed || 'moderate');
+
     const profile = {
       id: `user-${Date.now()}`,
       name: formData.name,
@@ -392,13 +415,13 @@ export const Onboarding: React.FC = () => {
       sex: formData.sex as 'male' | 'female',
       height: heightCm,
       weight: weightKg,
-      goalWeight: goalWeightKg || undefined,
+      goalWeight: effectiveGoalWeight,
       bodyFat: formData.bodyFat ? parseFloat(formData.bodyFat) : undefined,
       goalType: formData.goalType as any,
       activityLevel: formData.activityLevel as any,
       trainingFrequency: parseInt(formData.trainingFrequency) || 3,
       stepsTarget: parseInt(formData.stepsTarget) || 8000,
-      preferredDietSpeed: formData.preferredDietSpeed as any,
+      preferredDietSpeed: effectiveDietSpeed as any,
       onboarded: true,
     };
 
@@ -439,6 +462,11 @@ export const Onboarding: React.FC = () => {
     const weightKg = resolvedWeightKg();
     const goalWeightKg = resolvedGoalWeightKg();
 
+    const effectiveGoalWeight = (formData.goalType === 'maintenance' || formData.goalType === 'recomposition')
+      ? weightKg : (goalWeightKg || undefined);
+    const effectiveDietSpeed = formData.goalType === 'maintenance'
+      ? 'moderate' : (formData.preferredDietSpeed || 'moderate');
+
     const profile = {
       id: `user-${Date.now()}`,
       name: formData.name,
@@ -446,13 +474,13 @@ export const Onboarding: React.FC = () => {
       sex: formData.sex as 'male' | 'female',
       height: heightCm,
       weight: weightKg,
-      goalWeight: goalWeightKg || undefined,
+      goalWeight: effectiveGoalWeight,
       bodyFat: formData.bodyFat ? parseFloat(formData.bodyFat) : undefined,
       goalType: formData.goalType as any,
       activityLevel: formData.activityLevel as any,
       trainingFrequency: parseInt(formData.trainingFrequency) || 3,
       stepsTarget: parseInt(formData.stepsTarget) || 8000,
-      preferredDietSpeed: formData.preferredDietSpeed as any,
+      preferredDietSpeed: effectiveDietSpeed as any,
       onboarded: true,
       targets,
     };
@@ -820,34 +848,59 @@ export const Onboarding: React.FC = () => {
       );
 
       // ── Step 7: Diet Approach ─────────────────────────────────────────────
-      case 7: return (
-        <div key="step-7" className="animate-slide-up">
-          <StepHeader title="Diet approach" subtitle="How aggressively do you want to work toward your goal?" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-            <BigSelectionCard
-              emoji="🌱"
-              title="Sustainable"
-              desc={formData.goalType === 'muscle_gain' ? '+150 kcal/day · ~0.25 kg/week' : '–250 kcal/day · ~0.25 kg/week'}
-              selected={formData.preferredDietSpeed === 'sustainable'}
-              onClick={() => set('preferredDietSpeed', 'sustainable')}
+      case 7: {
+        const isGain = formData.goalType === 'muscle_gain';
+        const isRecomp = formData.goalType === 'recomposition';
+        const getSpeedDesc = (speed: 'sustainable' | 'moderate' | 'aggressive') => {
+          if (isRecomp) {
+            return speed === 'sustainable' ? 'Low training volume · gradual fat loss with muscle preservation'
+              : speed === 'moderate' ? 'Medium volume · best balance of fat loss and muscle retention'
+              : 'High volume · maximise protein intake and training frequency';
+          }
+          if (isGain) {
+            return speed === 'sustainable' ? '+150 kcal/day · ~0.25 kg/week'
+              : speed === 'moderate' ? '+300 kcal/day · ~0.5 kg/week'
+              : '+500 kcal/day · ~0.75 kg/week';
+          }
+          // fat_loss
+          return speed === 'sustainable' ? '–250 kcal/day · ~0.25 kg/week'
+            : speed === 'moderate' ? '–500 kcal/day · ~0.5 kg/week'
+            : '–750 kcal/day · ~0.75 kg/week';
+        };
+        return (
+          <div key="step-7" className="animate-slide-up">
+            <StepHeader
+              title={isRecomp ? 'Training commitment' : 'Diet approach'}
+              subtitle={isRecomp
+                ? 'Recomposition works at maintenance calories — choose your training intensity.'
+                : 'How aggressively do you want to work toward your goal?'}
             />
-            <BigSelectionCard
-              emoji="⚡"
-              title="Moderate"
-              desc={formData.goalType === 'muscle_gain' ? '+300 kcal/day · ~0.5 kg/week' : '–500 kcal/day · ~0.5 kg/week'}
-              selected={formData.preferredDietSpeed === 'moderate'}
-              onClick={() => set('preferredDietSpeed', 'moderate')}
-            />
-            <BigSelectionCard
-              emoji="🔥"
-              title="Aggressive"
-              desc={formData.goalType === 'muscle_gain' ? '+500 kcal/day · ~0.75 kg/week' : '–750 kcal/day · ~0.75 kg/week'}
-              selected={formData.preferredDietSpeed === 'aggressive'}
-              onClick={() => set('preferredDietSpeed', 'aggressive')}
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              <BigSelectionCard
+                emoji="🌱"
+                title="Sustainable"
+                desc={getSpeedDesc('sustainable')}
+                selected={formData.preferredDietSpeed === 'sustainable'}
+                onClick={() => set('preferredDietSpeed', 'sustainable')}
+              />
+              <BigSelectionCard
+                emoji="⚡"
+                title="Moderate"
+                desc={getSpeedDesc('moderate')}
+                selected={formData.preferredDietSpeed === 'moderate'}
+                onClick={() => set('preferredDietSpeed', 'moderate')}
+              />
+              <BigSelectionCard
+                emoji="🔥"
+                title="Aggressive"
+                desc={getSpeedDesc('aggressive')}
+                selected={formData.preferredDietSpeed === 'aggressive'}
+                onClick={() => set('preferredDietSpeed', 'aggressive')}
+              />
+            </div>
           </div>
-        </div>
-      );
+        );
+      }
 
       // ── Step 8: Calculating ───────────────────────────────────────────────
       case STEP_CALCULATING: return (

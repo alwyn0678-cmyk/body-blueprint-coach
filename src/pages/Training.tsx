@@ -1223,12 +1223,16 @@ const ActiveWorkoutScreen: React.FC<{
                         <span>{typeConf.label}</span>
                       </button>
 
-                      {/* Weight */}
+                      {/* Weight — type="text" fixes iOS decimal point blocked by type="number" */}
                       <input
-                        type="number" inputMode="decimal"
+                        type="text" inputMode="decimal"
+                        pattern="[0-9]*[.,]?[0-9]*"
                         placeholder={lastPerf ? String(lastPerf.weight) : '0'}
                         value={set.weight}
-                        onChange={e => updateSet(exIdx, setIdx, 'weight', e.target.value)}
+                        onChange={e => {
+                          const raw = e.target.value.replace(',', '.');
+                          if (/^(\d*\.?\d*)$/.test(raw)) updateSet(exIdx, setIdx, 'weight', raw);
+                        }}
                         onFocus={() => setActiveInput(inputKey)}
                         onBlur={() => setActiveInput(null)}
                         disabled={set.done}

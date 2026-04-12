@@ -528,154 +528,170 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
     const mult = getMultiplier();
     const isFav = state.favoriteFoods.some(f => f.id === selectedFood.id);
     return (
+      // Outer: fixed bounds, no overflow — splits into scroll area + pinned footer
       <div style={{
-        backgroundColor: 'var(--bg-primary)', minHeight: '100%',
+        backgroundColor: 'var(--bg-primary)',
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9002,
         display: 'flex', flexDirection: 'column',
-        padding: '1rem',
-        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
-        overflowY: 'auto',
+        overflowY: 'hidden',
       }}
         className="animate-slide-up"
       >
-        {/* Top nav */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-          <button
-            onClick={() => setSelectedFood(null)}
-            style={{
-              background: 'rgba(0,0,0,0.07)', border: 'none', borderRadius: '10px',
-              display: 'flex', alignItems: 'center', gap: '6px',
-              color: 'rgba(0,0,0,0.45)', padding: '0.5rem 0.85rem',
-              fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
-            }}
-          >
-            ← Back
-          </button>
-          <button
-            onClick={() => toggleFavoriteFood(selectedFood)}
-            style={{ background: 'none', border: 'none', display: 'flex', padding: '0.4rem', cursor: 'pointer' }}
-          >
-            <Heart size={22} color={isFav ? 'var(--accent-red)' : 'rgba(0,0,0,0.28)'} fill={isFav ? 'var(--accent-red)' : 'none'} />
-          </button>
-        </div>
+        {/* Scrollable content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', paddingBottom: '0.5rem' }}>
+          {/* Top nav */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+            <button
+              onClick={() => setSelectedFood(null)}
+              style={{
+                background: 'rgba(0,0,0,0.07)', border: 'none', borderRadius: '10px',
+                display: 'flex', alignItems: 'center', gap: '6px',
+                color: 'rgba(0,0,0,0.45)', padding: '0.5rem 0.85rem',
+                fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+              }}
+            >
+              ← Back
+            </button>
+            <button
+              onClick={() => toggleFavoriteFood(selectedFood)}
+              style={{ background: 'none', border: 'none', display: 'flex', padding: '0.4rem', cursor: 'pointer' }}
+            >
+              <Heart size={22} color={isFav ? 'var(--accent-red)' : 'rgba(0,0,0,0.28)'} fill={isFav ? 'var(--accent-red)' : 'none'} />
+            </button>
+          </div>
 
-        {/* Food name */}
-        <div style={{ marginTop: '1.25rem', marginBottom: '1rem' }}>
-          <h2 style={{ color: 'var(--text-primary)', lineHeight: 1.1, fontSize: '1.9rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
-            {selectedFood.name}
-          </h2>
-          <p style={{ color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, fontSize: '0.72rem', marginTop: '6px' }}>
-            {selectedFood.brand || 'Generic'}{selectedFood.source === 'openfoodfacts' ? ' · Open Food Facts' : ''}
-          </p>
-        </div>
+          {/* Food name */}
+          <div style={{ marginTop: '1.25rem', marginBottom: '1rem' }}>
+            <h2 style={{ color: 'var(--text-primary)', lineHeight: 1.1, fontSize: '1.9rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>
+              {selectedFood.name}
+            </h2>
+            <p style={{ color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, fontSize: '0.72rem', marginTop: '6px' }}>
+              {selectedFood.brand || 'Generic'}{selectedFood.source === 'openfoodfacts' ? ' · Open Food Facts' : ''}
+            </p>
+          </div>
 
-        {/* Macro card */}
-        <div style={{
-          background: 'var(--bg-card)',
-          borderRadius: '20px',
-          border: '1px solid rgba(0,0,0,0.07)',
-          boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.04)',
-          padding: '1.25rem',
-          marginBottom: '1.25rem',
-        }}>
+          {/* Macro card */}
           <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
-            borderBottom: '1px solid rgba(0,0,0,0.07)', paddingBottom: '1rem', marginBottom: '1rem',
+            background: 'var(--bg-card)',
+            borderRadius: '20px',
+            border: '1px solid rgba(0,0,0,0.07)',
+            boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.04)',
+            padding: '1.25rem',
+            marginBottom: '1.25rem',
           }}>
-            <span style={{
-              fontSize: '3.5rem', fontWeight: 900, color: 'var(--text-primary)',
-              fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', lineHeight: 0.9,
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+              borderBottom: '1px solid rgba(0,0,0,0.07)', paddingBottom: '1rem', marginBottom: '1rem',
             }}>
-              {Math.round(selectedFood.calories * mult)}
-            </span>
-            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'rgba(0,0,0,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Calories</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            {[
-              { label: 'Protein', value: selectedFood.protein * mult, color: 'var(--color-protein)' },
-              { label: 'Carbs', value: selectedFood.carbs * mult, color: 'var(--color-carbs)' },
-              { label: 'Fats', value: selectedFood.fats * mult, color: 'var(--color-fats)' },
-            ].map(m => (
-              <div key={m.label} style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ color: m.color, fontVariantNumeric: 'tabular-nums', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                  {Math.round(m.value)}g
-                </span>
-                <span style={{ color: 'rgba(0,0,0,0.35)', textTransform: 'uppercase', marginTop: '2px', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.06em' }}>
-                  {m.label}
-                </span>
-              </div>
-            ))}
-          </div>
-          {(selectedFood.fiber !== undefined || selectedFood.sodium !== undefined) && (
-            <div style={{ display: 'flex', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
-              {selectedFood.fiber !== undefined && (
-                <span style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.35)' }}>
-                  Fiber: <strong style={{ color: 'rgba(0,0,0,0.60)' }}>{Math.round(selectedFood.fiber * mult)}g</strong>
-                </span>
-              )}
-              {selectedFood.sodium !== undefined && (
-                <span style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.35)' }}>
-                  Sodium: <strong style={{ color: 'rgba(0,0,0,0.60)' }}>{Math.round(selectedFood.sodium * mult)}mg</strong>
-                </span>
-              )}
+              <span style={{
+                fontSize: '3.5rem', fontWeight: 900, color: 'var(--text-primary)',
+                fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', lineHeight: 0.9,
+              }}>
+                {Math.round(selectedFood.calories * mult)}
+              </span>
+              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'rgba(0,0,0,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Calories</span>
             </div>
-          )}
-        </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              {[
+                { label: 'Protein', value: selectedFood.protein * mult, color: 'var(--color-protein)' },
+                { label: 'Carbs', value: selectedFood.carbs * mult, color: 'var(--color-carbs)' },
+                { label: 'Fats', value: selectedFood.fats * mult, color: 'var(--color-fats)' },
+              ].map(m => (
+                <div key={m.label} style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ color: m.color, fontVariantNumeric: 'tabular-nums', fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+                    {Math.round(m.value)}g
+                  </span>
+                  <span style={{ color: 'rgba(0,0,0,0.35)', textTransform: 'uppercase', marginTop: '2px', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.06em' }}>
+                    {m.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {(selectedFood.fiber !== undefined || selectedFood.sodium !== undefined) && (
+              <div style={{ display: 'flex', gap: '16px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                {selectedFood.fiber !== undefined && (
+                  <span style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.35)' }}>
+                    Fiber: <strong style={{ color: 'rgba(0,0,0,0.60)' }}>{Math.round(selectedFood.fiber * mult)}g</strong>
+                  </span>
+                )}
+                {selectedFood.sodium !== undefined && (
+                  <span style={{ fontSize: '0.75rem', color: 'rgba(0,0,0,0.35)' }}>
+                    Sodium: <strong style={{ color: 'rgba(0,0,0,0.60)' }}>{Math.round(selectedFood.sodium * mult)}mg</strong>
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
 
-        {/* Serving amount */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
-          <label style={{ ...sectionLabelStyle, letterSpacing: '0.08em' }}>Serving Amount</label>
-          <input
-            type="number"
-            value={measurementValue}
-            onChange={e => setMeasurementValue(e.target.value)}
-            style={{
-              width: '100%', padding: '1rem 1.25rem', borderRadius: '14px',
-              border: '1px solid rgba(0,0,0,0.08)',
-              fontSize: '1.6rem', fontWeight: 700, textAlign: 'center',
-              backgroundColor: 'rgba(0,0,0,0.05)', color: '#fff',
-              fontVariantNumeric: 'tabular-nums', outline: 'none', boxSizing: 'border-box',
-            }}
-          />
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {[
-              { val: 'g', label: 'g' },
-              { val: 'serving', label: 'srv' },
-              { val: 'oz', label: 'oz' },
-              { val: 'ml', label: 'ml' },
-            ].map(u => (
-              <button
-                key={u.val}
-                onClick={() => setMeasurementUnit(u.val)}
-                style={{
-                  flex: 1, padding: '0.65rem 0',
-                  borderRadius: '12px',
-                  border: `1.5px solid ${measurementUnit === u.val ? 'rgba(87,96,56,0.50)' : 'rgba(0,0,0,0.10)'}`,
-                  backgroundColor: measurementUnit === u.val ? 'rgba(87,96,56,0.10)' : 'rgba(0,0,0,0.04)',
-                  color: measurementUnit === u.val ? '#576038' : 'rgba(0,0,0,0.35)',
-                  fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {u.label}
-              </button>
-            ))}
+          {/* Serving amount — type="text" fixes iOS decimal point bug */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '0.5rem' }}>
+            <label style={{ ...sectionLabelStyle, letterSpacing: '0.08em' }}>Serving Amount</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              value={measurementValue}
+              onChange={e => {
+                const raw = e.target.value.replace(',', '.');
+                if (/^(\d*\.?\d*)$/.test(raw) || raw === '') setMeasurementValue(raw);
+              }}
+              style={{
+                width: '100%', padding: '1rem 1.25rem', borderRadius: '14px',
+                border: '1px solid rgba(0,0,0,0.08)',
+                fontSize: '1.6rem', fontWeight: 700, textAlign: 'center',
+                backgroundColor: 'rgba(0,0,0,0.05)', color: 'var(--text-primary)',
+                fontVariantNumeric: 'tabular-nums', outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[
+                { val: 'g', label: 'g' },
+                { val: 'serving', label: 'srv' },
+                { val: 'oz', label: 'oz' },
+                { val: 'ml', label: 'ml' },
+              ].map(u => (
+                <button
+                  key={u.val}
+                  onClick={() => setMeasurementUnit(u.val)}
+                  style={{
+                    flex: 1, padding: '0.65rem 0',
+                    borderRadius: '12px',
+                    border: `1.5px solid ${measurementUnit === u.val ? 'rgba(87,96,56,0.50)' : 'rgba(0,0,0,0.10)'}`,
+                    backgroundColor: measurementUnit === u.val ? 'rgba(87,96,56,0.10)' : 'rgba(0,0,0,0.04)',
+                    color: measurementUnit === u.val ? '#576038' : 'rgba(0,0,0,0.35)',
+                    fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {u.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <button
-          onClick={() => { trackRecentFood(selectedFood); onAdd(selectedFood, mult); showToast(`${selectedFood.name} added`, 'success'); }}
-          style={{
-            marginTop: 'auto', padding: '1.25rem', width: '100%',
-            fontSize: '1rem', fontWeight: 800, borderRadius: '20px',
-            backgroundColor: 'var(--accent-blue)', color: '#fff',
-            boxShadow: '0 8px 24px rgba(87,96,56,0.30)', border: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            cursor: 'pointer',
-          }}
-        >
-          <CheckCircle2 size={20} /> Log to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
-        </button>
+        {/* Pinned footer — always visible regardless of content height */}
+        <div style={{
+          flexShrink: 0,
+          padding: '0.875rem 1rem',
+          paddingBottom: 'calc(0.875rem + env(safe-area-inset-bottom))',
+          borderTop: '1px solid rgba(0,0,0,0.06)',
+          backgroundColor: 'var(--bg-primary)',
+        }}>
+          <button
+            onClick={() => { trackRecentFood(selectedFood); onAdd(selectedFood, mult); showToast(`${selectedFood.name} added`, 'success'); }}
+            style={{
+              padding: '1.1rem', width: '100%',
+              fontSize: '1rem', fontWeight: 800, borderRadius: '20px',
+              backgroundColor: 'var(--accent-blue)', color: '#fff',
+              boxShadow: '0 8px 24px rgba(87,96,56,0.30)', border: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              cursor: 'pointer',
+            }}
+          >
+            <CheckCircle2 size={20} /> Log to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+          </button>
+        </div>
       </div>
     );
   }
