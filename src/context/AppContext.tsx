@@ -5,7 +5,7 @@ import {
   NutritionTotals, ProgressionRecord, ConnectionStatus,
   BodyMeasurement, ProgressPhoto, HabitDefinition, HabitLog,
   CoachInsight, WeeklyCheckIn, Mesocycle, Recipe, CustomProgram,
-  MealPlan, XPEvent, XPEventType, Milestone, PersonalRecord,
+  MealPlan, XPEvent, XPEventType, Milestone, PersonalRecord, DailyCheckIn,
 } from '../types';
 import { additionalExercises } from '../data/workoutPrograms';
 import { safeLoadState } from '../utils/persistence';
@@ -114,6 +114,8 @@ interface AppContextType {
   // Gamification
   awardXP: (type: XPEventType, amount: number, label: string) => void;
   markMilestoneSeen: (id: string) => void;
+  // Daily check-ins
+  saveDailyCheckIn: (checkIn: DailyCheckIn) => void;
   // Toast
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   // Reset
@@ -201,6 +203,7 @@ const defaultState: AppState = {
   xpHistory: [],
   milestones: [],
   personalRecords: [],
+  dailyCheckIns: [],
 };
 
 function loadInitialState(): AppState {
@@ -225,6 +228,7 @@ function loadInitialState(): AppState {
     xpHistory: loaded.xpHistory ?? [],
     milestones: loaded.milestones ?? [],
     personalRecords: loaded.personalRecords ?? [],
+    dailyCheckIns: loaded.dailyCheckIns ?? [],
   };
 }
 
@@ -905,6 +909,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   };
 
+  const saveDailyCheckIn = (checkIn: DailyCheckIn) => {
+    setState(prev => ({
+      ...prev,
+      dailyCheckIns: [checkIn, ...prev.dailyCheckIns.filter(c => c.date !== checkIn.date)].slice(0, 90),
+    }));
+  };
+
   // ── Workout draft ────────────────────────────────────────────────────────────
 
   const saveWorkoutDraft = (draft: WorkoutDraft) => {
@@ -973,7 +984,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       logHabit, addHabitDefinition, removeHabitDefinition,
       addCoachInsight, dismissCoachInsight, saveWeeklyCheckIn,
       saveMealPlan, deleteMealPlan,
-      awardXP, markMilestoneSeen,
+      awardXP, markMilestoneSeen, saveDailyCheckIn,
       showToast, resetApp,
     }}>
       {children}

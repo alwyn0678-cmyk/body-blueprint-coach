@@ -436,6 +436,17 @@ export interface PersonalRecord {
   achievedAt: string; // ISO date string
 }
 
+// ─── Daily Check-In ───────────────────────────────────────────────────────────
+
+export interface DailyCheckIn {
+  id: string;
+  date: string; // YYYY-MM-DD
+  mood: 1 | 2 | 3 | 4 | 5; // 1=poor, 5=great
+  energy: 1 | 2 | 3 | 4 | 5; // 1=drained, 5=fired up
+  soreness: 1 | 2 | 3 | 4 | 5; // 1=none, 5=very sore
+  coachResponse?: string;
+}
+
 // ─── App State ────────────────────────────────────────────────────────────────
 
 export interface AppState {
@@ -468,6 +479,8 @@ export interface AppState {
   xpHistory: XPEvent[];
   milestones: Milestone[];
   personalRecords: PersonalRecord[];
+  // Daily check-ins
+  dailyCheckIns: DailyCheckIn[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

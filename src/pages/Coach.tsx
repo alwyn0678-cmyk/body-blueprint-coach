@@ -3,10 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain, CheckCircle2, ChevronDown, ChevronUp,
   Zap, Target, BarChart3, Dumbbell, Apple, Moon,
-  RefreshCw, Send, Lock, Sparkles,
+  RefreshCw, Send, Lock, Sparkles, Heart, Activity, AlertTriangle,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { coachService, TrainingContext } from '../services/aiCoach';
+import {
+  coachService, TrainingContext,
+  getDailyCheckInResponse, DailyCheckInInput,
+  getProactiveInsights,
+  getFormTipsForExercise, FormTip,
+} from '../services/aiCoach';
+import { DailyCheckIn } from '../types';
 import { computeWeeklyStats, calculateWeightTrend, evaluateWeeklyCheckIn } from '../utils/aiCoachingEngine';
 import {
   buildVolumeLandmarks, calculateProgression, assessDeloadNeed,
@@ -154,6 +160,39 @@ const InsightCard: React.FC<{ insight: CoachInsight; onDismiss: () => void }> = 
   );
 };
 
+// ─── Form tip card ────────────────────────────────────────────────────────────
+
+const FormTipCard: React.FC<{ exerciseName: string; tip: FormTip }> = ({ exerciseName, tip }) => {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div style={{ borderRadius: 12, background: 'rgba(87,96,56,0.06)', border: '1px solid rgba(87,96,56,0.15)', overflow: 'hidden' }}>
+      <button
+        onClick={() => setExpanded(e => !e)}
+        style={{ width: '100%', padding: '10px 12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ textAlign: 'left' }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{exerciseName}</div>
+          <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'rgba(87,96,56,0.6)', marginTop: 1 }}>{tip.primaryMuscle}</div>
+        </div>
+        {expanded ? <ChevronUp size={14} color="rgba(87,96,56,0.5)" /> : <ChevronDown size={14} color="rgba(87,96,56,0.5)" />}
+      </button>
+      {expanded && (
+        <div style={{ padding: '0 12px 12px' }}>
+          <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(87,96,56,0.6)', marginBottom: 6 }}>Key Cues</div>
+          <ul style={{ margin: 0, paddingLeft: 16, listStyleType: 'disc' }}>
+            {tip.cues.map((cue, i) => (
+              <li key={i} style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 4, lineHeight: 1.5 }}>{cue}</li>
+            ))}
+          </ul>
+          <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 8, background: 'rgba(151,68,0,0.07)', border: '1px solid rgba(151,68,0,0.18)' }}>
+            <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#974400', marginBottom: 3 }}>Common Error</div>
+            <div style={{ fontSize: '0.73rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{tip.commonError}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Weekly check-in card ─────────────────────────────────────────────────────
 
 const WeeklyCheckInCard: React.FC<{
@@ -272,11 +311,19 @@ const AdaptiveTDEECard: React.FC<{ user: any; weeklyStats: any; evaluation: Retu
 // ─── Main Coach page ──────────────────────────────────────────────────────────
 
 export const Coach: React.FC = () => {
-  const { state, dismissCoachInsight, saveWeeklyCheckIn, addCoachInsight, showToast } = useApp();
+  const { state, dismissCoachInsight, saveWeeklyCheckIn, addCoachInsight, showToast, saveDailyCheckIn } = useApp();
   const user = state.user!;
 
   const [activeTab, setActiveTab] = useState<'insights' | 'chat' | 'checkin' | 'plan'>('insights');
   const [weeklyLoading, setWeeklyLoading] = useState(false);
+
+  // ── Daily Check-In state ───────────────────────────────────────────────────
+  const todayStr2 = new Date().toISOString().split('T')[0];
+  const todayCheckIn = state.dailyCheckIns.find(c => c.date === todayStr2);
+  const [checkInMood, setCheckInMood] = useState<1|2|3|4|5>(3);
+  const [checkInEnergy, setCheckInEnergy] = useState<1|2|3|4|5>(3);
+  const [checkInSoreness, setCheckInSoreness] = useState<1|2|3|4|5>(1);
+  const [checkInLoading, setCheckInLoading] = useState(false);
 
   const weeklyStats = useMemo(() => computeWeeklyStats(state.logs, user.targets), [state.logs, user.targets]);
 
@@ -480,6 +527,54 @@ export const Coach: React.FC = () => {
     currentEma: currentEma ?? undefined,
   }), [user, weeklyStats, weightDelta]);
 
+  // Proactive multi-day pattern insights
+  const proactiveInsights = useMemo(() =>
+    getProactiveInsights(state.logs, user, weeklyStats),
+  [state.logs, user, weeklyStats]);
+
+  // Form tips for exercises done in the last 2 days
+  const recentExerciseNames = useMemo(() => {
+    const today = new Date();
+    const twoAgo = [0, 1].map(i => {
+      const d = new Date(today); d.setDate(today.getDate() - i);
+      return d.toISOString().split('T')[0];
+    });
+    const names = new Set<string>();
+    twoAgo.forEach(d => {
+      state.logs[d]?.workouts.forEach(w =>
+        w.exercises.forEach(ex => names.add(ex.name))
+      );
+    });
+    return Array.from(names).slice(0, 5);
+  }, [state.logs]);
+
+  const formTips = useMemo(() =>
+    recentExerciseNames
+      .map(name => ({ name, tip: getFormTipsForExercise(name) }))
+      .filter((x): x is { name: string; tip: FormTip } => x.tip !== null),
+  [recentExerciseNames]);
+
+  const handleDailyCheckIn = useCallback(async () => {
+    setCheckInLoading(true);
+    try {
+      const input: DailyCheckInInput = { mood: checkInMood, energy: checkInEnergy, soreness: checkInSoreness };
+      const response = await getDailyCheckInResponse(input, user, weeklyStats);
+      const checkIn: DailyCheckIn = {
+        id: `ci_${Date.now()}`,
+        date: todayStr2,
+        mood: checkInMood,
+        energy: checkInEnergy,
+        soreness: checkInSoreness,
+        coachResponse: response,
+      };
+      saveDailyCheckIn(checkIn);
+    } catch (err) {
+      showToast('Check-in failed. Try again.', 'error');
+    } finally {
+      setCheckInLoading(false);
+    }
+  }, [checkInMood, checkInEnergy, checkInSoreness, user, weeklyStats, todayStr2, saveDailyCheckIn, showToast]);
+
   const handleCompleteCheckIn = useCallback(async () => {
     setWeeklyLoading(true);
     try {
@@ -576,6 +671,74 @@ export const Coach: React.FC = () => {
         </motion.div>
       )}
 
+      {/* ── Daily Check-In ── */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.11 }}>
+        {todayCheckIn ? (
+          // Already checked in today — show response
+          <div style={{ borderRadius: 16, background: 'rgba(87,96,56,0.06)', border: '1px solid rgba(87,96,56,0.18)', padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <Heart size={14} color="#576038" />
+              <span style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(87,96,56,0.6)' }}>Today's Check-In</span>
+              <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+                {[
+                  { label: 'Mood', val: todayCheckIn.mood, emojis: ['','😔','😕','😐','😊','😄'] },
+                  { label: 'Energy', val: todayCheckIn.energy, emojis: ['','😴','😪','😑','⚡','🔥'] },
+                  { label: 'Soreness', val: todayCheckIn.soreness, emojis: ['','✅','🟡','🟠','🔴','💀'] },
+                ].map(({ label, val, emojis }) => (
+                  <span key={label} title={label} style={{ fontSize: '1rem' }}>{emojis[val]}</span>
+                ))}
+              </div>
+            </div>
+            {todayCheckIn.coachResponse && (
+              <div style={{ fontSize: '0.78rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                {todayCheckIn.coachResponse}
+              </div>
+            )}
+          </div>
+        ) : (
+          // Check-in form
+          <div style={{ borderRadius: 16, background: 'rgba(87,96,56,0.06)', border: '1px solid rgba(87,96,56,0.18)', padding: '14px 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Heart size={14} color="#576038" />
+              <span style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(87,96,56,0.6)' }}>How are you feeling today?</span>
+            </div>
+            {([
+              { label: 'Mood', value: checkInMood, set: setCheckInMood, emojis: ['','😔','😕','😐','😊','😄'] },
+              { label: 'Energy', value: checkInEnergy, set: setCheckInEnergy, emojis: ['','😴','😪','😑','⚡','🔥'] },
+              { label: 'Soreness', value: checkInSoreness, set: setCheckInSoreness, emojis: ['','✅','🟡','🟠','🔴','💀'] },
+            ] as const).map(({ label, value, set, emojis }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-tertiary)', width: 60, flexShrink: 0 }}>{label}</span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {([1, 2, 3, 4, 5] as const).map(v => (
+                    <button key={v} onClick={() => (set as (n: 1|2|3|4|5) => void)(v)}
+                      style={{
+                        width: 36, height: 36, borderRadius: 10, fontSize: '1.1rem', border: 'none', cursor: 'pointer',
+                        background: value === v ? '#576038' : 'rgba(0,0,0,0.05)',
+                        transition: 'all 0.15s',
+                        transform: value === v ? 'scale(1.1)' : 'scale(1)',
+                      }}>
+                      {emojis[v]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={handleDailyCheckIn}
+              disabled={checkInLoading}
+              style={{
+                marginTop: 8, width: '100%', padding: '10px', borderRadius: 12,
+                background: checkInLoading ? 'rgba(87,96,56,0.4)' : 'linear-gradient(135deg, #576038, #3E4528)',
+                border: 'none', color: 'white', fontSize: '0.82rem', fontWeight: 700,
+                cursor: checkInLoading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}>
+              {checkInLoading ? <><span className="btn-spinner" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white' }} /> Getting coach response...</> : <><Activity size={13} /> Submit check-in</>}
+            </button>
+          </div>
+        )}
+      </motion.div>
+
       {/* ── Tabs ── */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
         <div className="pill-tabs">
@@ -665,6 +828,48 @@ export const Coach: React.FC = () => {
                       </div>
                     </div>
                   )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── Proactive pattern alerts ── */}
+            {proactiveInsights.length > 0 && (
+              <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                <div style={{ borderRadius: 16, border: '1px solid rgba(151,68,0,0.18)', background: 'rgba(151,68,0,0.04)', overflow: 'hidden', padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <AlertTriangle size={13} color="#974400" />
+                    <span style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(151,68,0,0.7)' }}>Pattern Alerts</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {proactiveInsights.map(ins => (
+                      <div key={ins.id} style={{ padding: '10px 12px', borderRadius: 10, background: ins.priority === 'high' ? 'rgba(151,68,0,0.08)' : 'rgba(87,96,56,0.06)', border: `1px solid ${ins.priority === 'high' ? 'rgba(151,68,0,0.20)' : 'rgba(87,96,56,0.15)'}` }}>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 3 }}>{ins.title}</div>
+                        <div style={{ fontSize: '0.73rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{ins.message}</div>
+                        {ins.action && (
+                          <div style={{ marginTop: 6, fontSize: '0.68rem', fontWeight: 800, color: ins.priority === 'high' ? '#974400' : '#576038', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            → {ins.action}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── Form tips for today's exercises ── */}
+            {formTips.length > 0 && (
+              <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                <div style={{ borderRadius: 16, border: '1px solid rgba(87,96,56,0.18)', background: 'rgba(87,96,56,0.04)', overflow: 'hidden', padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <Dumbbell size={13} color="#576038" />
+                    <span style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(87,96,56,0.6)' }}>Form Tips — Recent Exercises</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {formTips.map(({ name, tip }) => (
+                      <FormTipCard key={name} exerciseName={name} tip={tip} />
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             )}

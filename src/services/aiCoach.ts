@@ -906,3 +906,301 @@ Rules:
     targetProtein: protein,
   };
 }
+
+// ─── Exercise Form Tips ────────────────────────────────────────────────────────
+
+export interface FormTip {
+  cues: string[];
+  commonError: string;
+  primaryMuscle: string;
+}
+
+const EXERCISE_FORM_TIPS: Record<string, FormTip> = {
+  'barbell bench press': {
+    primaryMuscle: 'Chest',
+    cues: ['Retract & depress scapulae before unracking — creates a stable shelf', 'Grip ~1.5–2× shoulder width; elbows at 45–65° from torso (not 90°)', 'Drive feet into the floor; bar touches lower chest, not sternum'],
+    commonError: 'Elbows flaring to 90° — increases shoulder impingement risk and reduces pec loading significantly',
+  },
+  'squat': {
+    primaryMuscle: 'Quads / Glutes',
+    cues: ['360° brace before descent — breathe into your belly, not your chest', 'Knees track over toes; chest stays upright through the hole', 'Drive the floor away — lead with hips and chest simultaneously on ascent'],
+    commonError: '"Morning sickness" (chest drops, hips shoot up) — signals weak upper back or quad-to-posterior-chain imbalance',
+  },
+  'deadlift': {
+    primaryMuscle: 'Back / Hamstrings',
+    cues: ['Push the floor away — think "leg press", not "pick it up"', 'Bar over mid-foot; engage lats ("protect your armpits"); neutral spine', 'Lock hips and glutes at top — avoid hyperextending the lumbar'],
+    commonError: 'Jerking the bar off the floor — you lose leg drive; take the slack out first by creating tension before pulling',
+  },
+  'pull ups': {
+    primaryMuscle: 'Back / Biceps',
+    cues: ['Dead hang start — depress and retract scapulae before rep 1', 'Drive elbows toward your back pockets — chest to the bar', 'Full range every rep: dead hang at bottom, chin above bar at top'],
+    commonError: 'Half-reps or kipping — cuts lat time under tension in half and trains momentum, not strength',
+  },
+  'overhead press': {
+    primaryMuscle: 'Shoulders / Triceps',
+    cues: ['Elbows just slightly in front of the bar in the rack position', 'Tuck chin as bar passes face; re-extend neck when locked out overhead', 'Hard brace throughout — a soft core leaks force and strains lumbar'],
+    commonError: 'Bar drifting forward on the way up — keep bar path vertical directly over mid-foot/base of spine',
+  },
+  'barbell row': {
+    primaryMuscle: 'Back / Biceps',
+    cues: ['Hip hinge ~45°; let the bar hang from your lats, not your arms', 'Row to lower chest/upper abs; elbows drive straight back', 'Control the eccentric — 2 seconds down for maximum lat time under tension'],
+    commonError: 'Jerking with the lower back to initiate — turns a lat exercise into a lower-back strain risk',
+  },
+  'romanian deadlift': {
+    primaryMuscle: 'Hamstrings / Glutes',
+    cues: ['Push hips back first (hinge, not squat); spine stays neutral', 'Feel the hamstring stretch before reversing — bar stays close to legs the whole way', 'Squeeze glutes at top; avoid hyperextending lumbar'],
+    commonError: 'Bending knees too much and converting it into a conventional deadlift — kills the hamstring stretch reflex',
+  },
+  'hip thrust': {
+    primaryMuscle: 'Glutes',
+    cues: ['Shoulder blades on bench edge (not neck); chin tucked throughout', 'Drive through heels; squeeze glutes hard — hips fully extended at top', 'Pause 1–2 sec at top for maximum glute activation (avoids momentum)'],
+    commonError: 'Hyperextending the lumbar at the top — the pelvis should posteriorly tilt; not the lower back extend',
+  },
+  'incline dumbbell press': {
+    primaryMuscle: 'Upper Chest',
+    cues: ['30–45° incline — above this shifts load heavily to anterior delt', 'Dumbbells start at shoulder height, palms facing forward or neutral grip', 'Control descent to full chest stretch; drive up and slightly inward at top'],
+    commonError: 'Elbows too wide (90°) — shifts load to front delts; keep at 45–60° for maximum upper pec engagement',
+  },
+  'lat pulldown': {
+    primaryMuscle: 'Back / Biceps',
+    cues: ['Lean back ~10–15°; retract and depress scapulae before pulling', 'Drive elbows down to your sides — bar to upper chest', 'Full stretch at top — feel the lats lengthen with each rep'],
+    commonError: 'Pulling behind the neck — stresses the cervical spine with zero lat benefit; always pull to the front',
+  },
+  'leg press': {
+    primaryMuscle: 'Quads / Glutes',
+    cues: ['Feet hip-width or slightly wider; toes slightly turned out', 'Lower to ~90° knee angle — stop before lower back peels off the pad', "Don't lock knees at top — keep slight tension to protect the joint"],
+    commonError: 'Lower back rounding off the pad at the bottom — reduce range of motion until hip flexibility improves',
+  },
+  'lateral raise': {
+    primaryMuscle: 'Lateral Delts',
+    cues: ['Slight forward lean (~10°); elbows slightly bent throughout', 'Lead with elbows, not hands — raise to just below shoulder height', 'Slow 2–3 sec eccentric — this is where most growth stimulus occurs'],
+    commonError: 'Shrugging traps to compensate for too much weight — depress shoulders before each rep to reset',
+  },
+  'bulgarian split squat': {
+    primaryMuscle: 'Quads / Glutes',
+    cues: ['Front foot far enough forward that shin stays vertical at the bottom', 'Vertical torso = more quad emphasis; forward lean = more glute emphasis', 'Drive through the front heel — keep 90%+ of weight on the front leg'],
+    commonError: 'Front knee caving inward — cue "knee out" and use a light resistance band above knees to build awareness',
+  },
+  'face pull': {
+    primaryMuscle: 'Rear Delts / External Rotators',
+    cues: ['Set cable at eye level or above; pull rope to your face (not neck)', 'External rotate at end: "show your biceps to the ceiling" at peak contraction', 'Light weight, slow control — this is corrective work, not an ego lift'],
+    commonError: 'Too much weight turning it into a row — use light resistance and feel rear delts and rotator cuff, not traps',
+  },
+  'dumbbell curl': {
+    primaryMuscle: 'Biceps',
+    cues: ['Elbows pinned to your sides throughout — only forearms move', 'Supinate fully at top (pinky side up) for peak bicep contraction', 'Full stretch at bottom — partial reps at the top halve the stimulus'],
+    commonError: 'Swinging torso to initiate the rep — momentum bypasses the bicep; reduce weight and control every inch',
+  },
+  'tricep pushdown': {
+    primaryMuscle: 'Triceps',
+    cues: ['Elbows pinned to sides; only forearms move', 'Fully extend at bottom and squeeze; controlled flex at top', 'Both directions count — control the ascent as much as the press'],
+    commonError: 'Elbows drifting forward — involves shoulder flexion to assist; elbows stay fixed at the sides',
+  },
+};
+
+export function getFormTipsForExercise(exerciseName: string): FormTip | null {
+  const key = exerciseName.toLowerCase().trim();
+  if (EXERCISE_FORM_TIPS[key]) return EXERCISE_FORM_TIPS[key];
+  // Partial match: check if the exercise name contains a known key or vice versa
+  const match = Object.keys(EXERCISE_FORM_TIPS).find(k =>
+    key.includes(k) || k.split(' ').every(word => key.includes(word))
+  );
+  return match ? EXERCISE_FORM_TIPS[match] : null;
+}
+
+// ─── Proactive Pattern Insights ───────────────────────────────────────────────
+
+export function getProactiveInsights(
+  logs: Record<string, DailyLog>,
+  user: UserProfile,
+  weeklyStats: WeeklyStats,
+): CoachInsight[] {
+  const insights: CoachInsight[] = [];
+  const now = new Date().toISOString();
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  const recentDates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    return d.toISOString().split('T')[0];
+  });
+
+  const recentLogs = recentDates.map(d => logs[d]).filter(Boolean);
+
+  // Pattern: Under protein N days in a row
+  let underProteinDays = 0;
+  for (const log of recentLogs) {
+    const protein = Object.values(log.meals).flat().reduce((s, e) => s + e.nutrition.protein * e.amount, 0);
+    if (protein < user.targets.protein * 0.75) underProteinDays++;
+    else break;
+  }
+  if (underProteinDays >= 2) {
+    insights.push({
+      id: 'proactive_protein_streak',
+      type: 'nutrition',
+      priority: underProteinDays >= 4 ? 'high' : 'medium',
+      generatedAt: now,
+      title: `Under protein ${underProteinDays} days in a row`,
+      message: `You've been more than 25% under your ${user.targets.protein}g protein target for ${underProteinDays} consecutive days. This directly limits ${user.goalType === 'fat_loss' ? 'muscle retention in your cut' : 'muscle growth'}. Add a protein shake, Greek yogurt, or chicken breast to each main meal.`,
+      action: 'Prioritise a high-protein meal or shake today',
+    });
+  }
+
+  // Pattern: Calorie over target N days in a row (fat loss only)
+  if (user.goalType === 'fat_loss') {
+    let overCalsDays = 0;
+    for (const log of recentLogs) {
+      const cals = Object.values(log.meals).flat().reduce((s, e) => s + e.nutrition.calories * e.amount, 0);
+      if (cals > user.targets.calories * 1.08) overCalsDays++;
+      else break;
+    }
+    if (overCalsDays >= 3) {
+      insights.push({
+        id: 'proactive_cal_over_streak',
+        type: 'nutrition',
+        priority: 'high',
+        generatedAt: now,
+        title: `Over calories ${overCalsDays} days running`,
+        message: `${overCalsDays} consecutive days above your calorie target is erasing your deficit. Find the recurring trigger — a specific meal, time of day, or social situation — and make a specific plan for it.`,
+        action: "Audit yesterday's meals to find the pattern",
+      });
+    }
+  }
+
+  // Pattern: No workouts this week when several training days should have passed
+  const dayOfWeek = today.getDay(); // 0=Sun
+  const workoutsExpectedByNow = dayOfWeek <= 1 ? 0
+    : dayOfWeek <= 3 ? Math.ceil(user.trainingFrequency * 0.35)
+    : Math.ceil(user.trainingFrequency * 0.6);
+
+  if (weeklyStats.workoutsCompleted === 0 && workoutsExpectedByNow >= 1) {
+    insights.push({
+      id: 'proactive_no_workouts',
+      type: 'training',
+      priority: 'high',
+      generatedAt: now,
+      title: 'No workouts logged yet this week',
+      message: `Based on your ${user.trainingFrequency}x/week target, you should have ${workoutsExpectedByNow} session${workoutsExpectedByNow > 1 ? 's' : ''} done by now. The training stimulus is non-negotiable for ${user.goalType === 'fat_loss' ? 'preserving muscle in a cut' : 'driving hypertrophy'}.`,
+      action: "Log today's session",
+    });
+  }
+
+  // Pattern: Consistent logging streak + good adherence (positive reinforcement)
+  let loggingStreak = 0;
+  for (const d of recentDates) {
+    const log = logs[d];
+    if (!log || Object.values(log.meals).flat().length === 0) break;
+    loggingStreak++;
+  }
+  if (loggingStreak >= 5 && weeklyStats.calorieAdherence >= 80) {
+    insights.push({
+      id: 'proactive_logging_streak',
+      type: 'nutrition',
+      priority: 'low',
+      generatedAt: now,
+      title: `${loggingStreak}-day logging streak — elite consistency`,
+      message: `${loggingStreak} consecutive days of logging with ${weeklyStats.calorieAdherence}% calorie adherence. Data quality is coaching quality — you can only optimise what you measure. Keep this standard.`,
+    });
+  }
+
+  // Pattern: High RPE trend across recent sessions (overreaching signal)
+  const recentRPEs = recentLogs
+    .flatMap(l => l.workouts.map(w => w.sessionRPE))
+    .filter((r): r is number => typeof r === 'number' && r > 0);
+  if (recentRPEs.length >= 3) {
+    const avgRecentRPE = recentRPEs.reduce((a, b) => a + b, 0) / recentRPEs.length;
+    if (avgRecentRPE >= 8.5) {
+      insights.push({
+        id: 'proactive_high_rpe',
+        type: 'recovery',
+        priority: 'medium',
+        generatedAt: now,
+        title: `Average RPE ${avgRecentRPE.toFixed(1)} — monitor fatigue`,
+        message: `Your last ${recentRPEs.length} sessions averaged RPE ${avgRecentRPE.toFixed(1)}. Sustained high-RPE training without adequate recovery accumulates fatigue faster than adaptation. If performance is flat or declining, reduce volume 20–30% for one week.`,
+        action: 'Consider reducing sets by 20% this week',
+      });
+    }
+  }
+
+  // Pattern: Weight logged but not in recent days (missing data for trend)
+  const logsWithWeight = recentLogs.filter(l => l.weight && l.weight > 0);
+  const hasWeightGap = recentLogs.length >= 4 && logsWithWeight.length === 0;
+  if (hasWeightGap && weeklyStats.daysLogged >= 3) {
+    insights.push({
+      id: 'proactive_no_weight',
+      type: 'recovery',
+      priority: 'low',
+      generatedAt: now,
+      title: 'No weight logged this week',
+      message: `The adaptive TDEE engine needs consistent weight data to give you accurate calorie adjustments. Log your weight daily (morning, fasted, after bathroom) — the 7-day EMA smooths out daily fluctuations.`,
+      action: 'Log your weight this morning',
+    });
+  }
+
+  return insights;
+}
+
+// ─── Daily Check-In Response ──────────────────────────────────────────────────
+
+export interface DailyCheckInInput {
+  mood: 1 | 2 | 3 | 4 | 5;
+  energy: 1 | 2 | 3 | 4 | 5;
+  soreness: 1 | 2 | 3 | 4 | 5;
+}
+
+const MOOD_LABELS = ['', 'Struggling', 'Below average', 'Okay', 'Good', 'Great'];
+const ENERGY_LABELS = ['', 'Drained', 'Tired', 'Moderate', 'Energised', 'Fired up'];
+const SORENESS_LABELS = ['', 'None', 'Mild', 'Moderate', 'Significant', 'Very sore'];
+
+function buildCheckInResponse(checkIn: DailyCheckInInput, user: UserProfile, weeklyStats: WeeklyStats): string {
+  const firstName = user.name.split(' ')[0];
+  const { mood, energy, soreness } = checkIn;
+
+  if (soreness >= 4 && energy <= 2) {
+    return `${firstName}, high soreness + low energy is your body signalling it needs a recovery day. Active recovery (walk, mobility, light stretching) is the right call — not a hard session. Make sure you're hitting ${user.targets.protein}g protein today; it's the primary recovery driver.`;
+  }
+  if (energy >= 4 && mood >= 4) {
+    const nutriNote = weeklyStats.proteinAdherence >= 80
+      ? 'Your nutrition has been dialled this week — use that fuel.'
+      : `Push hard, but lock in your ${user.targets.protein}g protein target post-session.`;
+    return `High energy and solid mood — capitalise on this. ${nutriNote} Attack your session with intent and push for a rep PR where it feels right. Days like this are where progress accelerates.`;
+  }
+  if (energy <= 2 && mood <= 2) {
+    return `Low energy and mood can come from accumulated fatigue, poor sleep, or under-eating. Check calories and sleep first. If nutrition is on track, train at 70% intensity — it's still a stimulus, and consistency beats motivation every time.`;
+  }
+  if (soreness >= 3) {
+    return `Moderate soreness is normal DOMS — it tells you which muscles got the most stimulus last session. Prioritise different muscle groups today and hit ${user.targets.protein}g protein; it's the primary driver of muscle repair.`;
+  }
+  return `Average day — that's fine. Show up, train at a reasonable intensity, and log it. Consistency across average days is what separates results from goals.`;
+}
+
+export async function getDailyCheckInResponse(
+  checkIn: DailyCheckInInput,
+  user: UserProfile,
+  weeklyStats: WeeklyStats,
+): Promise<string> {
+  const key = getClaudeKey();
+  if (!key) return buildCheckInResponse(checkIn, user, weeklyStats);
+
+  const firstName = user.name.split(' ')[0];
+  const goalLabel = user.goalType === 'fat_loss' ? 'fat loss'
+    : user.goalType === 'muscle_gain' ? 'muscle gain'
+    : user.goalType;
+
+  const prompt = `Daily check-in from ${firstName}:
+- Mood: ${MOOD_LABELS[checkIn.mood]} (${checkIn.mood}/5)
+- Energy: ${ENERGY_LABELS[checkIn.energy]} (${checkIn.energy}/5)
+- Soreness: ${SORENESS_LABELS[checkIn.soreness]} (${checkIn.soreness}/5)
+
+Goal: ${goalLabel} | This week: ${weeklyStats.calorieAdherence}% calorie adherence, ${weeklyStats.avgProtein}g avg protein, ${weeklyStats.workoutsCompleted} workouts.
+
+Give ${firstName} a 2–3 sentence personalised coaching response: acknowledge how they're feeling, give one specific actionable recommendation for today (training modification, nutrition focus, or recovery), and close with a brief motivating line. Be direct. No filler.`;
+
+  return claudeComplete(
+    `You are an elite personal fitness coach. Give brief, direct, data-driven check-in responses. Reference the person's name and actual numbers.`,
+    prompt,
+    [],
+    200,
+  );
+}
