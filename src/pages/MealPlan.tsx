@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Sparkles, ChevronDown, ChevronUp, Plus, Trash2, RefreshCw, Calendar, X, ChevronRight, Clock, Users, Loader2, BookOpen } from 'lucide-react';
+import { Sparkles, ChevronDown, ChevronUp, Plus, Trash2, RefreshCw, Calendar, X, ChevronRight, Clock, Users, Loader2, BookOpen, ShoppingCart, Check, Copy } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { generateMealPlan, generateRecipe, Recipe } from '../services/aiCoach';
 import type { MealPlan as MealPlanType, PlannedMealItem, MealType } from '../types';
@@ -345,6 +345,221 @@ const RecipeModal: React.FC<{
   );
 };
 
+// ── Grocery List Modal ────────────────────────────────────────────────────────
+
+interface GroceryItem {
+  name: string;
+  servings: string[];
+}
+
+// Build deduplicated grocery list from all 7 days
+function buildGroceryItems(plan: MealPlanType): GroceryItem[] {
+  const map = new Map<string, { name: string; servings: Set<string> }>();
+  for (const day of plan.days) {
+    for (const items of Object.values(day.meals)) {
+      for (const item of items) {
+        const key = item.foodName.trim().toLowerCase();
+        if (!map.has(key)) {
+          map.set(key, { name: item.foodName, servings: new Set() });
+        }
+        map.get(key)!.servings.add(item.servingNote);
+      }
+    }
+  }
+  return Array.from(map.values())
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(({ name, servings }) => ({ name, servings: [...servings] }));
+}
+
+const GroceryListModal: React.FC<{
+  plan: MealPlanType;
+  onClose: () => void;
+}> = ({ plan, onClose }) => {
+  const items = buildGroceryItems(plan);
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [copied, setCopied] = useState(false);
+
+  const toggle = useCallback((name: string) => {
+    setChecked(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }, []);
+
+  const handleCopy = useCallback(async () => {
+    const text = items
+      .map(i => `• ${i.name}${i.servings.length ? ` (${i.servings.join(', ')})` : ''}`)
+      .join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  }, [items]);
+
+  const uncheckedCount = items.length - checked.size;
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9020,
+      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+    }}>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(0,0,0,0.45)',
+          backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)',
+        }}
+      />
+
+      {/* Sheet */}
+      <div style={{
+        position: 'relative', zIndex: 1,
+        background: 'var(--bg-primary)',
+        borderRadius: '28px 28px 0 0',
+        maxHeight: '88dvh',
+        display: 'flex', flexDirection: 'column',
+        boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
+        animation: 'slideUpSheet 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+      }}>
+        {/* Drag handle */}
+        <div style={{ width: 36, height: 4, background: 'rgba(0,0,0,0.14)', borderRadius: 4, margin: '12px auto 0' }} />
+
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px 20px 14px',
+          borderBottom: '1px solid rgba(87,96,56,0.08)',
+        }}>
+          <div>
+            <div style={{
+              fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.14em',
+              textTransform: 'uppercase', color: '#8B9467', marginBottom: 4,
+            }}>
+              Weekly Plan
+            </div>
+            <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+              Grocery List
+            </div>
+            <div style={{ fontSize: '0.73rem', color: 'var(--text-tertiary)', marginTop: 2 }}>
+              {uncheckedCount} of {items.length} items remaining
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              onClick={handleCopy}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '7px 14px', borderRadius: 20,
+                border: '1.5px solid rgba(87,96,56,0.25)',
+                background: copied ? 'rgba(87,96,56,0.10)' : 'transparent',
+                color: '#576038', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              {copied ? <Check size={13} strokeWidth={2.5} /> : <Copy size={13} />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                width: 32, height: 32, borderRadius: '50%', border: 'none',
+                background: 'rgba(0,0,0,0.07)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={15} color="rgba(0,0,0,0.50)" />
+            </button>
+          </div>
+        </div>
+
+        {/* List */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}>
+          <div style={{
+            background: 'var(--bg-card)', borderRadius: 16,
+            border: '1px solid rgba(87,96,56,0.08)', overflow: 'hidden',
+          }}>
+            {items.map((item, i) => {
+              const done = checked.has(item.name);
+              return (
+                <div
+                  key={item.name}
+                  onClick={() => toggle(item.name)}
+                  role="checkbox"
+                  aria-checked={done}
+                  tabIndex={0}
+                  onKeyDown={e => e.key === 'Enter' && toggle(item.name)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '12px 16px',
+                    borderBottom: i < items.length - 1 ? '1px solid rgba(87,96,56,0.06)' : 'none',
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  {/* Checkbox */}
+                  <div style={{
+                    width: 22, height: 22, borderRadius: 7, flexShrink: 0,
+                    border: done ? 'none' : '2px solid rgba(87,96,56,0.30)',
+                    background: done ? '#576038' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.2s',
+                  }}>
+                    {done && <Check size={12} color="#fff" strokeWidth={3} />}
+                  </div>
+
+                  {/* Text */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: '0.88rem', fontWeight: 700,
+                      color: done ? 'rgba(26,26,26,0.35)' : 'var(--text-primary)',
+                      textDecoration: done ? 'line-through' : 'none',
+                      transition: 'color 0.2s',
+                      lineHeight: 1.3,
+                    }}>
+                      {item.name}
+                    </div>
+                    {item.servings.length > 0 && (
+                      <div style={{
+                        fontSize: '0.71rem', color: done ? 'rgba(26,26,26,0.25)' : 'var(--text-tertiary)',
+                        marginTop: 2, transition: 'color 0.2s',
+                      }}>
+                        {item.servings.join(' · ')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {items.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(26,26,26,0.4)', fontSize: '0.85rem' }}>
+              No items in this plan
+            </div>
+          )}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes slideUpSheet {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+};
+
 // ── Day Card ──────────────────────────────────────────────────────────────────
 
 const DayCard: React.FC<{
@@ -477,6 +692,7 @@ export const MealPlan: React.FC = () => {
   const { state, saveMealPlan, deleteMealPlan, addFoodToLog, showToast } = useApp();
   const [generating, setGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'current' | 'saved'>('current');
+  const [showGroceryList, setShowGroceryList] = useState(false);
 
   const currentPlan = state.mealPlans[0] ?? null;
   const savedPlans = state.mealPlans.slice(1);
@@ -644,9 +860,24 @@ export const MealPlan: React.FC = () => {
                 ))}
               </div>
 
+              {/* Grocery list button */}
+              <button
+                onClick={() => setShowGroceryList(true)}
+                style={{
+                  width: '100%', marginTop: 16, padding: '14px 20px', borderRadius: 16,
+                  border: '1.5px solid rgba(87,96,56,0.22)',
+                  background: 'rgba(87,96,56,0.05)',
+                  color: '#576038', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <ShoppingCart size={16} />
+                View Grocery List
+              </button>
+
               {/* Plan info */}
               <div style={{
-                marginTop: 16, padding: '12px 16px',
+                marginTop: 12, padding: '12px 16px',
                 background: 'rgba(87,96,56,0.05)', borderRadius: 12,
                 fontSize: '0.75rem', color: 'rgba(26,26,26,0.5)', textAlign: 'center',
               }}>
@@ -686,6 +917,14 @@ export const MealPlan: React.FC = () => {
             </div>
           )}
         </>
+      )}
+
+      {/* Grocery list modal */}
+      {showGroceryList && currentPlan && (
+        <GroceryListModal
+          plan={currentPlan}
+          onClose={() => setShowGroceryList(false)}
+        />
       )}
 
       <style>{`
