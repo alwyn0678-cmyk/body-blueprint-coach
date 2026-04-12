@@ -539,8 +539,8 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
       }}
         className="animate-slide-up"
       >
-        {/* Scrollable content — extra bottom padding so content clears the pinned footer */}
-        <div style={{ padding: '1rem', paddingBottom: '120px' }}>
+        {/* Scrollable content — paddingBottom clears the tab bar + home indicator */}
+        <div style={{ padding: '1rem', paddingBottom: 'max(8rem, calc(6rem + env(safe-area-inset-bottom)))' }}>
           {/* Top nav */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
             <button
@@ -687,31 +687,23 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Pinned footer — fixed to viewport bottom, always reachable on iOS & Android */}
-        <div style={{
-          position: 'fixed',
-          bottom: 0, left: 0, right: 0,
-          zIndex: 9004,
-          padding: '0.875rem 1rem',
-          paddingBottom: 'max(2.5rem, calc(1rem + env(safe-area-inset-bottom)))',
-          borderTop: '1px solid rgba(0,0,0,0.06)',
-          backgroundColor: 'var(--bg-primary)',
-        }}>
-          <button
-            onClick={() => { trackRecentFood(selectedFood); onAdd(selectedFood, mult); showToast(`${selectedFood.name} added`, 'success'); }}
-            style={{
-              padding: '1.1rem', width: '100%',
-              fontSize: '1rem', fontWeight: 800, borderRadius: '20px',
-              backgroundColor: 'var(--accent-blue)', color: '#fff',
-              boxShadow: '0 8px 24px rgba(87,96,56,0.30)', border: 'none',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-              cursor: 'pointer',
-            }}
-          >
-            <CheckCircle2 size={20} /> Log to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
-          </button>
+          {/* Log button — inline in scroll so tab bar never covers it */}
+          <div style={{ marginTop: '1.25rem' }}>
+            <button
+              onClick={() => { trackRecentFood(selectedFood); onAdd(selectedFood, mult); showToast(`${selectedFood.name} added`, 'success'); }}
+              style={{
+                padding: '1.1rem', width: '100%',
+                fontSize: '1rem', fontWeight: 800, borderRadius: '20px',
+                backgroundColor: 'var(--accent-blue)', color: '#fff',
+                boxShadow: '0 8px 24px rgba(87,96,56,0.30)', border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                cursor: 'pointer',
+              }}
+            >
+              <CheckCircle2 size={20} /> Log to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+            </button>
+          </div>
         </div>
       </div>
     );
