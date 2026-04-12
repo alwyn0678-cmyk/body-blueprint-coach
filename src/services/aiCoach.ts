@@ -1444,6 +1444,60 @@ Keep it achievable for a home cook. 5–10 ingredients, 4–8 steps.`,
   }
 }
 
+// ─── Grocery List Generator ───────────────────────────────────────────────────
+
+export interface GroceryCategory {
+  category: string;
+  items: string[]; // e.g. "2 cups rolled oats", "500g chicken breast"
+}
+
+export async function generateGroceryList(
+  mealDishes: string[] // flat list of unique dish names from the week
+): Promise<GroceryCategory[] | null> {
+  const key = getAIKey();
+  if (!key) return null;
+
+  const dishList = mealDishes.join('\n');
+  const raw = await geminiComplete(
+    'You are a professional meal prep nutritionist. Output only valid compact JSON, no markdown, no explanation.',
+    `The following meals are planned for the week. Generate a consolidated grocery shopping list with the real ingredients needed to make all of them.
+
+MEALS:
+${dishList}
+
+Return this exact JSON structure (no markdown, no code blocks):
+[
+  {
+    "category": "Produce",
+    "items": ["2 bananas", "1 bag spinach (200g)", "3 avocados"]
+  },
+  {
+    "category": "Proteins",
+    "items": ["500g chicken breast", "400g salmon fillet", "12 eggs"]
+  }
+]
+
+Categories to use: Produce, Proteins, Dairy & Eggs, Grains & Bread, Pantry & Dry Goods, Frozen, Condiments & Sauces, Other.
+Only include categories that have items. Consolidate duplicates (e.g. eggs across multiple meals → one egg line). Include realistic quantities for a week's worth of meals for 1 person. Output only the JSON array.`,
+    [],
+    1200,
+  );
+
+  const cleaned = raw
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/g, '')
+    .trim();
+
+  try {
+    const parsed = JSON.parse(cleaned) as GroceryCategory[];
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 // ─── AI Program Generator ─────────────────────────────────────────────────────
 
 export interface ProgramQuestionnaire {

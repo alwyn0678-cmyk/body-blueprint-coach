@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Sparkles, ChevronDown, ChevronUp, Plus, Trash2, RefreshCw, Calendar, X, ChevronRight, Clock, Users, Loader2, BookOpen, ShoppingCart, Check, Copy } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { generateMealPlan, generateRecipe, Recipe } from '../services/aiCoach';
+import { generateMealPlan, generateRecipe, generateGroceryList, Recipe, GroceryCategory } from '../services/aiCoach';
 import type { MealPlan as MealPlanType, PlannedMealItem, MealType } from '../types';
 
 const MEAL_LABELS: Record<string, string> = {
@@ -347,67 +347,102 @@ const RecipeModal: React.FC<{
 
 // ── Grocery List Modal ────────────────────────────────────────────────────────
 
-interface GroceryItem {
-  name: string;
-  servings: string[];
-}
-
-// Build deduplicated grocery list from all 7 days
-function buildGroceryItems(plan: MealPlanType): GroceryItem[] {
-  const map = new Map<string, { name: string; servings: Set<string> }>();
+/** Extract unique dish names from the plan to send to the AI */
+function extractDishNames(plan: MealPlanType): string[] {
+  const seen = new Set<string>();
+  const names: string[] = [];
   for (const day of plan.days) {
     for (const items of Object.values(day.meals)) {
       for (const item of items) {
         const key = item.foodName.trim().toLowerCase();
-        if (!map.has(key)) {
-          map.set(key, { name: item.foodName, servings: new Set() });
+        if (!seen.has(key)) {
+          seen.add(key);
+          names.push(item.foodName.trim());
         }
-        map.get(key)!.servings.add(item.servingNote);
       }
     }
   }
-  return Array.from(map.values())
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(({ name, servings }) => ({ name, servings: [...servings] }));
+  return names;
 }
+
+const CATEGORY_COLORS: Record<string, string> = {
+  'Produce': '#576038',
+  'Proteins': '#974400',
+  'Dairy & Eggs': '#8B6914',
+  'Grains & Bread': '#8B9467',
+  'Pantry & Dry Goods': '#3E4528',
+  'Frozen': '#5B7FA6',
+  'Condiments & Sauces': '#7C3F8E',
+  'Other': '#6B6B6B',
+};
 
 const GroceryListModal: React.FC<{
   plan: MealPlanType;
   onClose: () => void;
 }> = ({ plan, onClose }) => {
-  const items = buildGroceryItems(plan);
+  const [categories, setCategories] = useState<GroceryCategory[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [noKey, setNoKey] = useState(false);
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
+  const mountedRef = useRef(true);
 
-  const toggle = useCallback((name: string) => {
+  useEffect(() => {
+    mountedRef.current = true;
+    const key = localStorage.getItem('bbc_gemini_api_key') ?? localStorage.getItem('bbc_claude_api_key');
+    if (!key?.trim()) {
+      setNoKey(true);
+      setLoading(false);
+      return;
+    }
+    const dishes = extractDishNames(plan);
+    generateGroceryList(dishes).then(result => {
+      if (!mountedRef.current) return;
+      setCategories(result);
+      setLoading(false);
+    }).catch(() => {
+      if (mountedRef.current) setLoading(false);
+    });
+    return () => { mountedRef.current = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const toggle = useCallback((key: string) => {
     setChecked(prev => {
       const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }, []);
 
+  const allItems = categories?.flatMap(c => c.items) ?? [];
+  const totalItems = allItems.length;
+  const uncheckedCount = totalItems - checked.size;
+
   const handleCopy = useCallback(async () => {
-    const text = 'Grocery List\n\n' + items.map(i => `• ${i.name}`).join('\n');
-    // iOS-safe clipboard write: use execCommand fallback if async API fails
+    let text = 'Grocery List\n';
+    if (categories) {
+      for (const cat of categories) {
+        text += `\n${cat.category}\n`;
+        for (const item of cat.items) text += `• ${item}\n`;
+      }
+    } else {
+      text += '\n' + allItems.map(i => `• ${i}`).join('\n');
+    }
     const writeViaExecCommand = () => {
       const el = document.createElement('textarea');
       el.value = text;
       el.setAttribute('readonly', '');
       el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
       document.body.appendChild(el);
-      el.focus();
-      el.select();
+      el.focus(); el.select();
       try { document.execCommand('copy'); } catch { /* ignore */ }
       document.body.removeChild(el);
     };
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        writeViaExecCommand();
-      }
+      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+      else writeViaExecCommand();
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -415,9 +450,7 @@ const GroceryListModal: React.FC<{
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [items]);
-
-  const uncheckedCount = items.length - checked.size;
+  }, [categories, allItems]);
 
   return (
     <div style={{
@@ -464,25 +497,29 @@ const GroceryListModal: React.FC<{
             <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-primary)' }}>
               Grocery List
             </div>
-            <div style={{ fontSize: '0.73rem', color: 'var(--text-tertiary)', marginTop: 2 }}>
-              {uncheckedCount} of {items.length} items remaining
-            </div>
+            {!loading && totalItems > 0 && (
+              <div style={{ fontSize: '0.73rem', color: 'var(--text-tertiary)', marginTop: 2 }}>
+                {uncheckedCount} of {totalItems} items remaining
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button
-              onClick={handleCopy}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '7px 14px', borderRadius: 20,
-                border: '1.5px solid rgba(87,96,56,0.25)',
-                background: copied ? 'rgba(87,96,56,0.10)' : 'transparent',
-                color: '#576038', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              {copied ? <Check size={13} strokeWidth={2.5} /> : <Copy size={13} />}
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
+            {!loading && !noKey && categories && (
+              <button
+                onClick={handleCopy}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '7px 14px', borderRadius: 20,
+                  border: '1.5px solid rgba(87,96,56,0.25)',
+                  background: copied ? 'rgba(87,96,56,0.10)' : 'transparent',
+                  color: '#576038', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {copied ? <Check size={13} strokeWidth={2.5} /> : <Copy size={13} />}
+                {copied ? 'Copied!' : 'Copy'}
+              </button>
+            )}
             <button
               onClick={onClose}
               style={{
@@ -497,72 +534,89 @@ const GroceryListModal: React.FC<{
           </div>
         </div>
 
-        {/* List */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}>
-          <div style={{
-            background: 'var(--bg-card)', borderRadius: 16,
-            border: '1px solid rgba(87,96,56,0.08)', overflow: 'hidden',
-          }}>
-            {items.map((item, i) => {
-              const done = checked.has(item.name);
-              return (
-                <div
-                  key={item.name}
-                  onClick={() => toggle(item.name)}
-                  role="checkbox"
-                  aria-checked={done}
-                  tabIndex={0}
-                  onKeyDown={e => e.key === 'Enter' && toggle(item.name)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    padding: '12px 16px',
-                    borderBottom: i < items.length - 1 ? '1px solid rgba(87,96,56,0.06)' : 'none',
-                    cursor: 'pointer',
-                    WebkitTapHighlightColor: 'transparent',
-                    transition: 'background 0.15s',
-                  }}
-                >
-                  {/* Checkbox */}
-                  <div style={{
-                    width: 22, height: 22, borderRadius: 7, flexShrink: 0,
-                    border: done ? 'none' : '2px solid rgba(87,96,56,0.30)',
-                    background: done ? '#576038' : 'transparent',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'all 0.2s',
-                  }}>
-                    {done && <Check size={12} color="#fff" strokeWidth={3} />}
-                  </div>
-
-                  {/* Text */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: '0.88rem', fontWeight: 700,
-                      color: done ? 'rgba(26,26,26,0.35)' : 'var(--text-primary)',
-                      textDecoration: done ? 'line-through' : 'none',
-                      transition: 'color 0.2s',
-                      lineHeight: 1.3,
-                    }}>
-                      {item.name}
-                    </div>
-                    {item.servings.length > 0 && (
-                      <div style={{
-                        fontSize: '0.71rem', color: done ? 'rgba(26,26,26,0.25)' : 'var(--text-tertiary)',
-                        marginTop: 2, transition: 'color 0.2s',
-                      }}>
-                        {item.servings.join(' · ')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {items.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(26,26,26,0.4)', fontSize: '0.85rem' }}>
-              No items in this plan
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}>
+          {loading && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 0', gap: 12 }}>
+              <Loader2 size={28} color="#576038" style={{ animation: 'spin 1s linear infinite' }} />
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                Building your ingredient list…
+              </div>
             </div>
           )}
+
+          {!loading && noKey && (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(26,26,26,0.5)', fontSize: '0.85rem' }}>
+              Add your Gemini key in <strong>Settings → AI Coach</strong> to generate ingredient lists.
+            </div>
+          )}
+
+          {!loading && !noKey && !categories && (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(26,26,26,0.4)', fontSize: '0.85rem' }}>
+              Could not generate the grocery list. Try again.
+            </div>
+          )}
+
+          {!loading && categories && categories.map(cat => {
+            const color = CATEGORY_COLORS[cat.category] ?? '#576038';
+            return (
+              <div key={cat.category} style={{ marginBottom: 16 }}>
+                {/* Category header */}
+                <div style={{
+                  fontSize: '0.6rem', fontWeight: 900, letterSpacing: '0.12em',
+                  textTransform: 'uppercase', color,
+                  paddingBottom: 6, marginBottom: 4,
+                }}>
+                  {cat.category}
+                </div>
+                <div style={{
+                  background: 'var(--bg-card)', borderRadius: 14,
+                  border: '1px solid rgba(87,96,56,0.08)', overflow: 'hidden',
+                }}>
+                  {cat.items.map((item, i) => {
+                    const itemKey = `${cat.category}::${item}`;
+                    const done = checked.has(itemKey);
+                    return (
+                      <div
+                        key={itemKey}
+                        onClick={() => toggle(itemKey)}
+                        role="checkbox"
+                        aria-checked={done}
+                        tabIndex={0}
+                        onKeyDown={e => e.key === 'Enter' && toggle(itemKey)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 14,
+                          padding: '11px 16px',
+                          borderBottom: i < cat.items.length - 1 ? '1px solid rgba(87,96,56,0.06)' : 'none',
+                          cursor: 'pointer',
+                          WebkitTapHighlightColor: 'transparent',
+                        }}
+                      >
+                        <div style={{
+                          width: 22, height: 22, borderRadius: 7, flexShrink: 0,
+                          border: done ? 'none' : `2px solid rgba(87,96,56,0.28)`,
+                          background: done ? color : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.2s',
+                        }}>
+                          {done && <Check size={12} color="#fff" strokeWidth={3} />}
+                        </div>
+                        <div style={{
+                          fontSize: '0.88rem', fontWeight: 600,
+                          color: done ? 'rgba(26,26,26,0.30)' : 'var(--text-primary)',
+                          textDecoration: done ? 'line-through' : 'none',
+                          transition: 'color 0.2s',
+                          lineHeight: 1.35,
+                        }}>
+                          {item}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -571,6 +625,7 @@ const GroceryListModal: React.FC<{
           from { transform: translateY(100%); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );
