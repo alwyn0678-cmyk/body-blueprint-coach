@@ -68,6 +68,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
   const [apiError, setApiError] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'found' | 'notfound' | 'error' | 'permission_denied' | 'unsupported'>('idle');
+  const [selectedViaBarcode, setSelectedViaBarcode] = useState(false);
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [measurementValue, setMeasurementValue] = useState('1');
   const [measurementUnit, setMeasurementUnit] = useState('serving');
@@ -180,6 +181,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
       if (result) {
         setIsScanning(false);
         setScanNotFound(false);
+        setSelectedViaBarcode(true);
         setSelectedFood(result);
         showToast(`Found: ${result.name}`, 'success');
       } else {
@@ -234,6 +236,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
         setScanStatus('idle');
         setShowManualBarcode(false);
         setManualBarcodeInput('');
+        setSelectedViaBarcode(true);
         setSelectedFood(result);
         showToast(`Found: ${result.name}`, 'success');
       } else {
@@ -542,7 +545,7 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
           {/* Top nav */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
             <button
-              onClick={() => setSelectedFood(null)}
+              onClick={() => { setSelectedFood(null); setSelectedViaBarcode(false); }}
               style={{
                 background: 'rgba(0,0,0,0.07)', border: 'none', borderRadius: '10px',
                 display: 'flex', alignItems: 'center', gap: '6px',
@@ -552,12 +555,29 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
             >
               ← Back
             </button>
-            <button
-              onClick={() => toggleFavoriteFood(selectedFood)}
-              style={{ background: 'none', border: 'none', display: 'flex', padding: '0.4rem', cursor: 'pointer' }}
-            >
-              <Heart size={22} color={isFav ? 'var(--accent-red)' : 'rgba(0,0,0,0.28)'} fill={isFav ? 'var(--accent-red)' : 'none'} />
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {selectedViaBarcode && (
+                <button
+                  onClick={() => { setSelectedFood(null); setSelectedViaBarcode(false); openScanner(); }}
+                  title="Scan again"
+                  style={{
+                    background: 'rgba(87,96,56,0.10)', border: '1px solid rgba(87,96,56,0.18)',
+                    borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px',
+                    color: '#576038', padding: '0.45rem 0.75rem',
+                    fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
+                  }}
+                >
+                  <RefreshCw size={13} strokeWidth={2.5} />
+                  Rescan
+                </button>
+              )}
+              <button
+                onClick={() => toggleFavoriteFood(selectedFood)}
+                style={{ background: 'none', border: 'none', display: 'flex', padding: '0.4rem', cursor: 'pointer' }}
+              >
+                <Heart size={22} color={isFav ? 'var(--accent-red)' : 'rgba(0,0,0,0.28)'} fill={isFav ? 'var(--accent-red)' : 'none'} />
+              </button>
+            </div>
           </div>
 
           {/* Food name */}
