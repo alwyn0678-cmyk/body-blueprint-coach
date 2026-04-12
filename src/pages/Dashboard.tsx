@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Flame, Dumbbell, Droplets, Footprints, TrendingUp,
-  Brain, Activity, RefreshCw, Sparkles, Zap,
+  Brain, Activity, RefreshCw, Sparkles, Zap, Play, CheckCircle2,
 } from 'lucide-react';
 import { useApp, computeLevel, xpToNextLevel, LEVEL_NAMES } from '../context/AppContext';
 import {
@@ -431,6 +431,110 @@ export const Dashboard: React.FC = () => {
 
           </div>
         </motion.section>
+
+        {/* ── Active AI Program Widget ── */}
+        {(() => {
+          const activeId = state.activeAIProgramId;
+          const startDate = state.activeAIProgramStartDate;
+          if (!activeId || !startDate) return null;
+          const program = state.aiPrograms.find(p => p.id === activeId);
+          if (!program) return null;
+
+          const days = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+          const week = Math.min(Math.floor(days / 7) + 1, 12);
+          const weekProgress = Math.round(((week - 1) / 12) * 100);
+
+          // Determine current phase
+          let phaseIndex = 0;
+          for (let i = 0; i < program.phases.length; i++) {
+            const parts = program.phases[i].weeks.split('-').map(Number);
+            if (week >= (parts[0] ?? 1) && week <= (parts[1] ?? 12)) { phaseIndex = i; break; }
+          }
+          const phase = program.phases[phaseIndex];
+          const phaseColors = ['#576038', '#974400', '#3E4528'];
+          const phaseColor = phaseColors[phaseIndex] ?? '#576038';
+
+          // Today's workout from the active phase schedule
+          const dow = new Date().getDay(); // 0=Sun
+          const adjDay = dow === 0 ? 6 : dow - 1; // 0=Mon
+          const todaySession = phase?.weeklySchedule[adjDay];
+
+          return (
+            <motion.section
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.4 }}
+              style={{ marginTop: 20 }}
+            >
+              <div
+                onClick={() => navigate('/ai-program')}
+                style={{
+                  borderRadius: 24, overflow: 'hidden', cursor: 'pointer',
+                  background: `linear-gradient(135deg, ${phaseColor}E8, ${phaseColor})`,
+                  boxShadow: `0 8px 32px ${phaseColor}30`,
+                  position: 'relative',
+                }}
+              >
+                {/* Radial highlight */}
+                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at top right, rgba(255,255,255,0.12) 0%, transparent 60%)', pointerEvents: 'none' }} />
+                <div style={{ padding: '18px 20px', position: 'relative', zIndex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <CheckCircle2 size={16} color="rgba(255,255,255,0.85)" strokeWidth={2.5} />
+                      <span style={{ fontSize: '0.6rem', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)' }}>
+                        Active Program · Week {week} of 12
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)' }}>
+                      Phase {phase?.phase ?? 1}{phase?.name ? ` · ${phase.name}` : ''}
+                    </span>
+                  </div>
+                  <div style={{ fontWeight: 900, fontSize: '1rem', color: '#fff', marginBottom: 6, lineHeight: 1.2 }}>
+                    {program.name}
+                  </div>
+                  {/* Week progress bar */}
+                  <div style={{ height: 4, borderRadius: 4, background: 'rgba(255,255,255,0.22)', overflow: 'hidden', marginBottom: 12 }}>
+                    <div style={{
+                      height: '100%', borderRadius: 4,
+                      background: 'rgba(255,255,255,0.80)',
+                      width: `${weekProgress}%`,
+                      transition: 'width 0.7s ease',
+                    }} />
+                  </div>
+                  {/* Today's session */}
+                  {todaySession && (
+                    <div style={{
+                      background: 'rgba(0,0,0,0.18)', borderRadius: 14, padding: '10px 14px',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                    }}>
+                      {todaySession.isRest ? (
+                        <>
+                          <span style={{ fontSize: '1rem' }}>😴</span>
+                          <div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#fff' }}>Rest Day</div>
+                            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.65)' }}>Active recovery recommended</div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Play size={14} color="#fff" fill="#fff" />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#fff' }}>
+                              Today: {todaySession.name}
+                            </div>
+                            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.65)' }}>
+                              {todaySession.exercises.length} exercises · Tap to train
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.section>
+          );
+        })()}
 
         {/* ── Bento Stats Grid ── */}
         <motion.section

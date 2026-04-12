@@ -28,6 +28,17 @@ export interface TrainingContext {
   programDayNotes?: Array<{ dayName: string; notes: string }>; // user-written notes per training day
 }
 
+export interface ActiveAIProgram {
+  name: string;
+  week: number; // 1–12
+  phase: number; // 1, 2, or 3
+  phaseName: string;
+  phaseGoal: string;
+  phaseProgressionNote: string;
+  phaseNutrition: { calories: number; protein: number; carbs: number; fats: number };
+  todaySession?: string; // e.g. "Push A — 8 exercises" or "Rest Day"
+}
+
 export interface CoachContext {
   user: UserProfile;
   todayLog?: DailyLog;
@@ -37,6 +48,7 @@ export interface CoachContext {
   weightDelta7d?: number; // kg change over 7 days
   currentEma?: number;
   trainingContext?: TrainingContext; // enriched training intelligence
+  activeAIProgram?: ActiveAIProgram; // 12-week AI program context
 }
 
 // ─── Gemini API ───────────────────────────────────────────────────────────────
@@ -65,18 +77,26 @@ async function geminiComplete(
       })),
       { role: 'user', parts: [{ text: userMessage }] },
     ];
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents,
-          generationConfig: { maxOutputTokens: maxTokens },
-        }),
-      }
-    );
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 30_000);
+    let res: Response;
+    try {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents,
+            generationConfig: { maxOutputTokens: maxTokens },
+          }),
+          signal: ctrl.signal,
+        }
+      );
+    } finally {
+      clearTimeout(tid);
+    }
     const data = await res.json();
     if (data.error) {
       if (data.error.code === 400) return 'Invalid Gemini API key. Double-check your key in **Settings → AI Coach**.';
@@ -87,6 +107,7 @@ async function geminiComplete(
     if (!text) return 'Empty response from AI. Try again.';
     return text;
   } catch (e) {
+    if ((e as Error).name === 'AbortError') return 'Request timed out. Check your connection and try again.';
     return `Network error: ${e instanceof Error ? e.message : String(e)}`;
   }
 }
@@ -221,6 +242,18 @@ const buildSystemPrompt = (user: UserProfile, ctx?: Partial<CoachContext>): stri
   if (tc?.programDayNotes && tc.programDayNotes.length > 0) {
     lines.push(``, `ATHLETE'S OWN TRAINING NOTES (written by ${firstName} — factor these into all advice):`);
     tc.programDayNotes.forEach(n => lines.push(`- ${n.dayName}: "${n.notes}"`));
+  }
+
+  // ── Active 12-week AI program context ────────────────────────────────────────
+  if (ctx?.activeAIProgram) {
+    const ap = ctx.activeAIProgram;
+    lines.push(``, `ACTIVE 12-WEEK AI PROGRAM:`);
+    lines.push(`- Program: "${ap.name}" | Week ${ap.week}/12 | Phase ${ap.phase}: ${ap.phaseName}`);
+    lines.push(`- Phase goal: ${ap.phaseGoal}`);
+    lines.push(`- Phase progression note: ${ap.phaseProgressionNote}`);
+    lines.push(`- Phase nutrition targets: ${ap.phaseNutrition.calories} kcal | ${ap.phaseNutrition.protein}g protein | ${ap.phaseNutrition.carbs}g carbs | ${ap.phaseNutrition.fats}g fats`);
+    if (ap.todaySession) lines.push(`- Today's scheduled session: ${ap.todaySession}`);
+    lines.push(`  ↳ All training and nutrition advice must align with this periodised program and current phase objectives`);
   }
 
   lines.push(``, `─── RESPONSE RULES ───`);
@@ -1483,18 +1516,32 @@ Critical rules:
 - Adjust macro splits per phase based on goal (${q.goal})
 - All tips arrays must have exactly 3 items`;
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: 'You are an expert fitness coach. Output only valid JSON matching the requested structure exactly. No markdown, no code blocks, no explanation.' }] },
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 12000 },
-      }),
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 90_000);
+
+  let res: Response;
+  try {
+    res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: 'You are an expert fitness coach. Output only valid JSON matching the requested structure exactly. No markdown, no code blocks, no explanation.' }] },
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 12000, temperature: 0.7 },
+        }),
+        signal: controller.signal,
+      }
+    );
+  } catch (err) {
+    if ((err as Error).name === 'AbortError') {
+      throw new Error('Program generation timed out (90s). Check your connection and try again.');
     }
-  );
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const data = await res.json();
   if (data.error) {

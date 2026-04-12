@@ -538,6 +538,8 @@ export interface AppState {
   mealPlans: MealPlan[];
   // AI generated programs
   aiPrograms: AIProgram[];
+  activeAIProgramId: string | null;
+  activeAIProgramStartDate: string | null;
   // Gamification
   xp: number;
   level: number;

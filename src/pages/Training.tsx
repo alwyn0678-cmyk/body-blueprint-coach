@@ -2145,6 +2145,195 @@ export const Training: React.FC = () => {
     );
   }
 
+  // ── AI Program Active (standalone — no other program assigned) ──────────
+  if (state.activeAIProgramId && !state.assignedProgram && !state.activeCustomProgramId) {
+    const program = state.aiPrograms.find(p => p.id === state.activeAIProgramId);
+    if (program) {
+      const startDate = state.activeAIProgramStartDate ?? new Date().toISOString().split('T')[0];
+      const daysElapsed = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+      const currentWeek = Math.min(Math.floor(daysElapsed / 7) + 1, 12);
+
+      let phaseIndex = 0;
+      for (let i = 0; i < program.phases.length; i++) {
+        const parts = program.phases[i].weeks.split('-').map(Number);
+        if (currentWeek >= (parts[0] ?? 1) && currentWeek <= (parts[1] ?? 12)) { phaseIndex = i; break; }
+      }
+      const phase = program.phases[phaseIndex];
+      const phaseNutrition = program.nutrition.phases[phaseIndex];
+      const phaseColors = ['#576038', '#974400', '#3E4528'];
+      const phaseColor = phaseColors[phaseIndex] ?? '#576038';
+
+      const dow = new Date().getDay();
+      const adjDay = dow === 0 ? 6 : dow - 1;
+      const todaySession = phase?.weeklySchedule[adjDay];
+
+      const startAIProgramSession = () => {
+        if (!todaySession || todaySession.isRest) return;
+        const builtExercises: ActiveExercise[] = todaySession.exercises.map(ex => ({
+          libraryId: ex.name.toLowerCase().replace(/\s+/g, '_'),
+          name: ex.name,
+          targetReps: ex.reps,
+          rest: parseInt(ex.rest) || 90,
+          notes: ex.notes,
+          sets: Array.from({ length: parseInt(ex.sets) || 3 }, () => ({
+            weight: '', reps: '', rpe: 0, type: 'N' as const, done: false,
+          })),
+        }));
+        setSessionName(todaySession.name);
+        setExercises(builtExercises);
+        setElapsed(0);
+        setSessionActive(true);
+      };
+
+      return (
+        <div style={{
+          minHeight: '100dvh', background: '#F5F0E8',
+          padding: '1.5rem 1.25rem', paddingBottom: 'calc(6rem + env(safe-area-inset-bottom))',
+          display: 'flex', flexDirection: 'column', gap: 14,
+        }}>
+          {/* Header */}
+          <div style={{ marginBottom: 4 }}>
+            <div style={{ fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(0,0,0,0.3)', marginBottom: 4 }}>
+              Week {currentWeek} of 12 · Phase {phase?.phase ?? 1}{phase?.name ? ` — ${phase.name}` : ''}
+            </div>
+            <h1 style={{ fontFamily: "'Outfit',sans-serif", fontSize: '1.6rem', fontWeight: 900, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.2 }}>
+              {program.name}
+            </h1>
+          </div>
+
+          {/* Today's session card */}
+          {todaySession && (
+            <div style={{
+              borderRadius: 22, overflow: 'hidden',
+              background: todaySession.isRest
+                ? 'rgba(87,96,56,0.06)'
+                : `linear-gradient(135deg, ${phaseColor}E8, ${phaseColor})`,
+              boxShadow: todaySession.isRest ? 'none' : `0 8px 32px ${phaseColor}28`,
+            }}>
+              <div style={{ padding: '20px', position: 'relative' }}>
+                {!todaySession.isRest && (
+                  <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at top right, rgba(255,255,255,0.10) 0%, transparent 60%)', pointerEvents: 'none' }} />
+                )}
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <div style={{ fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: todaySession.isRest ? 'var(--text-tertiary)' : 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
+                    Today
+                  </div>
+                  <div style={{ fontWeight: 900, fontSize: '1.15rem', color: todaySession.isRest ? 'var(--text-secondary)' : '#fff', marginBottom: 4 }}>
+                    {todaySession.isRest ? '😴 Rest Day' : todaySession.name}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: todaySession.isRest ? 'var(--text-tertiary)' : 'rgba(255,255,255,0.72)', marginBottom: todaySession.isRest ? 0 : 16 }}>
+                    {todaySession.isRest ? 'Active recovery, stretching, or light walk' : `${todaySession.exercises.length} exercises · ${phase?.name ?? `Phase ${phase?.phase}`}`}
+                  </div>
+                  {!todaySession.isRest && (
+                    <button
+                      onClick={startAIProgramSession}
+                      style={{
+                        padding: '12px 24px', borderRadius: 14, border: 'none',
+                        background: 'rgba(255,255,255,0.22)', color: '#fff',
+                        fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        backdropFilter: 'blur(8px)',
+                      }}
+                    >
+                      <Play size={16} fill="#fff" /> Start Session
+                    </button>
+                  )}
+                </div>
+              </div>
+              {/* Exercise list preview */}
+              {!todaySession.isRest && (
+                <div style={{ background: 'rgba(0,0,0,0.12)', padding: '12px 20px 16px' }}>
+                  {todaySession.exercises.slice(0, 5).map((ex, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < Math.min(todaySession.exercises.length, 5) - 1 ? '1px solid rgba(255,255,255,0.10)' : 'none' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff' }}>{ex.name}</span>
+                      <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>{ex.sets} × {ex.reps}</span>
+                    </div>
+                  ))}
+                  {todaySession.exercises.length > 5 && (
+                    <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.5)', paddingTop: 6, textAlign: 'center' }}>
+                      +{todaySession.exercises.length - 5} more exercises
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Phase nutrition context */}
+          {phaseNutrition && (
+            <div style={{
+              borderRadius: 16, padding: '14px 16px',
+              background: `${phaseColor}08`,
+              border: `1px solid ${phaseColor}20`,
+            }}>
+              <div style={{ fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: phaseColor, marginBottom: 8 }}>
+                Phase Nutrition Targets
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {[
+                  { label: 'Calories', value: `${phaseNutrition.calories}`, unit: 'kcal' },
+                  { label: 'Protein', value: `${phaseNutrition.protein}`, unit: 'g' },
+                  { label: 'Carbs', value: `${phaseNutrition.carbs}`, unit: 'g' },
+                  { label: 'Fats', value: `${phaseNutrition.fats}`, unit: 'g' },
+                ].map(({ label, value, unit }) => (
+                  <div key={label} style={{ flex: 1, textAlign: 'center', padding: '8px 4px', borderRadius: 10, background: 'rgba(255,255,255,0.60)' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 900, color: phaseColor, letterSpacing: '-0.02em' }}>{value}<span style={{ fontSize: '0.55rem', fontWeight: 700, opacity: 0.7 }}>{unit}</span></div>
+                    <div style={{ fontSize: '0.5rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(0,0,0,0.35)', marginTop: 2 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Week schedule */}
+          <div>
+            <div style={{ fontSize: '0.58rem', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(0,0,0,0.3)', marginBottom: 10 }}>
+              This Week's Schedule
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {phase?.weeklySchedule.map((day, i) => {
+                const isToday = i === adjDay;
+                return (
+                  <div key={i} style={{
+                    borderRadius: 14, padding: '12px 16px',
+                    background: isToday ? `${phaseColor}12` : 'rgba(87,96,56,0.04)',
+                    border: isToday ? `1.5px solid ${phaseColor}30` : '1px solid rgba(87,96,56,0.08)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 800, color: isToday ? phaseColor : 'var(--text-primary)' }}>
+                        {day.day}{isToday ? ' · Today' : ''}
+                      </div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: 1 }}>
+                        {day.isRest ? 'Rest' : day.name}
+                      </div>
+                    </div>
+                    {!day.isRest && (
+                      <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>{day.exercises.length} ex.</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Change program link */}
+          <button
+            onClick={() => navigate('/ai-program')}
+            style={{
+              marginTop: 4, padding: '12px', borderRadius: 12, border: 'none',
+              background: 'transparent', color: 'var(--text-tertiary)',
+              fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
+              textDecoration: 'underline',
+            }}
+          >
+            View full program / change program
+          </button>
+        </div>
+      );
+    }
+  }
+
   // ── No Program Assigned ───────────────────────────────────────────────────
   if (!state.assignedProgram && !state.activeCustomProgramId) {
     return (

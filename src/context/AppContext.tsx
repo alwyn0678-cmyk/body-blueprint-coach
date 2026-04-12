@@ -114,6 +114,8 @@ interface AppContextType {
   // AI Programs
   saveAIProgram: (program: AIProgram) => void;
   deleteAIProgram: (id: string) => void;
+  activateAIProgram: (id: string) => void;
+  deactivateAIProgram: () => void;
   // Gamification
   awardXP: (type: XPEventType, amount: number, label: string) => void;
   markMilestoneSeen: (id: string) => void;
@@ -202,6 +204,8 @@ const defaultState: AppState = {
   weeklyCheckIns: [],
   mealPlans: [],
   aiPrograms: [],
+  activeAIProgramId: null,
+  activeAIProgramStartDate: null,
   xp: 0,
   level: 1,
   xpHistory: [],
@@ -237,6 +241,8 @@ function loadInitialState(): AppState {
     favoriteExerciseIds: loaded.favoriteExerciseIds ?? [],
     mealPlans: loaded.mealPlans ?? [],
     aiPrograms: loaded.aiPrograms ?? [],
+    activeAIProgramId: loaded.activeAIProgramId ?? null,
+    activeAIProgramStartDate: loaded.activeAIProgramStartDate ?? null,
     xp: loaded.xp ?? 0,
     level: loaded.level ?? 1,
     xpHistory: loaded.xpHistory ?? [],
@@ -343,6 +349,56 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, 5000);
     return () => { if (cloudSyncTimer.current) clearTimeout(cloudSyncTimer.current); };
   }, [state]);
+
+  // ── AI program phase auto-transition ──────────────────────────────────────
+  useEffect(() => {
+    const { activeAIProgramId, activeAIProgramStartDate, aiPrograms, user } = state;
+    if (!activeAIProgramId || !activeAIProgramStartDate || !user) return;
+    const program = aiPrograms.find(p => p.id === activeAIProgramId);
+    if (!program) return;
+
+    const daysElapsed = Math.floor((Date.now() - new Date(activeAIProgramStartDate).getTime()) / (1000 * 60 * 60 * 24));
+    const currentWeek = Math.min(Math.floor(daysElapsed / 7) + 1, 12);
+
+    let phaseIndex = 0;
+    for (let i = 0; i < program.phases.length; i++) {
+      const parts = program.phases[i].weeks.split('-').map(Number);
+      if (currentWeek >= (parts[0] ?? 1) && currentWeek <= (parts[1] ?? 12)) { phaseIndex = i; break; }
+    }
+
+    const lastAppliedKey = `bbc_ai_phase_${activeAIProgramId}`;
+    const lastApplied = parseInt(localStorage.getItem(lastAppliedKey) ?? '-1', 10);
+
+    if (lastApplied !== phaseIndex) {
+      const phaseNutrition = program.nutrition.phases[phaseIndex];
+      if (phaseNutrition) {
+        setState(prev => ({
+          ...prev,
+          user: prev.user ? {
+            ...prev.user,
+            targets: {
+              calories: phaseNutrition.calories,
+              protein: phaseNutrition.protein,
+              carbs: phaseNutrition.carbs,
+              fats: phaseNutrition.fats,
+            },
+          } : prev.user,
+        }));
+        localStorage.setItem(lastAppliedKey, String(phaseIndex));
+        // Notify on real phase transitions (not initial load)
+        if (lastApplied >= 0) {
+          const phaseName = program.phases[phaseIndex]?.name ?? `Phase ${phaseIndex + 1}`;
+          setToasts(prev => [...prev, {
+            id: `phase_transition_${Date.now()}`,
+            message: `${phaseName} started! Nutrition targets updated to ${phaseNutrition.calories} kcal / ${phaseNutrition.protein}g protein.`,
+            type: 'success' as const,
+            duration: 6000,
+          }]);
+        }
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.activeAIProgramId, state.activeAIProgramStartDate, state.aiPrograms]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -901,7 +957,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const deleteAIProgram = (id: string) => {
-    setState(prev => ({ ...prev, aiPrograms: prev.aiPrograms.filter(p => p.id !== id) }));
+    setState(prev => ({
+      ...prev,
+      aiPrograms: prev.aiPrograms.filter(p => p.id !== id),
+      activeAIProgramId: prev.activeAIProgramId === id ? null : prev.activeAIProgramId,
+      activeAIProgramStartDate: prev.activeAIProgramId === id ? null : prev.activeAIProgramStartDate,
+    }));
+  };
+
+  const activateAIProgram = (id: string) => {
+    // Mark phase 0 (Phase 1) as already applied so the auto-transition effect
+    // doesn't re-fire a "new phase" toast on the very first load
+    localStorage.setItem(`bbc_ai_phase_${id}`, '0');
+    setState(prev => ({
+      ...prev,
+      activeAIProgramId: id,
+      activeAIProgramStartDate: new Date().toISOString().split('T')[0],
+    }));
+  };
+
+  const deactivateAIProgram = () => {
+    setState(prev => {
+      if (prev.activeAIProgramId) {
+        localStorage.removeItem(`bbc_ai_phase_${prev.activeAIProgramId}`);
+      }
+      return { ...prev, activeAIProgramId: null, activeAIProgramStartDate: null };
+    });
   };
 
   // ── Gamification ─────────────────────────────────────────────────────────────
@@ -1022,7 +1103,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       logHabit, addHabitDefinition, removeHabitDefinition,
       addCoachInsight, dismissCoachInsight, saveWeeklyCheckIn,
       saveMealPlan, deleteMealPlan,
-      saveAIProgram, deleteAIProgram,
+      saveAIProgram, deleteAIProgram, activateAIProgram, deactivateAIProgram,
       awardXP, markMilestoneSeen, saveDailyCheckIn,
       showToast, resetApp,
     }}>

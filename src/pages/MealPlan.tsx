@@ -389,15 +389,31 @@ const GroceryListModal: React.FC<{
   }, []);
 
   const handleCopy = useCallback(async () => {
-    const text = items
-      .map(i => `• ${i.name}${i.servings.length ? ` (${i.servings.join(', ')})` : ''}`)
-      .join('\n');
+    const text = 'Grocery List\n\n' + items.map(i => `• ${i.name}`).join('\n');
+    // iOS-safe clipboard write: use execCommand fallback if async API fails
+    const writeViaExecCommand = () => {
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.setAttribute('readonly', '');
+      el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+      document.body.appendChild(el);
+      el.focus();
+      el.select();
+      try { document.execCommand('copy'); } catch { /* ignore */ }
+      document.body.removeChild(el);
+    };
     try {
-      await navigator.clipboard.writeText(text);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        writeViaExecCommand();
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // ignore
+      writeViaExecCommand();
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   }, [items]);
 
@@ -700,16 +716,65 @@ export const MealPlan: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
   const todayDayOfWeek = new Date().getDay();
   const todayIndex = todayDayOfWeek === 0 ? 6 : todayDayOfWeek - 1;
-  const targets = {
-    calories: state.user?.targets.calories ?? 2000,
-    protein: state.user?.targets.protein ?? 150,
-  };
+  // Determine effective nutrition targets (AI program phase overrides user defaults)
+  const targets = (() => {
+    const activeId = state.activeAIProgramId;
+    const startDate = state.activeAIProgramStartDate;
+    if (activeId && startDate) {
+      const program = state.aiPrograms.find(p => p.id === activeId);
+      if (program) {
+        const daysElapsed = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+        const currentWeek = Math.min(Math.floor(daysElapsed / 7) + 1, 12);
+        let phaseIndex = 0;
+        for (let i = 0; i < program.phases.length; i++) {
+          const parts = program.phases[i].weeks.split('-').map(Number);
+          if (currentWeek >= (parts[0] ?? 1) && currentWeek <= (parts[1] ?? 12)) { phaseIndex = i; break; }
+        }
+        const nutPhase = program.nutrition.phases[phaseIndex];
+        if (nutPhase) {
+          return { calories: nutPhase.calories, protein: nutPhase.protein };
+        }
+      }
+    }
+    return {
+      calories: state.user?.targets.calories ?? 2000,
+      protein: state.user?.targets.protein ?? 150,
+    };
+  })();
 
   const handleGenerate = useCallback(async () => {
     if (!state.user) return;
     setGenerating(true);
     try {
-      const plan = await generateMealPlan(state.user);
+      // If an AI program is active, use the current phase's nutrition targets
+      let userForPlan = state.user;
+      const activeId = state.activeAIProgramId;
+      const startDate = state.activeAIProgramStartDate;
+      if (activeId && startDate) {
+        const program = state.aiPrograms.find(p => p.id === activeId);
+        if (program) {
+          const daysElapsed = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+          const currentWeek = Math.min(Math.floor(daysElapsed / 7) + 1, 12);
+          let phaseIndex = 0;
+          for (let i = 0; i < program.phases.length; i++) {
+            const parts = program.phases[i].weeks.split('-').map(Number);
+            if (currentWeek >= (parts[0] ?? 1) && currentWeek <= (parts[1] ?? 12)) { phaseIndex = i; break; }
+          }
+          const nutPhase = program.nutrition.phases[phaseIndex];
+          if (nutPhase) {
+            userForPlan = {
+              ...state.user,
+              targets: {
+                calories: nutPhase.calories,
+                protein: nutPhase.protein,
+                carbs: nutPhase.carbs,
+                fats: nutPhase.fats,
+              },
+            };
+          }
+        }
+      }
+      const plan = await generateMealPlan(userForPlan);
       saveMealPlan(plan);
       showToast('Meal plan generated!', 'success');
       setActiveTab('current');
@@ -718,7 +783,7 @@ export const MealPlan: React.FC = () => {
     } finally {
       setGenerating(false);
     }
-  }, [state.user, saveMealPlan, showToast]);
+  }, [state.user, state.activeAIProgramId, state.activeAIProgramStartDate, state.aiPrograms, saveMealPlan, showToast]);
 
   const handleLogMeal = useCallback((mealType: MealType, items: PlannedMealItem[]) => {
     items.forEach(item => {

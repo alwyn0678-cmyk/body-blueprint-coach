@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Sparkles, RefreshCw, ChevronDown, ChevronUp,
   Dumbbell, Utensils, Trophy, Target, Zap, Clock, RotateCcw,
-  ChevronRight, Trash2, BookOpen,
+  ChevronRight, Trash2, BookOpen, Play, CheckCircle2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { generateAIProgram, ProgramQuestionnaire } from '../services/aiCoach';
@@ -242,7 +242,7 @@ const MacroCircle: React.FC<{ label: string; value: number; unit: string; color:
 
 export const AIProgram: React.FC = () => {
   const navigate = useNavigate();
-  const { state, saveAIProgram, deleteAIProgram, showToast } = useApp();
+  const { state, saveAIProgram, deleteAIProgram, activateAIProgram, deactivateAIProgram, updateUser, showToast } = useApp();
 
   const existingProgram = state.aiPrograms[0] ?? null;
 
@@ -318,15 +318,63 @@ export const AIProgram: React.FC = () => {
     showToast('Program deleted', 'info');
   };
 
+  const handleActivate = () => {
+    if (!activeProgram) return;
+    activateAIProgram(activeProgram.id);
+    // Update user nutrition targets from Phase 1 of the program
+    const phase1Nutrition = activeProgram.nutrition.phases[0];
+    if (phase1Nutrition && state.user) {
+      updateUser({
+        targets: {
+          calories: phase1Nutrition.calories,
+          protein: phase1Nutrition.protein,
+          carbs: phase1Nutrition.carbs,
+          fats: phase1Nutrition.fats,
+        },
+      });
+    }
+    showToast('Program started! Training & nutrition targets updated.', 'success');
+    navigate('/');
+  };
+
+  const handleDeactivate = () => {
+    deactivateAIProgram();
+    showToast('Program deactivated', 'info');
+  };
+
+  const isActiveProgram = activeProgram ? state.activeAIProgramId === activeProgram.id : false;
+
+  // Compute current week if active
+  const currentWeek = (() => {
+    if (!isActiveProgram || !state.activeAIProgramStartDate) return null;
+    const start = new Date(state.activeAIProgramStartDate);
+    const now = new Date();
+    const days = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.min(Math.floor(days / 7) + 1, 12);
+  })();
+
   // ── Generating screen ──────────────────────────────────────────────────────
 
   if (view === 'generating') {
     return (
       <div style={{
-        minHeight: '100dvh', display: 'flex', flexDirection: 'column',
+        minHeight: 'calc(100dvh - 64px)', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        background: 'var(--bg-primary)', padding: '2rem',
+        background: 'var(--bg-primary)', padding: '2rem', position: 'relative',
       }}>
+        {/* Cancel button — top-left */}
+        <button
+          onClick={() => { setView('wizard'); setGenerating(false); }}
+          style={{
+            position: 'absolute', top: 16, left: 16,
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 6,
+            color: 'var(--text-tertiary)', fontSize: '0.82rem', fontWeight: 700,
+            padding: '8px 4px',
+          }}
+        >
+          <ArrowLeft size={16} /> Cancel
+        </button>
         <div style={{
           width: 80, height: 80, borderRadius: '50%',
           background: 'linear-gradient(135deg, #576038, #8B9467)',
@@ -550,6 +598,50 @@ export const AIProgram: React.FC = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Start / Active / Deactivate CTA */}
+              {isActiveProgram ? (
+                <div style={{ marginTop: 4 }}>
+                  <div style={{
+                    borderRadius: 16, padding: '16px 20px',
+                    background: 'linear-gradient(135deg, #3E4528, #576038)',
+                    display: 'flex', alignItems: 'center', gap: 14,
+                  }}>
+                    <CheckCircle2 size={24} color="#C2CB9A" strokeWidth={2.5} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 900, fontSize: '0.9rem', color: '#fff' }}>
+                        Program Active
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
+                        Week {currentWeek} of 12 · Training & nutrition synced
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleDeactivate}
+                    style={{
+                      marginTop: 8, width: '100%', padding: '11px', borderRadius: 12, border: 'none',
+                      background: 'rgba(87,96,56,0.08)', color: 'var(--text-tertiary)',
+                      fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
+                    }}
+                  >
+                    Deactivate Program
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleActivate}
+                  style={{
+                    marginTop: 4, width: '100%', padding: '16px', borderRadius: 16, border: 'none',
+                    background: 'linear-gradient(135deg, #576038, #8B9467)',
+                    color: '#fff', fontWeight: 900, fontSize: '1rem', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                    boxShadow: '0 6px 24px rgba(87,96,56,0.35)',
+                  }}
+                >
+                  <Play size={18} fill="#fff" /> Start This Program
+                </button>
+              )}
 
               {/* Delete */}
               <button

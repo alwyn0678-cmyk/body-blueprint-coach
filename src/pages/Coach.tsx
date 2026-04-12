@@ -434,6 +434,52 @@ export const Coach: React.FC = () => {
     };
   }, [state.logs, state.customPrograms, state.activeCustomProgramId, progressionSuggestions, deloadRec, musclesUnderMEV, activeMuscles]);
 
+  // Build active AI program context for the coach
+  const activeAIProgramContext = useMemo(() => {
+    const activeId = state.activeAIProgramId;
+    const startDate = state.activeAIProgramStartDate;
+    if (!activeId || !startDate) return undefined;
+    const program = state.aiPrograms.find(p => p.id === activeId);
+    if (!program) return undefined;
+
+    const daysElapsed = Math.floor((Date.now() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+    const week = Math.min(Math.floor(daysElapsed / 7) + 1, 12);
+
+    let phaseIndex = 0;
+    for (let i = 0; i < program.phases.length; i++) {
+      const parts = program.phases[i].weeks.split('-').map(Number);
+      if (week >= (parts[0] ?? 1) && week <= (parts[1] ?? 12)) { phaseIndex = i; break; }
+    }
+    const phase = program.phases[phaseIndex];
+    const nutPhase = program.nutrition.phases[phaseIndex];
+
+    // Today's scheduled session
+    const dow = new Date().getDay();
+    const adjDay = dow === 0 ? 6 : dow - 1;
+    const todaySession = phase?.weeklySchedule[adjDay];
+    const todaySessionStr = todaySession
+      ? todaySession.isRest
+        ? 'Rest Day — active recovery or light mobility'
+        : `${todaySession.name} — ${todaySession.exercises.length} exercises`
+      : undefined;
+
+    return {
+      name: program.name,
+      week,
+      phase: phase?.phase ?? 1,
+      phaseName: phase?.name ?? '',
+      phaseGoal: phase?.focus ?? '',
+      phaseProgressionNote: phase?.progressionNote ?? '',
+      phaseNutrition: {
+        calories: nutPhase?.calories ?? user.targets.calories,
+        protein: nutPhase?.protein ?? user.targets.protein,
+        carbs: nutPhase?.carbs ?? user.targets.carbs,
+        fats: nutPhase?.fats ?? user.targets.fats,
+      },
+      todaySession: todaySessionStr,
+    };
+  }, [state.activeAIProgramId, state.activeAIProgramStartDate, state.aiPrograms, user.targets]);
+
   // ── AI Chat state ──────────────────────────────────────────────────────────
   type ChatMsg = { role: 'user' | 'assistant'; content: string; id: string };
   const SESSION_KEY = 'evolved_coach_chat';
@@ -484,6 +530,7 @@ export const Coach: React.FC = () => {
           weightDelta7d: weightDelta,
           currentEma: currentEma ?? undefined,
           trainingContext,
+          activeAIProgram: activeAIProgramContext,
         },
         msg.trim(),
         history.slice(0, -1), // history excludes the current message (passed separately)
@@ -495,7 +542,7 @@ export const Coach: React.FC = () => {
     } finally {
       setChatLoading(false);
     }
-  }, [chatLoading, chatMessages, user, weeklyStats, weightDelta, currentEma, trainingContext]);
+  }, [chatLoading, chatMessages, user, weeklyStats, weightDelta, currentEma, trainingContext, activeAIProgramContext]);
 
   const handleChat = useCallback(() => sendMessage(chatInput), [chatInput, sendMessage]);
 
@@ -506,6 +553,13 @@ export const Coach: React.FC = () => {
   // Personalized chat starter questions based on actual user data
   const suggestedQuestions = useMemo(() => {
     const questions: string[] = [];
+    // AI program specific questions (highest priority when active)
+    if (activeAIProgramContext) {
+      questions.push(`I'm in Week ${activeAIProgramContext.week} of my program (${activeAIProgramContext.phaseName}) — am I on track?`);
+      if (activeAIProgramContext.todaySession && !activeAIProgramContext.todaySession.startsWith('Rest')) {
+        questions.push(`What should I focus on for today's ${activeAIProgramContext.todaySession.split(' —')[0]}?`);
+      }
+    }
     if (weeklyStats.proteinAdherence < 70 && weeklyStats.daysLogged >= 3)
       questions.push(`I'm only hitting ${weeklyStats.proteinAdherence}% protein adherence — what's the fix?`);
     if (progressionSuggestions.some(s => s.type === 'deload'))
@@ -528,7 +582,7 @@ export const Coach: React.FC = () => {
       : ['How do I know if I\'m making real progress?', 'What\'s the most important habit to build right now?', 'How should I structure my training week?'];
     for (const fb of fallbacks) { if (questions.length >= 4) break; questions.push(fb); }
     return questions.slice(0, 4);
-  }, [weeklyStats, progressionSuggestions, musclesUnderMEV, user.goalType, weightDelta, deloadRec]);
+  }, [weeklyStats, progressionSuggestions, musclesUnderMEV, user.goalType, weightDelta, deloadRec, activeAIProgramContext]);
   const dailyInsight = useMemo(() => coachService.getDailyInsight({
     user, weeklyStats,
     recentWorkouts: Object.values(state.logs).flatMap(l => l.workouts)
@@ -628,6 +682,7 @@ export const Coach: React.FC = () => {
         weightDelta7d: weightDelta,
         currentEma: currentEma ?? undefined,
         trainingContext,
+        activeAIProgram: activeAIProgramContext,
       });
 
       const checkIn: WeeklyCheckIn = {
