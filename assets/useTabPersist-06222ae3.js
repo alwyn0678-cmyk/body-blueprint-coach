@@ -1,0 +1,1 @@
+import{r as n}from"./index-5f073e09.js";function u(r,s){const e=`bbc_tab_${r}`,[o,a]=n.useState(()=>{try{return sessionStorage.getItem(e)||s}catch{return s}});return[o,t=>{a(t);try{sessionStorage.setItem(e,t)}catch{}}]}export{u};
