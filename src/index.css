@@ -1462,6 +1462,53 @@ textarea:focus-visible {
   .btn-green:hover    { box-shadow: 0 6px 24px rgba(87,96,56,0.38); }
 }
 
+/* ── Bottom Nav Pills ─────────────────────────────────────────────── */
+.nav-pill-link {
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 10px;
+  border-radius: 14px;
+  background: transparent;
+  transition: background 180ms ease, transform 120ms ease, box-shadow 180ms ease;
+  will-change: transform;
+}
+.nav-pill--active {
+  padding: 8px 14px;
+  background: linear-gradient(145deg, #576038, #3E4528);
+  box-shadow: 0 3px 12px rgba(87,96,56,0.35), inset 0 1px 0 rgba(255,255,255,0.18);
+  transform: scale(1.06);
+}
+.nav-pill:active:not(.nav-pill--active) {
+  background: rgba(87,96,56,0.08);
+  transform: scale(0.94);
+}
+.nav-pill-icon {
+  color: #576038;
+}
+.nav-pill--active .nav-pill-icon {
+  color: #FAF9F6;
+}
+.nav-pill-label {
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: #576038;
+  line-height: 1;
+  opacity: 0.65;
+}
+.nav-pill--active .nav-pill-label {
+  color: #FAF9F6;
+  opacity: 1;
+}
+
 /* ── Mobile press feedback on tappable glass cards ── */
 button.glass-card:active,
 a.glass-card:active,

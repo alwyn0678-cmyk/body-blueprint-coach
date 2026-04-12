@@ -93,38 +93,11 @@ export const Header: React.FC = () => {
       zIndex: 50,
     }}>
       {NAV_ITEMS.map(({ to, Icon, label }) => (
-        <NavLink key={to} to={to} end={to === '/'} style={{ textDecoration: 'none' }}>
+        <NavLink key={to} to={to} end={to === '/'} className="nav-pill-link">
           {({ isActive }) => (
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              padding: isActive ? '8px 14px' : '7px 10px',
-              borderRadius: 14,
-              background: isActive
-                ? 'linear-gradient(145deg, #576038, #3E4528)'
-                : 'transparent',
-              boxShadow: isActive
-                ? '0 3px 12px rgba(87,96,56,0.35), inset 0 1px 0 rgba(255,255,255,0.18)'
-                : 'none',
-              transition: 'all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-              transform: isActive ? 'scale(1.06)' : 'scale(1)',
-              gap: 3,
-            }}
-              onTouchStart={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(87,96,56,0.07)'; }}
-              onTouchEnd={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-            >
-              <Icon
-                size={18}
-                strokeWidth={isActive ? 2.3 : 1.6}
-                style={{ color: isActive ? '#FAF9F6' : '#576038' }}
-              />
-              <span style={{
-                fontSize: '0.48rem', fontWeight: 900,
-                letterSpacing: '0.10em', textTransform: 'uppercase',
-                color: isActive ? '#FAF9F6' : '#576038',
-                lineHeight: 1, opacity: isActive ? 1 : 0.65,
-              }}>
-                {label}
-              </span>
+            <div className={`nav-pill${isActive ? ' nav-pill--active' : ''}`}>
+              <Icon size={18} strokeWidth={isActive ? 2.3 : 1.6} className="nav-pill-icon" />
+              <span className="nav-pill-label">{label}</span>
             </div>
           )}
         </NavLink>

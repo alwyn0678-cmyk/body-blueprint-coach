@@ -849,10 +849,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const dismissCoachInsight = (id: string) => {
-    setState(prev => ({
-      ...prev,
-      coachInsights: prev.coachInsights.map(i => i.id === id ? { ...i, dismissed: true } : i),
-    }));
+    setState(prev => {
+      const exists = prev.coachInsights.find(i => i.id === id);
+      if (exists) {
+        return {
+          ...prev,
+          coachInsights: prev.coachInsights.map(i => i.id === id ? { ...i, dismissed: true } : i),
+        };
+      }
+      // Insight came from coachService (not yet in state) — add a dismissed stub so filter picks it up
+      return {
+        ...prev,
+        coachInsights: [
+          ...prev.coachInsights,
+          { id, dismissed: true, type: 'nutrition' as const, title: '', message: '', priority: 'low' as const, generatedAt: new Date().toISOString() },
+        ],
+      };
+    });
   };
 
   const saveWeeklyCheckIn = (checkIn: WeeklyCheckIn) => {

@@ -73,6 +73,7 @@ export const LogFood: React.FC = () => {
   const [copiedYesterday, setCopiedYesterday] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [showScanner, setShowScanner] = useState(false);
+  const [showRecipeLibrary, setShowRecipeLibrary] = useState(false);
 
   const prevDate = offsetDate(selectedDate, -1);
   const prevDateLog = state.logs[prevDate];
@@ -790,11 +791,44 @@ export const LogFood: React.FC = () => {
 
         {/* ── RECIPE LIBRARY ── */}
         <div style={{ marginTop: '4px' }}>
-          <RecipeLibrary
-            activeMeal={activeMeal}
-            selectedDate={selectedDate}
-            onAdd={handleAddFood}
-          />
+          <button
+            onClick={() => setShowRecipeLibrary(v => !v)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '13px 16px', borderRadius: showRecipeLibrary ? '16px 16px 0 0' : '16px',
+              background: showRecipeLibrary ? 'linear-gradient(135deg, #576038, #8B9467)' : 'rgba(87,96,56,0.07)',
+              border: showRecipeLibrary ? 'none' : '1px solid rgba(87,96,56,0.12)',
+              cursor: 'pointer', transition: 'all 0.2s ease',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: '1rem' }}>👨‍🍳</span>
+              <span style={{
+                fontSize: '0.85rem', fontWeight: 800,
+                color: showRecipeLibrary ? '#fff' : '#576038',
+                letterSpacing: '0.01em',
+              }}>Recipe Library</span>
+            </div>
+            <ChevronDown
+              size={16}
+              color={showRecipeLibrary ? 'rgba(255,255,255,0.7)' : 'rgba(87,96,56,0.5)'}
+              style={{ transform: showRecipeLibrary ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.25s ease' }}
+            />
+          </button>
+          {showRecipeLibrary && (
+            <div style={{
+              borderRadius: '0 0 16px 16px',
+              border: '1px solid rgba(87,96,56,0.12)',
+              borderTop: 'none',
+              overflow: 'hidden',
+            }}>
+              <RecipeLibrary
+                activeMeal={activeMeal}
+                selectedDate={selectedDate}
+                onAdd={handleAddFood}
+              />
+            </div>
+          )}
         </div>
 
         {/* ── SAVED MEALS SECTION ── */}
