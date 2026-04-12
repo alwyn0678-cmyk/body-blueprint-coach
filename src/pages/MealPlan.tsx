@@ -542,7 +542,7 @@ const GroceryListModal: React.FC<{
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', paddingBottom: 'max(3rem, calc(1.5rem + env(safe-area-inset-bottom)))' }}>
           {loading && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 0', gap: 12 }}>
               <Loader2 size={28} color="#576038" style={{ animation: 'spin 1s linear infinite' }} />

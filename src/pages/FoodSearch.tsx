@@ -531,17 +531,16 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
     const mult = getMultiplier();
     const isFav = state.favoriteFoods.some(f => f.id === selectedFood.id);
     return (
-      // Outer: fixed bounds, no overflow — splits into scroll area + pinned footer
+      // Outer: fixed full-screen container
       <div style={{
         backgroundColor: 'var(--bg-primary)',
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9002,
-        display: 'flex', flexDirection: 'column',
-        overflowY: 'hidden',
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9003,
+        overflowY: 'auto',
       }}
         className="animate-slide-up"
       >
-        {/* Scrollable content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', paddingBottom: '0.5rem' }}>
+        {/* Scrollable content — extra bottom padding so content clears the pinned footer */}
+        <div style={{ padding: '1rem', paddingBottom: '120px' }}>
           {/* Top nav */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
             <button
@@ -690,9 +689,11 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
           </div>
         </div>
 
-        {/* Pinned footer — always visible regardless of content height */}
+        {/* Pinned footer — fixed to viewport bottom, always reachable on iOS & Android */}
         <div style={{
-          flexShrink: 0,
+          position: 'fixed',
+          bottom: 0, left: 0, right: 0,
+          zIndex: 9004,
           padding: '0.875rem 1rem',
           paddingBottom: 'max(2.5rem, calc(1rem + env(safe-area-inset-bottom)))',
           borderTop: '1px solid rgba(0,0,0,0.06)',

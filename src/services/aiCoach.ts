@@ -1403,9 +1403,7 @@ export async function generateRecipe(foodName: string, servingNote: string): Pro
   const key = getAIKey();
   if (!key) return null;
 
-  const raw = await geminiComplete(
-    'You are a professional chef and recipe developer. Always respond with only valid compact JSON, no markdown code blocks, no explanation, no extra text whatsoever.',
-    `Write a clear, practical home-cooking recipe for "${foodName}" (serving: ${servingNote}).
+  const userPrompt = `Write a clear, practical home-cooking recipe for "${foodName}" (serving: ${servingNote}).
 Return this exact JSON (no markdown, no code blocks):
 {
   "title": "Full recipe name",
@@ -1416,10 +1414,40 @@ Return this exact JSON (no markdown, no code blocks):
   "steps": ["Preheat oven to 200°C.", "Season the chicken..."],
   "tips": "One practical cooking tip."
 }
-Keep it achievable for a home cook. 5–10 ingredients, 4–8 steps.`,
-    [],
-    2000,
-  );
+Keep it achievable for a home cook. 5–10 ingredients, 4–8 steps.`;
+
+  // Direct fetch with thinkingBudget:0 — all tokens go to JSON, not reasoning
+  let raw: string;
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 30_000);
+    let res: Response;
+    try {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: 'You are a professional chef and recipe developer. Always respond with only valid compact JSON, no markdown code blocks, no explanation, no extra text whatsoever.' }] },
+            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+            generationConfig: {
+              maxOutputTokens: 2000,
+              thinkingConfig: { thinkingBudget: 0 },
+            },
+          }),
+          signal: ctrl.signal,
+        }
+      );
+    } finally {
+      clearTimeout(tid);
+    }
+    const data = await res.json();
+    if (data.error) return null;
+    raw = extractGeminiText(data) ?? '';
+  } catch {
+    return null;
+  }
 
   const cleaned = raw
     .replace(/^```json\s*/i, '')
@@ -1458,9 +1486,7 @@ export async function generateGroceryList(
   if (!key) return null;
 
   const dishList = mealDishes.join('\n');
-  const raw = await geminiComplete(
-    'You are a professional meal prep nutritionist. Output only valid compact JSON array, no markdown fences, no explanation, no preamble.',
-    `The following meals are planned for the week. Generate a consolidated grocery shopping list with the real ingredients needed to make all of them.
+  const userPrompt = `The following meals are planned for the week. Generate a consolidated grocery shopping list with the real ingredients needed to make all of them.
 
 MEALS:
 ${dishList}
@@ -1478,10 +1504,40 @@ Return this exact JSON structure (no markdown, no code blocks):
 ]
 
 Categories to use: Produce, Proteins, Dairy & Eggs, Grains & Bread, Pantry & Dry Goods, Frozen, Condiments & Sauces, Other.
-Only include categories that have items. Consolidate duplicates (e.g. eggs across multiple meals → one egg line). Include realistic quantities for a week's worth of meals for 1 person. Output only the JSON array.`,
-    [],
-    4000,
-  );
+Only include categories that have items. Consolidate duplicates (e.g. eggs across multiple meals → one egg line). Include realistic quantities for a week's worth of meals for 1 person. Output only the JSON array.`;
+
+  // Direct fetch with thinkingBudget:0 so all output tokens go to JSON, not reasoning
+  let raw: string;
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 30_000);
+    let res: Response;
+    try {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: 'You are a professional meal prep nutritionist. Output only valid compact JSON array, no markdown fences, no explanation, no preamble.' }] },
+            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+            generationConfig: {
+              maxOutputTokens: 4000,
+              thinkingConfig: { thinkingBudget: 0 },
+            },
+          }),
+          signal: ctrl.signal,
+        }
+      );
+    } finally {
+      clearTimeout(tid);
+    }
+    const data = await res.json();
+    if (data.error) return null;
+    raw = extractGeminiText(data) ?? '';
+  } catch {
+    return null;
+  }
 
   // Strip markdown fences anywhere in the string
   const cleaned = raw
