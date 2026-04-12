@@ -360,6 +360,67 @@ export interface CustomProgram {
   updatedAt: string;
 }
 
+// ─── AI Generated Program ────────────────────────────────────────────────────
+
+export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
+export type EquipmentLevel = 'full_gym' | 'dumbbells' | 'bodyweight';
+
+export interface AIProgramExercise {
+  name: string;
+  sets: string;
+  reps: string;
+  rest: string;
+  notes: string;
+}
+
+export interface AIProgramDay {
+  day: string;
+  name: string;
+  isRest: boolean;
+  exercises: AIProgramExercise[];
+}
+
+export interface AIProgramPhase {
+  phase: 1 | 2 | 3;
+  name: string;
+  weeks: string;
+  focus: string;
+  progressionNote: string;
+  weeklySchedule: AIProgramDay[];
+}
+
+export interface AIProgramNutritionPhase {
+  phase: 1 | 2 | 3;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  focus: string;
+  tips: string[];
+}
+
+export interface AIProgramNutrition {
+  overview: string;
+  phases: AIProgramNutritionPhase[];
+  mealTiming: string[];
+  keyPrinciples: string[];
+}
+
+export interface AIProgram {
+  id: string;
+  createdAt: string;
+  name: string;
+  level: ExperienceLevel;
+  goal: string;
+  daysPerWeek: number;
+  equipment: EquipmentLevel;
+  injuries: string;
+  overview: string;
+  phases: AIProgramPhase[];
+  nutrition: AIProgramNutrition;
+}
+
 // ─── Meal Planning ────────────────────────────────────────────────────────────
 
 export interface PlannedMealItem {
@@ -475,6 +536,8 @@ export interface AppState {
   activeMesocycle?: Mesocycle;
   // Meal planning
   mealPlans: MealPlan[];
+  // AI generated programs
+  aiPrograms: AIProgram[];
   // Gamification
   xp: number;
   level: number;

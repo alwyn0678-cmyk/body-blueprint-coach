@@ -59,6 +59,7 @@ const Health       = lazy(() => import('./pages/Health').then(m => ({ default: m
 const Coach        = lazy(() => import('./pages/Coach').then(m => ({ default: m.Coach })));
 const Habits       = lazy(() => import('./pages/Habits').then(m => ({ default: m.Habits })));
 const ProgramBuilder = lazy(() => import('./pages/ProgramBuilder').then(m => ({ default: m.ProgramBuilder })));
+const AIProgram     = lazy(() => import('./pages/AIProgram').then(m => ({ default: m.AIProgram })));
 const MealPlan     = lazy(() => import('./pages/MealPlan').then(m => ({ default: m.MealPlan })));
 
 // ─── Page loading fallback — matches bg colour so no flash ───────────────────
@@ -102,6 +103,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/coach"      element={<Coach />} />
             <Route path="/habits"     element={<Habits />} />
             <Route path="/programs"   element={<ProgramBuilder />} />
+            <Route path="/ai-program" element={<AIProgram />} />
             <Route path="/meal-plan"  element={<MealPlan />} />
             <Route path="*"           element={<Navigate to="/" replace />} />
           </Routes>

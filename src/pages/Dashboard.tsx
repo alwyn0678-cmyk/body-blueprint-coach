@@ -636,10 +636,48 @@ export const Dashboard: React.FC = () => {
           </div>
         </motion.section>
 
+        {/* ── AI Program Builder ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24, duration: 0.4 }}
+          style={{ marginTop: 24 }}
+          onClick={() => navigate('/ai-program')}
+        >
+          <div style={{
+            borderRadius: 20, padding: '18px 20px',
+            background: 'var(--bg-card)',
+            border: '1.5px solid rgba(87,96,56,0.14)',
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 16,
+            boxShadow: '0 4px 20px rgba(87,96,56,0.08)',
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ position: 'absolute', top: 0, right: 0, width: 120, height: '100%', background: 'linear-gradient(90deg, transparent, rgba(87,96,56,0.04))', pointerEvents: 'none' }} />
+            <div style={{
+              width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+              background: 'linear-gradient(135deg, #576038, #8B9467)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(87,96,56,0.30)',
+            }}>
+              <Sparkles size={22} color="#fff" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 900, fontSize: '0.92rem', color: 'var(--text-primary)', marginBottom: 3 }}>
+                {state.aiPrograms?.length ? 'My 12-Week Program' : 'Build My 12-Week Program'}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: 1.4 }}>
+                {state.aiPrograms?.length
+                  ? `${state.aiPrograms[0].goal} · ${state.aiPrograms[0].level} · ${state.aiPrograms[0].daysPerWeek}×/week`
+                  : 'AI builds your personalised training & nutrition plan'}
+              </div>
+            </div>
+            <Activity size={16} color="rgba(87,96,56,0.35)" />
+          </div>
+        </motion.section>
+
         {/* ── Coach Insight ── */}
         <motion.section
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.4 }}
-          style={{ marginTop: 36 }}
+          style={{ marginTop: 16 }}
           onClick={() => navigate('/coach')}
         >
           <div style={{

@@ -8,7 +8,7 @@
  * Add key in Settings → AI Coach
  */
 
-import { UserProfile, DailyLog, WeeklyStats, WorkoutSession, CoachInsight, GoalType, MealPlan, PlannedDay, PlannedMealItem } from '../types';
+import { UserProfile, DailyLog, WeeklyStats, WorkoutSession, CoachInsight, GoalType, MealPlan, PlannedDay, PlannedMealItem, AIProgram, AIProgramPhase, AIProgramNutrition, ExperienceLevel, EquipmentLevel } from '../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1401,4 +1401,140 @@ Keep it achievable for a home cook. 5–10 ingredients, 4–8 steps.`,
   } catch {
     return null;
   }
+}
+
+// ─── AI Program Generator ─────────────────────────────────────────────────────
+
+export interface ProgramQuestionnaire {
+  level: ExperienceLevel;
+  goal: string;
+  daysPerWeek: number;
+  equipment: EquipmentLevel;
+  injuries: string;
+  weightKg: number;
+  calories: number;
+  protein: number;
+}
+
+export async function generateAIProgram(q: ProgramQuestionnaire): Promise<AIProgram> {
+  const key = getAIKey();
+  if (!key) throw new Error('No Gemini API key. Set it in Settings → AI Coach.');
+
+  const equipmentLabel = q.equipment === 'full_gym' ? 'full gym (barbells, cables, machines, dumbbells)'
+    : q.equipment === 'dumbbells' ? 'dumbbells and cables only'
+    : 'bodyweight only';
+
+  const setsPerEx = q.level === 'beginner' ? 3 : q.level === 'intermediate' ? '3-4' : '4-5';
+  const exPerSession = q.level === 'beginner' ? '4-5' : q.level === 'intermediate' ? '5-6' : '6-7';
+  const restDays = 7 - q.daysPerWeek;
+
+  const prompt = `You are an elite personal trainer and sports nutritionist. Generate a complete, detailed 12-week training and nutrition program.
+
+User profile:
+- Experience level: ${q.level} (beginner=0-1yr, intermediate=1-3yr, advanced=3+yr)
+- Primary goal: ${q.goal}
+- Training days per week: ${q.daysPerWeek} (${restDays} rest days)
+- Equipment available: ${equipmentLabel}
+- Injuries / limitations: ${q.injuries || 'none'}
+- Body weight: ${q.weightKg}kg
+- Daily calorie target: ~${q.calories} kcal
+- Daily protein target: ~${q.protein}g
+
+Return ONLY a valid JSON object (no markdown, no explanation, no code fences) matching this exact structure:
+{
+  "name": "Descriptive program name",
+  "overview": "2-3 sentence program overview tailored to this user",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Phase 1 name (e.g. Foundation)",
+      "weeks": "1-4",
+      "focus": "What this phase develops",
+      "progressionNote": "How to add weight/reps each week",
+      "weeklySchedule": [
+        { "day": "Monday", "name": "Session name", "isRest": false, "exercises": [
+          { "name": "Exercise name", "sets": "${setsPerEx}", "reps": "8-12", "rest": "90 sec", "notes": "Coaching cue" }
+        ]},
+        { "day": "Tuesday", "name": "Rest / Active Recovery", "isRest": true, "exercises": [] }
+      ]
+    },
+    { "phase": 2, "name": "...", "weeks": "5-8", "focus": "...", "progressionNote": "...", "weeklySchedule": [...] },
+    { "phase": 3, "name": "...", "weeks": "9-12", "focus": "...", "progressionNote": "...", "weeklySchedule": [...] }
+  ],
+  "nutrition": {
+    "overview": "Nutrition philosophy for this program",
+    "phases": [
+      { "phase": 1, "name": "Phase 1 Nutrition", "calories": ${q.calories}, "protein": ${q.protein}, "carbs": 0, "fats": 0, "focus": "Nutrition priority for phase 1", "tips": ["Tip 1", "Tip 2", "Tip 3"] },
+      { "phase": 2, "name": "Phase 2 Nutrition", "calories": 0, "protein": 0, "carbs": 0, "fats": 0, "focus": "...", "tips": [...] },
+      { "phase": 3, "name": "Phase 3 Nutrition", "calories": 0, "protein": 0, "carbs": 0, "fats": 0, "focus": "...", "tips": [...] }
+    ],
+    "mealTiming": ["Pre-workout advice", "Post-workout advice", "General timing tip"],
+    "keyPrinciples": ["Principle 1", "Principle 2", "Principle 3", "Principle 4"]
+  }
+}
+
+Critical rules:
+- All 7 days must appear in each phase's weeklySchedule (Monday through Sunday)
+- Exactly ${q.daysPerWeek} training days and ${restDays} rest days per week
+- Each training session: ${exPerSession} exercises, ${setsPerEx} sets each
+- Exercises must match equipment: ${equipmentLabel}
+- Phase 2 increases volume/intensity over Phase 1; Phase 3 further intensifies
+- Nutrition carbs and fats must sum correctly: calories = protein*4 + carbs*4 + fats*9
+- Adjust macro splits per phase based on goal (${q.goal})
+- All tips arrays must have exactly 3 items`;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: 'You are an expert fitness coach. Output only valid JSON matching the requested structure exactly. No markdown, no code blocks, no explanation.' }] },
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 12000 },
+      }),
+    }
+  );
+
+  const data = await res.json();
+  if (data.error) {
+    if (data.error.code === 400) throw new Error('Invalid Gemini API key. Check Settings → AI Coach.');
+    if (data.error.code === 429) throw new Error('Rate limit hit. Wait 60 seconds and try again.');
+    throw new Error(`API error: ${data.error.message}`);
+  }
+
+  const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  const cleaned = text
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/g, '')
+    .trim();
+
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Could not parse program from AI response.');
+
+  let parsed: Partial<AIProgram & { phases: AIProgramPhase[]; nutrition: AIProgramNutrition }>;
+  try {
+    parsed = JSON.parse(match[0]);
+  } catch {
+    throw new Error('Invalid JSON returned by AI. Try again.');
+  }
+
+  if (!parsed.name || !Array.isArray(parsed.phases) || parsed.phases.length !== 3 || !parsed.nutrition) {
+    throw new Error('AI returned an incomplete program. Please try again.');
+  }
+
+  return {
+    id: `aiprog_${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    name: parsed.name,
+    overview: parsed.overview ?? '',
+    level: q.level,
+    goal: q.goal,
+    daysPerWeek: q.daysPerWeek,
+    equipment: q.equipment,
+    injuries: q.injuries,
+    phases: parsed.phases,
+    nutrition: parsed.nutrition,
+  };
 }

@@ -5,7 +5,7 @@ import {
   NutritionTotals, ProgressionRecord, ConnectionStatus,
   BodyMeasurement, ProgressPhoto, HabitDefinition, HabitLog,
   CoachInsight, WeeklyCheckIn, Mesocycle, Recipe, CustomProgram,
-  MealPlan, XPEvent, XPEventType, Milestone, PersonalRecord, DailyCheckIn,
+  MealPlan, XPEvent, XPEventType, Milestone, PersonalRecord, DailyCheckIn, AIProgram,
 } from '../types';
 import { additionalExercises } from '../data/workoutPrograms';
 import { safeLoadState } from '../utils/persistence';
@@ -111,6 +111,9 @@ interface AppContextType {
   // Meal plans
   saveMealPlan: (plan: MealPlan) => void;
   deleteMealPlan: (id: string) => void;
+  // AI Programs
+  saveAIProgram: (program: AIProgram) => void;
+  deleteAIProgram: (id: string) => void;
   // Gamification
   awardXP: (type: XPEventType, amount: number, label: string) => void;
   markMilestoneSeen: (id: string) => void;
@@ -198,6 +201,7 @@ const defaultState: AppState = {
   coachInsights: [],
   weeklyCheckIns: [],
   mealPlans: [],
+  aiPrograms: [],
   xp: 0,
   level: 1,
   xpHistory: [],
@@ -232,6 +236,7 @@ function loadInitialState(): AppState {
     activeCustomProgramId: loaded.activeCustomProgramId ?? null,
     favoriteExerciseIds: loaded.favoriteExerciseIds ?? [],
     mealPlans: loaded.mealPlans ?? [],
+    aiPrograms: loaded.aiPrograms ?? [],
     xp: loaded.xp ?? 0,
     level: loaded.level ?? 1,
     xpHistory: loaded.xpHistory ?? [],
@@ -888,6 +893,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setState(prev => ({ ...prev, mealPlans: prev.mealPlans.filter(p => p.id !== id) }));
   };
 
+  const saveAIProgram = (program: AIProgram) => {
+    setState(prev => ({
+      ...prev,
+      aiPrograms: [program, ...prev.aiPrograms.filter(p => p.id !== program.id)].slice(0, 10),
+    }));
+  };
+
+  const deleteAIProgram = (id: string) => {
+    setState(prev => ({ ...prev, aiPrograms: prev.aiPrograms.filter(p => p.id !== id) }));
+  };
+
   // ── Gamification ─────────────────────────────────────────────────────────────
 
   const awardXP = (type: XPEventType, amount: number, label: string) => {
@@ -1006,6 +1022,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       logHabit, addHabitDefinition, removeHabitDefinition,
       addCoachInsight, dismissCoachInsight, saveWeeklyCheckIn,
       saveMealPlan, deleteMealPlan,
+      saveAIProgram, deleteAIProgram,
       awardXP, markMilestoneSeen, saveDailyCheckIn,
       showToast, resetApp,
     }}>
