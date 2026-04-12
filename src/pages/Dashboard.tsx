@@ -21,7 +21,7 @@ const fmtNum = (n: number, dp = 0): string =>
 
 // ─── Evolved Ring ────────────────────────────────────────────────────────────
 
-const EvolvedRing: React.FC<{ score: number }> = ({ score }) => {
+const EvolvedRing: React.FC<{ score: number }> = React.memo(({ score }) => {
   const R = 112;
   const circ = 2 * Math.PI * R;
   const pct = Math.min(score / 100, 1);
@@ -119,7 +119,7 @@ const EvolvedRing: React.FC<{ score: number }> = ({ score }) => {
       </div>
     </div>
   );
-};
+});
 
 // ─── Log Sheet ────────────────────────────────────────────────────────────────
 
@@ -270,7 +270,7 @@ export const Dashboard: React.FC = () => {
     return Math.round(calAdherence * 25 + proAdherence * 25 + stepsAdherence * 25 + trained * 25);
   }, [totals, user.targets, steps, stepsTarget, log]);
 
-  const handleSave = (type: 'water' | 'steps' | 'weight') => (value: number) => {
+  const handleSave = useCallback((type: 'water' | 'steps' | 'weight') => (value: number) => {
     if (type === 'weight') {
       updateWeight(value, dateStr);
       showToast(`Weight logged: ${value}${units === 'imperial' ? ' lbs' : ' kg'}`, 'success');
@@ -279,7 +279,7 @@ export const Dashboard: React.FC = () => {
       showToast(`${type === 'water' ? 'Water' : 'Steps'} updated`, 'success');
     }
     setActiveSheet(null);
-  };
+  }, [dateStr, units, updateWeight, updateDailyLog, showToast]);
 
   const caloriesRemaining = Math.max(user.targets.calories - totals.calories, 0);
   const caloriesOver = totals.calories > user.targets.calories;

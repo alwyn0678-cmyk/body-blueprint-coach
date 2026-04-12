@@ -1345,3 +1345,60 @@ Give ${firstName} a 2–3 sentence personalised coaching response: acknowledge h
     200,
   );
 }
+
+// ─── Recipe Generation ────────────────────────────────────────────────────────
+
+export interface Recipe {
+  title: string;
+  servings: string;
+  prepTime: string;
+  cookTime: string;
+  ingredients: string[];
+  steps: string[];
+  tips: string;
+}
+
+export async function generateRecipe(foodName: string, servingNote: string): Promise<Recipe | null> {
+  const key = getAIKey();
+  if (!key) return null;
+
+  const raw = await geminiComplete(
+    'You are a professional chef and recipe developer. Always respond with only valid compact JSON, no markdown code blocks, no explanation, no extra text whatsoever.',
+    `Write a clear, practical home-cooking recipe for "${foodName}" (serving: ${servingNote}).
+Return this exact JSON (no markdown, no code blocks):
+{
+  "title": "Full recipe name",
+  "servings": "e.g. 2 servings",
+  "prepTime": "e.g. 10 min",
+  "cookTime": "e.g. 20 min",
+  "ingredients": ["200g chicken breast", "2 tbsp olive oil"],
+  "steps": ["Preheat oven to 200°C.", "Season the chicken..."],
+  "tips": "One practical cooking tip."
+}
+Keep it achievable for a home cook. 5–10 ingredients, 4–8 steps.`,
+    [],
+    900,
+  );
+
+  const cleaned = raw
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/g, '')
+    .trim();
+
+  try {
+    const parsed = JSON.parse(cleaned) as Partial<Recipe>;
+    if (!parsed.title || !Array.isArray(parsed.ingredients) || !Array.isArray(parsed.steps)) return null;
+    return {
+      title: parsed.title,
+      servings: parsed.servings ?? '2 servings',
+      prepTime: parsed.prepTime ?? '—',
+      cookTime: parsed.cookTime ?? '—',
+      ingredients: parsed.ingredients,
+      steps: parsed.steps,
+      tips: parsed.tips ?? '',
+    };
+  } catch {
+    return null;
+  }
+}
