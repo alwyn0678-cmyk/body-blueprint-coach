@@ -568,24 +568,27 @@ export const LogFood: React.FC = () => {
 
       {/* ── DAILY SUMMARY HEADER ── */}
       <div style={{
-        background: 'linear-gradient(180deg, rgba(87,96,56,0.07) 0%, transparent 100%)',
-        padding: '14px 16px 16px',
-        borderBottom: '1px solid rgba(0,0,0,0.04)',
+        background: 'linear-gradient(160deg, #576038 0%, #3E4528 100%)',
+        padding: '16px 18px 20px',
+        position: 'relative', overflow: 'hidden',
       }}>
+        {/* Subtle texture overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 80% 0%, rgba(255,255,255,0.08) 0%, transparent 55%)', pointerEvents: 'none' }} />
+
         {/* Date navigation row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
               onClick={() => { setSelectedDate(d => offsetDate(d, -1)); setCopiedYesterday(false); }}
-              style={{ background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(28,28,46,0.65)' }}
+              style={{ background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)' }}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={16} color="#FCFFE2" />
             </button>
-            <div style={{ textAlign: 'center', minWidth: 100 }}>
-              <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>{dateLabel}</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#FCFFE2', letterSpacing: '-0.01em' }}>{dateLabel}</div>
               {!isToday && (
                 <button onClick={() => setSelectedDate(todayDate)}
-                  style={{ background: 'none', border: 'none', fontSize: '0.62rem', fontWeight: 700, color: 'var(--accent-blue)', cursor: 'pointer', padding: '2px 0' }}>
+                  style={{ background: 'none', border: 'none', fontSize: '0.62rem', fontWeight: 700, color: 'rgba(194,203,154,0.85)', cursor: 'pointer', padding: '2px 0' }}>
                   Back to today
                 </button>
               )}
@@ -593,124 +596,103 @@ export const LogFood: React.FC = () => {
             <button
               onClick={() => { if (canGoForward) setSelectedDate(d => offsetDate(d, 1)); }}
               disabled={!canGoForward}
-              style={{ background: canGoForward ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.02)', border: `1px solid ${canGoForward ? 'rgba(0,0,0,0.07)' : 'rgba(0,0,0,0.03)'}`, borderRadius: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: canGoForward ? 'pointer' : 'default', color: canGoForward ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.10)' }}
+              style={{ background: canGoForward ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)', border: 'none', borderRadius: 10, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: canGoForward ? 'pointer' : 'default' }}
             >
-              <ChevronRight size={16} />
+              <ChevronRight size={16} color={canGoForward ? '#FCFFE2' : 'rgba(252,255,226,0.25)'} />
             </button>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{
-              fontSize: '0.65rem', fontWeight: 800,
-              color: isOver ? 'var(--accent-red)' : calPct >= 90 ? '#974400' : 'var(--accent-blue)',
-              textTransform: 'uppercase', letterSpacing: '0.06em',
-              padding: '3px 9px', borderRadius: '50px',
-              backgroundColor: isOver ? 'rgba(255,69,58,0.1)' : calPct >= 90 ? 'rgba(151,68,0,0.10)' : 'rgba(87,96,56,0.09)',
-              border: `1px solid ${isOver ? 'rgba(255,69,58,0.2)' : calPct >= 90 ? 'rgba(151,68,0,0.20)' : 'rgba(87,96,56,0.18)'}`,
-            }}>
-              {isOver ? 'Over' : calPct >= 90 ? 'Nearly there' : `${Math.round(calPct)}% logged`}
-            </span>
-          </div>
+          {/* Status badge */}
+          <span style={{
+            fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase',
+            padding: '4px 10px', borderRadius: 50,
+            background: isOver ? 'rgba(220,38,38,0.25)' : calPct >= 90 ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.12)',
+            color: isOver ? '#FCA5A5' : '#FCFFE2',
+            border: `1px solid ${isOver ? 'rgba(220,38,38,0.4)' : 'rgba(255,255,255,0.2)'}`,
+          }}>
+            {isOver ? `+${Math.abs(Math.round(calRemaining))} over` : calPct >= 90 ? 'Almost there' : `${Math.round(calPct)}% done`}
+          </span>
         </div>
 
-        {/* Calorie row: logged / target */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '10px' }}>
+        {/* ── Calorie hero ── */}
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
+            <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(194,203,154,0.7)', marginBottom: 4 }}>
+              Calories Today
+            </div>
             <div style={{
-              fontSize: '2.4rem', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1,
-              color: isOver ? 'var(--accent-red)' : 'var(--text-primary)',
+              fontSize: '3.4rem', fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 1,
+              color: isOver ? '#FCA5A5' : '#FCFFE2',
               fontVariantNumeric: 'tabular-nums',
             }}>
               {calLogged.toLocaleString()}
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.24)', fontWeight: 600, marginTop: '4px' }}>
-              kcal logged
-            </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'rgba(0,0,0,0.35)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-              {isOver
-                ? <span style={{ color: 'var(--accent-red)' }}>+{Math.abs(calRemaining).toLocaleString()}</span>
-                : calRemaining.toLocaleString()
-              }
+          <div style={{ textAlign: 'right', paddingBottom: 6 }}>
+            <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'rgba(252,255,226,0.45)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>
+              {calTarget.toLocaleString()}
             </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.32)', fontWeight: 700, marginTop: '3px' }}>
-              {isOver ? 'over' : 'remaining'} · {calTarget.toLocaleString()} goal
+            <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'rgba(194,203,154,0.6)', marginTop: 2 }}>
+              kcal goal
             </div>
           </div>
         </div>
 
-        {/* Calorie progress bar */}
-        <div style={{ height: '5px', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '3px', overflow: 'hidden', marginBottom: '14px' }}>
+        {/* Calorie progress bar — thicker */}
+        <div style={{ position: 'relative', zIndex: 1, height: 8, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 6, overflow: 'hidden', marginBottom: 18 }}>
           <div style={{
             height: '100%', width: `${Math.min(calPct, 100)}%`,
             background: isOver
-              ? 'linear-gradient(90deg, #ef4444, var(--accent-red))'
+              ? 'linear-gradient(90deg, #EF4444, #FCA5A5)'
               : calPct > 80
-                ? 'linear-gradient(90deg, var(--accent-primary), #974400)'
-                : 'linear-gradient(90deg, var(--accent-primary), #8B9467)',
-            borderRadius: '3px', transition: 'width 0.5s ease',
+                ? 'linear-gradient(90deg, #C2CB9A, #FCFFE2)'
+                : 'linear-gradient(90deg, #8B9467, #C2CB9A)',
+            borderRadius: 6, transition: 'width 0.6s cubic-bezier(0.25,1,0.5,1)',
           }} />
         </div>
 
-        {/* Macro bars */}
+        {/* ── Macro cards ── */}
         {targets && (
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 8 }}>
             {[
-              { label: 'Protein', key: 'P', logged: Math.round(dayTotals.protein), target: proTarget, color: 'var(--color-protein)', bg: 'rgba(151,68,0,0.12)' },
-              { label: 'Carbs',   key: 'C', logged: Math.round(dayTotals.carbs),   target: carbTarget, color: 'var(--color-carbs)',   bg: 'rgba(87,96,56,0.08)' },
-              { label: 'Fats',    key: 'F', logged: Math.round(dayTotals.fats),    target: fatTarget,  color: 'var(--color-fats)',    bg: 'rgba(255,69,58,0.12)' },
+              { label: 'Protein', short: 'P', logged: Math.round(dayTotals.protein), target: proTarget, accent: '#FC9A77' },
+              { label: 'Carbs',   short: 'C', logged: Math.round(dayTotals.carbs),   target: carbTarget, accent: '#C2CB9A' },
+              { label: 'Fats',    short: 'F', logged: Math.round(dayTotals.fats),    target: fatTarget,  accent: '#8B9467' },
             ].map(m => {
               const pct = Math.min(100, (m.logged / Math.max(1, m.target)) * 100);
               const over = m.logged > m.target;
               return (
-                <div key={m.key} style={{
+                <div key={m.short} style={{
                   flex: 1,
-                  background: 'rgba(0,0,0,0.03)',
-                  borderRadius: '12px',
-                  padding: '8px 10px',
-                  border: '1px solid rgba(0,0,0,0.04)',
+                  background: 'rgba(255,255,255,0.1)',
+                  backdropFilter: 'blur(8px)',
+                  borderRadius: 16,
+                  padding: '12px 12px 10px',
+                  border: '1px solid rgba(255,255,255,0.15)',
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.20)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.key}</span>
-                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: over ? 'var(--accent-red)' : m.color, fontVariantNumeric: 'tabular-nums' }}>
-                      {m.logged}<span style={{ fontSize: '0.55rem', color: 'rgba(0,0,0,0.16)', fontWeight: 600 }}>/{m.target}g</span>
-                    </span>
+                  {/* Label */}
+                  <div style={{ fontSize: '0.58rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(194,203,154,0.7)', marginBottom: 6 }}>
+                    {m.label}
                   </div>
-                  <div style={{ height: '3px', backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+                  {/* Number */}
+                  <div style={{ fontSize: '1.3rem', fontWeight: 900, color: over ? '#FCA5A5' : '#FCFFE2', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: 2 }}>
+                    {m.logged}
+                    <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'rgba(252,255,226,0.45)', marginLeft: 2 }}>g</span>
+                  </div>
+                  {/* Target */}
+                  <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'rgba(194,203,154,0.55)', marginBottom: 8 }}>
+                    of {m.target}g
+                  </div>
+                  {/* Progress bar */}
+                  <div style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 3, overflow: 'hidden' }}>
                     <div style={{
                       height: '100%', width: `${pct}%`,
-                      backgroundColor: over ? 'var(--accent-red)' : m.color,
-                      borderRadius: '2px', transition: 'width 0.4s ease',
+                      backgroundColor: over ? '#FCA5A5' : m.accent,
+                      borderRadius: 3, transition: 'width 0.5s ease',
                     }} />
                   </div>
                 </div>
               );
             })}
-          </div>
-        )}
-        {/* Smart remaining hint — show if meaningful gap remains */}
-        {targets && calPct < 95 && !isOver && (Math.round(proRemaining) > 5 || Math.round(carbRemaining) > 10 || Math.round(fatRemaining) > 5) && (
-          <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(0,0,0,0.02)', borderRadius: 12, border: '1px solid rgba(0,0,0,0.04)' }}>
-            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(0,0,0,0.14)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>
-              Still to go
-            </div>
-            <div style={{ display: 'flex', gap: 14 }}>
-              {proRemaining > 5 && (
-                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--color-protein)', fontVariantNumeric: 'tabular-nums' }}>
-                  +{Math.round(proRemaining)}g protein
-                </span>
-              )}
-              {carbRemaining > 10 && (
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-carbs)', fontVariantNumeric: 'tabular-nums' }}>
-                  +{Math.round(carbRemaining)}g carbs
-                </span>
-              )}
-              {fatRemaining > 5 && (
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-fats)', fontVariantNumeric: 'tabular-nums' }}>
-                  +{Math.round(fatRemaining)}g fats
-                </span>
-              )}
-            </div>
           </div>
         )}
       </div>

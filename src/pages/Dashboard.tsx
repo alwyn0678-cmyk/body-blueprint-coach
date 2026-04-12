@@ -114,6 +114,32 @@ const LogSheet: React.FC<{
 
 // ─── Affirmations ─────────────────────────────────────────────────────────────
 
+const AFF_CACHE_KEY = 'bbc_affirmation_cache';
+
+interface AffCache {
+  date: string;
+  text: string;
+  index: number;
+}
+
+const loadCachedAff = (dateStr: string): string | null => {
+  try {
+    const raw = localStorage.getItem(AFF_CACHE_KEY);
+    if (!raw) return null;
+    const cache: AffCache = JSON.parse(raw);
+    return cache.date === dateStr ? cache.text : null;
+  } catch { return null; }
+};
+
+const saveCachedAff = (dateStr: string, text: string) => {
+  try {
+    const existing = localStorage.getItem(AFF_CACHE_KEY);
+    const prev: AffCache = existing ? JSON.parse(existing) : { date: '', text: '', index: 0 };
+    const nextIdx = prev.date === dateStr ? prev.index : (prev.index + 1) % 20;
+    localStorage.setItem(AFF_CACHE_KEY, JSON.stringify({ date: dateStr, text, index: nextIdx }));
+  } catch {}
+};
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export const Dashboard: React.FC = () => {
@@ -122,17 +148,24 @@ export const Dashboard: React.FC = () => {
   const [activeSheet, setActiveSheet] = useState<'water' | 'steps' | 'weight' | null>(null);
   const [affirmation, setAffirmation] = useState('');
   const [affirmationLoading, setAffirmationLoading] = useState(false);
+  const [affFadeKey, setAffFadeKey] = useState(0);
 
   const dateStr = todayStr();
   const log = state.logs[dateStr];
   const user = state.user!;
 
-  const fetchAffirmation = useCallback(async () => {
+  const fetchAffirmation = useCallback(async (forceRefresh = false) => {
+    if (!forceRefresh) {
+      const cached = loadCachedAff(dateStr);
+      if (cached) { setAffirmation(cached); return; }
+    }
     setAffirmationLoading(true);
     const text = await generateAffirmation(user.name);
+    saveCachedAff(dateStr, text);
     setAffirmation(text);
+    setAffFadeKey(k => k + 1);
     setAffirmationLoading(false);
-  }, [user.name]);
+  }, [user.name, dateStr]);
 
   useEffect(() => { fetchAffirmation(); }, [fetchAffirmation]);
 
@@ -433,31 +466,40 @@ export const Dashboard: React.FC = () => {
           style={{ marginTop: 16 }}
         >
           <div style={{
-            borderRadius: 24, padding: '20px 22px',
-            background: 'linear-gradient(135deg, rgba(87,96,56,0.06) 0%, rgba(194,203,154,0.05) 100%)',
-            border: '1px solid rgba(87,96,56,0.12)',
+            borderRadius: 24, padding: '22px 24px',
+            background: 'linear-gradient(135deg, #576038 0%, #3E4528 100%)',
+            boxShadow: '0 8px 32px rgba(87,96,56,0.25)',
+            position: 'relative', overflow: 'hidden',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Sparkles size={13} color="#8B9467" />
-                <span style={{ fontSize: '0.58rem', fontWeight: 900, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: 'rgba(87,96,56,0.65)' }}>
-                  Daily Affirmation
-                </span>
+            {/* subtle radial glow */}
+            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.07) 0%, transparent 60%)', pointerEvents: 'none' }} />
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <Sparkles size={13} color="rgba(194,203,154,0.9)" />
+                  <span style={{ fontSize: '0.58rem', fontWeight: 900, textTransform: 'uppercase' as const, letterSpacing: '0.14em', color: 'rgba(194,203,154,0.75)' }}>
+                    Daily Affirmation
+                  </span>
+                </div>
+                <button
+                  onClick={() => fetchAffirmation(true)}
+                  disabled={affirmationLoading}
+                  style={{ background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: 8, cursor: affirmationLoading ? 'default' : 'pointer', padding: 7, display: 'flex', transition: 'background 0.2s' }}
+                >
+                  <RefreshCw size={12} color="rgba(194,203,154,0.8)" style={{ animation: affirmationLoading ? 'spin 1s linear infinite' : 'none' }} />
+                </button>
               </div>
-              <button
-                onClick={fetchAffirmation}
-                disabled={affirmationLoading}
-                style={{ background: 'none', border: 'none', cursor: affirmationLoading ? 'default' : 'pointer', padding: 4, display: 'flex', opacity: 0.5 }}
+              <p
+                key={affFadeKey}
+                className="aff-fade"
+                style={{
+                  fontSize: '1rem', fontWeight: 600, color: affirmationLoading ? 'rgba(255,255,255,0.3)' : '#FCFFE2',
+                  lineHeight: 1.6, margin: 0, fontStyle: 'italic',
+                }}
               >
-                <RefreshCw size={13} color="rgba(0,0,0,0.40)" style={{ animation: affirmationLoading ? 'spin 1s linear infinite' : 'none' }} />
-              </button>
+                {affirmation ? `"${affirmation}"` : '…'}
+              </p>
             </div>
-            <p style={{
-              fontSize: '0.92rem', fontWeight: 600, color: affirmationLoading ? 'rgba(0,0,0,0.25)' : 'var(--text-primary)',
-              lineHeight: 1.55, margin: 0, fontStyle: 'italic',
-              transition: 'color 0.3s ease',
-            }}>
-              {affirmation ? `"${affirmation}"` : '…'}</p>
           </div>
         </motion.section>
 

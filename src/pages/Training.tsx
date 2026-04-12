@@ -564,17 +564,37 @@ const MUSCLE_COLORS: Record<string, string> = {
   Hamstrings: '#974400', Triceps: '#576038', Core: '#8B9467',
 };
 
-const PUSH_MUSCLES = ['Chest', 'Triceps', 'Delts', 'Shoulders'];
-const PULL_MUSCLES = ['Back', 'Arms', 'Traps', 'Biceps'];
-const LEG_MUSCLES = ['Legs', 'Glutes', 'Hamstrings', 'Calves', 'Quads'];
+const PUSH_MUSCLES = new Set(['Chest', 'Triceps', 'Delts', 'Shoulders', 'Front Delts', 'Side Delts']);
+const PULL_MUSCLES = new Set(['Back', 'Lats', 'Traps', 'Biceps', 'Rear Delts', 'Rhomboids', 'Arms']);
+const LEG_MUSCLES  = new Set(['Legs', 'Glutes', 'Hamstrings', 'Calves', 'Quads', 'Hip Flexors', 'Adductors', 'Abductors']);
+const CORE_MUSCLES = new Set(['Core', 'Abs', 'Obliques', 'Lower Back', 'Transverse Abdominis']);
 
 const getMovementPattern = (muscles: string[]): 'push' | 'pull' | 'legs' | 'core' => {
-  if (muscles.some(m => LEG_MUSCLES.includes(m))) return 'legs';
-  if (muscles.some(m => m === 'Core' || m === 'Abs')) return 'core';
-  const hasPush = muscles.some(m => PUSH_MUSCLES.includes(m));
-  const hasPull = muscles.some(m => PULL_MUSCLES.includes(m));
-  if (hasPull && !hasPush) return 'pull';
-  return 'push';
+  if (muscles.some(m => LEG_MUSCLES.has(m))) return 'legs';
+  if (muscles.some(m => CORE_MUSCLES.has(m))) return 'core';
+  const pushScore = muscles.filter(m => PUSH_MUSCLES.has(m)).length;
+  const pullScore = muscles.filter(m => PULL_MUSCLES.has(m)).length;
+  // Compounds that are primarily pushing get push; primarily pulling get pull
+  if (pullScore > pushScore) return 'pull';
+  if (pushScore > 0) return 'push';
+  if (pullScore > 0) return 'pull';
+  return 'push'; // safe fallback
+};
+
+/** Checks if exercise truly belongs to a push/pull/legs pattern (strict — no overlap bleed) */
+const matchesPattern = (muscles: string[], pattern: string): boolean => {
+  if (pattern === 'push') {
+    // Must have at least one push muscle and NOT be primarily legs/core
+    if (muscles.some(m => LEG_MUSCLES.has(m)) || muscles.some(m => CORE_MUSCLES.has(m))) return false;
+    return muscles.some(m => PUSH_MUSCLES.has(m));
+  }
+  if (pattern === 'pull') {
+    if (muscles.some(m => LEG_MUSCLES.has(m)) || muscles.some(m => CORE_MUSCLES.has(m))) return false;
+    return muscles.some(m => PULL_MUSCLES.has(m));
+  }
+  if (pattern === 'legs') return muscles.some(m => LEG_MUSCLES.has(m));
+  if (pattern === 'core') return muscles.some(m => CORE_MUSCLES.has(m));
+  return false;
 };
 
 const PATTERN_COLOR: Record<string, string> = {
@@ -620,17 +640,35 @@ const ExercisePicker: React.FC<{
     );
   };
 
-  const MUSCLE_KEYS = new Set(['Chest', 'Back', 'Shoulders', 'Glutes', 'Hamstrings', 'Biceps', 'Triceps', 'Quads', 'Calves', 'Core', 'Traps', 'Rear Delts']);
+  const PATTERN_FILTERS = new Set(['push', 'pull', 'legs', 'core']);
+  const MUSCLE_KEYS = new Set(['Chest', 'Back', 'Shoulders', 'Glutes', 'Hamstrings', 'Biceps', 'Triceps', 'Quads', 'Calves', 'Core', 'Traps', 'Rear Delts', 'Lats']);
 
-  const filtered = library.filter(e => {
-    const matchQ = e.name.toLowerCase().includes(query.toLowerCase());
+  const q = query.toLowerCase().trim();
+
+  const base = library.filter(e => {
     let matchF = true;
     if (filter === 'favorites') matchF = favoriteIds.includes(e.id);
     else if (filter === 'swap') matchF = !!swapMuscles && e.targetMuscles.some(m => swapMuscles.includes(m));
     else if (MUSCLE_KEYS.has(filter)) matchF = e.targetMuscles.includes(filter);
-    else if (filter !== 'all') matchF = getMovementPattern(e.targetMuscles) === filter;
-    return matchQ && matchF;
+    else if (PATTERN_FILTERS.has(filter)) matchF = matchesPattern(e.targetMuscles, filter);
+    return matchF;
   });
+
+  // Ranked search: exact > starts-with > word-starts > contains
+  const rankName = (name: string): number => {
+    const n = name.toLowerCase();
+    if (!q) return 0;
+    if (n === q) return 0;
+    if (n.startsWith(q)) return 1;
+    if (n.split(/\s+/).some(w => w.startsWith(q))) return 2;
+    if (n.includes(q)) return 3;
+    return 99;
+  };
+
+  const filtered = (q
+    ? base.filter(e => rankName(e.name) < 99).sort((a, b) => rankName(a.name) - rankName(b.name))
+    : base
+  );
 
   const recentExercises = recentIds
     .map(id => library.find(e => e.id === id))

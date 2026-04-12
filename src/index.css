@@ -701,13 +701,13 @@ button:focus:not(:focus-visible) { outline: none; }
 /* ═══════════════════════════════════════════════════════════════════
    ANIMATIONS
    ═══════════════════════════════════════════════════════════════════ */
-@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp   { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes scaleIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
-@keyframes shimmer { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }
-@keyframes pulse   { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+@keyframes slideIn   { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes scaleIn   { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+@keyframes shimmer   { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+@keyframes pulse     { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
 @keyframes pulseGlow {
   0%   { box-shadow: 0 0 0 0 rgba(87,96,56,0.3); }
   70%  { box-shadow: 0 0 0 10px rgba(87,96,56,0); }
@@ -724,13 +724,27 @@ button:focus:not(:focus-visible) { outline: none; }
   100% { background-position: calc(200px + 100%) 0; }
 }
 @keyframes ringFill { from { stroke-dashoffset: 300; } to { stroke-dashoffset: var(--target-offset); } }
-@keyframes countUp { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+@keyframes countUp  { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
 
-.animate-fade-in   { animation: fadeIn  0.2s ease-out both; }
-.animate-slide-up  { animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+/* ── Affirmation fade-in — triggered by key change ── */
+@keyframes affFadeIn {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.aff-fade { animation: affFadeIn 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* ── Press feedback for touchable cards ── */
+@keyframes btnPress {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(0.965); }
+  100% { transform: scale(1); }
+}
+
+.animate-fade-in    { animation: fadeIn  0.2s ease-out both; }
+.animate-slide-up   { animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1) both; }
 .animate-slide-down { animation: slideDown 0.25s ease-out both; }
-.animate-slide-in  { animation: slideIn 0.3s cubic-bezier(0.16,1,0.3,1) both; }
-.animate-scale-in  { animation: scaleIn 0.2s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-slide-in   { animation: slideIn 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-scale-in   { animation: scaleIn 0.2s cubic-bezier(0.16,1,0.3,1) both; }
 .animate-shimmer   { animation: shimmer 1.5s ease-in-out infinite; }
 .animate-pulse     { animation: pulseGlow 2s infinite; }
 .animate-spin      { animation: spin 0.8s linear infinite; }
@@ -1204,4 +1218,87 @@ button:focus:not(:focus-visible) { outline: none; }
 .chat-message-content li {
   margin-bottom: 3px;
   line-height: 1.55;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MICRO-INTERACTIONS & PRESS PHYSICS
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* All tappable surfaces get satisfying press feedback */
+button:not(:disabled):active,
+[role="button"]:active {
+  transform: scale(0.96);
+  transition: transform 80ms ease-out;
+}
+/* Override for elements that define their own active transforms */
+.btn-primary:active, .btn-blue:active, .btn-green:active,
+.btn-secondary:active, .btn-ghost:active, .btn-danger:active {
+  transform: scale(0.967);
+}
+.btn-icon:active { transform: scale(0.90); }
+
+/* Smooth focus ring for accessibility */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TYPOGRAPHY REFINEMENTS
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Tighter letter-spacing on large numerics for premium feel */
+.text-hero-num {
+  font-size: clamp(2.4rem, 9vw, 3.6rem);
+  font-weight: 900;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Section headers — consistent across all pages */
+.section-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+/* Micro-label caps */
+.label-caps {
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SCROLL IMPROVEMENTS
+   ═══════════════════════════════════════════════════════════════════ */
+* { -webkit-overflow-scrolling: touch; }
+
+/* Hide scrollbar on horizontal scroll strips */
+.scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scroll-x::-webkit-scrollbar { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CARD HOVER LIFT — desktop polish
+   ═══════════════════════════════════════════════════════════════════ */
+@media (hover: hover) {
+  .card-interactive:hover {
+    box-shadow: 0 6px 28px rgba(26,28,26,0.10);
+    transform: translateY(-1px);
+    transition: transform 200ms ease, box-shadow 200ms ease;
+  }
+  .btn-primary:hover  { box-shadow: 0 6px 28px rgba(87,96,56,0.45); }
+  .btn-green:hover    { box-shadow: 0 6px 24px rgba(87,96,56,0.38); }
 }
