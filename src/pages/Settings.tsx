@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { calculateTargets, calculateTDEEBreakdown } from '../utils/macroEngine';
 import { kgToLbs, cmToFtIn } from '../utils/units';
-import { UserProfile } from '../types';
+import { UserProfile, ActivityLevel, GoalType } from '../types';
 import {
   DangerButton,
   MetricCard,
@@ -185,7 +185,7 @@ export const Settings: React.FC = () => {
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [comingSoonApp, setComingSoonApp] = useState<{ name: string; id: string } | null>(null);
   const [notifyEnabled, setNotifyEnabled] = useState<Record<string, boolean>>({});
-  const [claudeKey, setGeminiKey] = useState(() => localStorage.getItem('bbc_claude_api_key') ?? '');
+  const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('bbc_gemini_api_key') ?? localStorage.getItem('bbc_claude_api_key') ?? '');
   const [claudeKeySaved, setClaudeKeySaved] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -679,23 +679,23 @@ export const Settings: React.FC = () => {
         <SecLabel text="AI Coach" />
         <PageCard>
           <div style={{ padding: '14px 16px' }}>
-            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>Claude API Key</div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: C.textPrimary, marginBottom: 4 }}>Gemini API Key</div>
             <div style={{ fontSize: '0.72rem', color: C.textTertiary, fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
-              Optional — enables Claude Haiku AI coaching. Get a key at console.anthropic.com
+              Optional — enables Gemini 2.5 Flash AI coaching. Get a free key at aistudio.google.com/apikey
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 type="password"
-                placeholder="sk-ant-..."
-                value={claudeKey}
+                placeholder="AIza..."
+                value={geminiKey}
                 onChange={e => {
                   const val = e.target.value;
                   setGeminiKey(val);
                   setClaudeKeySaved(false);
                   if (val.trim()) {
-                    localStorage.setItem('bbc_claude_api_key', val.trim());
+                    localStorage.setItem('bbc_gemini_api_key', val.trim());
                   } else {
-                    localStorage.removeItem('bbc_claude_api_key');
+                    localStorage.removeItem('bbc_gemini_api_key');
                   }
                 }}
                 style={{
@@ -706,10 +706,10 @@ export const Settings: React.FC = () => {
               />
               <button
                 onClick={() => {
-                  if (claudeKey.trim()) {
-                    localStorage.setItem('bbc_claude_api_key', claudeKey.trim());
+                  if (geminiKey.trim()) {
+                    localStorage.setItem('bbc_gemini_api_key', geminiKey.trim());
                   } else {
-                    localStorage.removeItem('bbc_claude_api_key');
+                    localStorage.removeItem('bbc_gemini_api_key');
                   }
                   setClaudeKeySaved(true);
                   setTimeout(() => setClaudeKeySaved(false), 2500);
@@ -718,16 +718,16 @@ export const Settings: React.FC = () => {
                   padding: '10px 16px', borderRadius: 12,
                   background: claudeKeySaved ? 'rgba(87,96,56,0.15)' : 'rgba(87,96,56,0.10)',
                   border: `1px solid ${claudeKeySaved ? 'rgba(87,96,56,0.35)' : 'rgba(87,96,56,0.25)'}`,
-                  color: claudeKeySaved ? '#576038' : '#576038',
+                  color: '#576038',
                   fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0,
                 }}
               >
                 {claudeKeySaved ? '✓ Saved' : 'Save'}
               </button>
             </div>
-            {claudeKey && (
+            {geminiKey && (
               <button
-                onClick={() => { setGeminiKey(''); localStorage.removeItem('bbc_claude_api_key'); }}
+                onClick={() => { setGeminiKey(''); localStorage.removeItem('bbc_gemini_api_key'); localStorage.removeItem('bbc_claude_api_key'); }}
                 style={{ marginTop: 8, background: 'none', border: 'none', color: C.textTertiary, fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
               >
                 Clear key
@@ -1128,9 +1128,9 @@ const ProfileEditSheet: React.FC<{
       height:             parseFloat(form.height),
       age:                parseInt(form.age),
       sex:                form.sex as 'male' | 'female',
-      activityLevel:      form.activityLevel as any,
-      goalType:           form.goalType as any,
-      preferredDietSpeed: form.preferredDietSpeed as any,
+      activityLevel:      form.activityLevel as ActivityLevel,
+      goalType:           form.goalType as GoalType,
+      preferredDietSpeed: form.preferredDietSpeed as 'aggressive' | 'moderate' | 'sustainable',
       trainingFrequency:  parseInt(form.trainingFrequency) || 3,
       stepsTarget:        parseInt(form.stepsTarget) || 8000,
     });

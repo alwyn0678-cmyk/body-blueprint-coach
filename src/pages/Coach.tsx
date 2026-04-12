@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain, CheckCircle2, ChevronDown, ChevronUp,
   Zap, Target, BarChart3, Dumbbell, Apple, Moon,
-  RefreshCw, Send, Lock, Sparkles, Heart, Activity, AlertTriangle,
+  RefreshCw, Send, Lock, Sparkles, Heart, Activity, AlertTriangle, FileText,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import {
@@ -11,6 +11,7 @@ import {
   getDailyCheckInResponse, DailyCheckInInput,
   getProactiveInsights,
   getFormTipsForExercise, FormTip,
+  generateProgressReport, ProgressReportInput,
 } from '../services/aiCoach';
 import { DailyCheckIn } from '../types';
 import { computeWeeklyStats, calculateWeightTrend, evaluateWeeklyCheckIn } from '../utils/aiCoachingEngine';
@@ -409,6 +410,14 @@ export const Coach: React.FC = () => {
         }).filter(e => e.sets > 0),
       }));
 
+    // Collect day notes from the active custom program
+    const activeProgram = (state.customPrograms || []).find(p => p.id === state.activeCustomProgramId);
+    const programDayNotes = activeProgram
+      ? activeProgram.days
+          .filter(d => d.notes && d.notes.trim())
+          .map(d => ({ dayName: d.name, notes: d.notes! }))
+      : [];
+
     return {
       recentSessions,
       progressionReady: progressionSuggestions.map(s => ({
@@ -420,8 +429,9 @@ export const Coach: React.FC = () => {
       deloadReasons: deloadRec.reasons,
       musclesUnderMEV,
       musclesAboveMEV: activeMuscles.filter(v => v.currentVolume >= v.mev).map(v => v.muscle),
+      programDayNotes,
     };
-  }, [state.logs, progressionSuggestions, deloadRec, musclesUnderMEV, activeMuscles]);
+  }, [state.logs, state.customPrograms, state.activeCustomProgramId, progressionSuggestions, deloadRec, musclesUnderMEV, activeMuscles]);
 
   // ── AI Chat state ──────────────────────────────────────────────────────────
   type ChatMsg = { role: 'user' | 'assistant'; content: string; id: string };
@@ -436,11 +446,11 @@ export const Coach: React.FC = () => {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const [hasClaudeKey, setHasClaudeKey] = useState(
-    () => !!localStorage.getItem('bbc_claude_api_key')
-  );
+  const getHasAIKey = () =>
+    !!(localStorage.getItem('bbc_gemini_api_key') || localStorage.getItem('bbc_claude_api_key'));
+  const [hasClaudeKey, setHasClaudeKey] = useState(getHasAIKey);
   useEffect(() => {
-    const check = () => setHasClaudeKey(!!localStorage.getItem('bbc_claude_api_key'));
+    const check = () => setHasClaudeKey(getHasAIKey());
     window.addEventListener('storage', check);
     const interval = setInterval(check, 2000);
     return () => { window.removeEventListener('storage', check); clearInterval(interval); };
@@ -575,6 +585,37 @@ export const Coach: React.FC = () => {
     }
   }, [checkInMood, checkInEnergy, checkInSoreness, user, weeklyStats, todayStr2, saveDailyCheckIn, showToast]);
 
+  // ── Progress Report ────────────────────────────────────────────────────────
+  const [reportText, setReportText] = useState('');
+  const [reportLoading, setReportLoading] = useState(false);
+
+  const handleGenerateReport = useCallback(async () => {
+    setReportLoading(true);
+    try {
+      const weightTrend = weightDelta < -0.1 ? 'losing' as const : weightDelta > 0.1 ? 'gaining' as const : 'maintaining' as const;
+      const recentSessionCount = Object.values(state.logs)
+        .filter(l => l.workouts.length > 0).length;
+      const input: ProgressReportInput = {
+        user,
+        weeklyStats,
+        weightDelta7d: weightDelta,
+        weightTrend,
+        topProgressions: progressionSuggestions
+          .filter(s => s.type === 'weight_increase')
+          .slice(0, 4)
+          .map(s => ({ exerciseName: s.exerciseName, reasoning: s.reasoning })),
+        musclesUnderMEV,
+        recentSessionCount,
+      };
+      const text = await generateProgressReport(input);
+      setReportText(text);
+    } catch (err) {
+      showToast('Report generation failed. Try again.', 'error');
+    } finally {
+      setReportLoading(false);
+    }
+  }, [user, weeklyStats, weightDelta, state.logs, progressionSuggestions, musclesUnderMEV, showToast]);
+
   const handleCompleteCheckIn = useCallback(async () => {
     setWeeklyLoading(true);
     try {
@@ -614,7 +655,7 @@ export const Coach: React.FC = () => {
     } finally {
       setWeeklyLoading(false);
     }
-  }, [user, weeklyStats, weightDelta, currentEma, weekAdjustment, showToast]);
+  }, [user, weeklyStats, weightDelta, currentEma, weekAdjustment, trainingContext, showToast]);
 
   const insightColor = dailyInsight.priority === 'high' ? '#974400'
     : dailyInsight.priority === 'medium' ? '#974400' : '#576038';
@@ -902,9 +943,9 @@ export const Coach: React.FC = () => {
                   <Lock size={15} color="rgba(87,96,56,0.6)" />
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>AI Chat requires a Claude key</div>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>AI Chat requires a Gemini key</div>
                   <div style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                    Enter your Claude key in Settings → AI Coach. Powered by Claude Haiku.
+                    Enter your Gemini key in Settings → AI Coach. Get a free key at aistudio.google.com/apikey
                   </div>
                 </div>
               </div>
@@ -976,7 +1017,7 @@ export const Coach: React.FC = () => {
               <div style={{ flex: 1, position: 'relative' }}>
                 <input
                   className="input-field"
-                  placeholder={hasClaudeKey ? 'Ask your coach...' : 'Set Claude key in Settings to chat...'}
+                  placeholder={hasClaudeKey ? 'Ask your coach...' : 'Add Gemini key in Settings to chat...'}
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChat(); } }}
@@ -1043,6 +1084,46 @@ export const Coach: React.FC = () => {
         {activeTab === 'plan' && (
           <motion.div key="plan" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* ── AI Progress Report ── */}
+            <div style={{ borderRadius: 18, background: reportText ? 'rgba(87,96,56,0.05)' : 'linear-gradient(135deg, rgba(87,96,56,0.08) 0%, rgba(151,68,0,0.05) 100%)', border: '1px solid rgba(87,96,56,0.18)', padding: '16px 18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: reportText ? 12 : 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: 'rgba(87,96,56,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FileText size={14} color="#576038" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary)' }}>AI Progress Report</div>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>Comprehensive weekly analysis</div>
+                  </div>
+                </div>
+                <button
+                  onClick={handleGenerateReport}
+                  disabled={reportLoading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '7px 14px', borderRadius: 20,
+                    background: reportLoading ? 'rgba(87,96,56,0.3)' : 'linear-gradient(135deg, #576038, #3E4528)',
+                    border: 'none', color: 'white', fontSize: '0.73rem', fontWeight: 700,
+                    cursor: reportLoading ? 'default' : 'pointer', flexShrink: 0,
+                  }}
+                >
+                  {reportLoading
+                    ? <><span className="btn-spinner" style={{ width: 10, height: 10, borderColor: 'rgba(255,255,255,0.3)', borderTopColor: 'white', marginRight: 4 }} /> Generating...</>
+                    : <><Sparkles size={11} /> {reportText ? 'Refresh' : 'Generate'}</>}
+                </button>
+              </div>
+              {reportText && (
+                <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+                  <ChatMarkdown text={reportText} />
+                </div>
+              )}
+              {!reportText && !reportLoading && (
+                <div style={{ marginTop: 12, fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
+                  Tap Generate to get a data-driven analysis of your body composition trend, nutrition adherence, strength progress, and specific actions for next week.
+                </div>
+              )}
+            </div>
 
             {/* Current targets */}
             <div style={{ borderRadius: 18, background: 'var(--bg-card)', border: '1px solid var(--border-color)', padding: '16px 18px' }}>

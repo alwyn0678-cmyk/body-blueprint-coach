@@ -258,8 +258,7 @@ export async function searchFoods(
     // Merge: interleave OFF + USDA results by score, then deduplicate
     const merged = deduplicateById([...off, ...usda]);
     api = filterAndSort(merged, trimmed);
-  } catch (err) {
-    console.warn('[foodService] Remote search failed:', err);
+  } catch {
     api = [];
     apiError = true;
   }
@@ -300,10 +299,8 @@ export async function lookupBarcode(barcode: string): Promise<FoodItem | null> {
       return usdaResult.value;
     }
 
-    console.warn('[foodService] Barcode not found in any database:', clean);
     return null;
-  } catch (err) {
-    console.warn('[foodService] Barcode lookup failed:', err);
+  } catch {
     return null;
   }
 }

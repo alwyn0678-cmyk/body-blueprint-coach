@@ -67,7 +67,7 @@ const MeasurementSheet: React.FC<{ onClose: () => void; onSave: (m: BodyMeasurem
     };
     MEASUREMENT_FIELDS.forEach(f => {
       const v = parseFloat(form[f.key]);
-      if (isFinite(v) && v > 0) (m as any)[f.key] = v;
+      if (isFinite(v) && v > 0) (m as unknown as Record<string, number>)[f.key] = v;
     });
     onSave(m);
   };
@@ -111,22 +111,26 @@ const MeasurementSheet: React.FC<{ onClose: () => void; onSave: (m: BodyMeasurem
 
 // ─── Measurement history card ─────────────────────────────────────────────────
 
+type NumericMeasurementKey = Exclude<keyof BodyMeasurement, 'id' | 'date'>;
+const getMeasVal = (m: BodyMeasurement, key: NumericMeasurementKey): number | undefined =>
+  m[key] as number | undefined;
+
 const MeasurementCard: React.FC<{
   measurement: BodyMeasurement;
   prev?: BodyMeasurement;
   onDelete: () => void;
 }> = ({ measurement, prev, onDelete }) => {
   const [expanded, setExpanded] = useState(false);
-  const delta = (key: keyof BodyMeasurement): string => {
-    const curr = (measurement as any)[key];
-    const p = prev ? (prev as any)[key] : undefined;
+  const delta = (key: NumericMeasurementKey): string => {
+    const curr = getMeasVal(measurement, key);
+    const p = prev ? getMeasVal(prev, key) : undefined;
     if (!curr || !p) return '';
     const d = curr - p;
     return `${d > 0 ? '+' : ''}${d.toFixed(1)}`;
   };
-  const deltaColor = (key: keyof BodyMeasurement): string => {
-    const curr = (measurement as any)[key];
-    const p = prev ? (prev as any)[key] : undefined;
+  const deltaColor = (key: NumericMeasurementKey): string => {
+    const curr = getMeasVal(measurement, key);
+    const p = prev ? getMeasVal(prev, key) : undefined;
     if (!curr || !p) return 'var(--text-tertiary)';
     const d = curr - p;
     // For weight/fat: down is good (fat_loss); for measurements like arm: up might be good
@@ -171,15 +175,16 @@ const MeasurementCard: React.FC<{
       {expanded && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.04)' }}>
           {MEASUREMENT_FIELDS.filter(f => f.key !== 'weight' && f.key !== 'bodyFat').map(f => {
-            const val = (measurement as any)[f.key];
+            const key = f.key as NumericMeasurementKey;
+            const val = getMeasVal(measurement, key);
             if (!val) return null;
             return (
               <div key={f.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{f.label}</span>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
                   <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>{val}{f.suffix}</span>
-                  {prev && delta(f.key as any) && (
-                    <span style={{ fontSize: '0.62rem', fontWeight: 700, color: deltaColor(f.key as any) }}>{delta(f.key as any)}</span>
+                  {prev && delta(key) && (
+                    <span style={{ fontSize: '0.62rem', fontWeight: 700, color: deltaColor(key) }}>{delta(key)}</span>
                   )}
                 </div>
               </div>

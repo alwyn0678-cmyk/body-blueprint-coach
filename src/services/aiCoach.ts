@@ -2,10 +2,10 @@
  * AI Coach Service
  *
  * FREE by default — uses a data-driven coaching engine with no API required.
- * Optional upgrade: set a Claude API key (https://console.anthropic.com)
- * for Claude Haiku 3.5 powered natural language responses.
+ * Optional upgrade: set a Gemini API key (https://aistudio.google.com/apikey)
+ * for Gemini 2.5 Flash powered natural language responses.
  *
- * VITE_CLAUDE_API_KEY=your-key-here (in .env)
+ * Add key in Settings → AI Coach
  */
 
 import { UserProfile, DailyLog, WeeklyStats, WorkoutSession, CoachInsight, GoalType, MealPlan, PlannedDay, PlannedMealItem } from '../types';
@@ -25,6 +25,7 @@ export interface TrainingContext {
   deloadReasons: string[];
   musclesUnderMEV: string[];
   musclesAboveMEV: string[];
+  programDayNotes?: Array<{ dayName: string; notes: string }>; // user-written notes per training day
 }
 
 export interface CoachContext {
@@ -38,50 +39,51 @@ export interface CoachContext {
   trainingContext?: TrainingContext; // enriched training intelligence
 }
 
-// ─── Claude API ───────────────────────────────────────────────────────────────
+// ─── Gemini API ───────────────────────────────────────────────────────────────
 
-const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
-const getClaudeKey = (): string | null => {
-  const runtime = localStorage.getItem('bbc_claude_api_key');
+const getAIKey = (): string | null => {
+  const runtime = localStorage.getItem('bbc_gemini_api_key')
+    ?? localStorage.getItem('bbc_claude_api_key'); // legacy fallback
   return runtime && runtime.trim() ? runtime.trim() : null;
 };
 
-async function claudeComplete(
+async function geminiComplete(
   systemPrompt: string,
   userMessage: string,
   history: { role: 'user' | 'assistant'; content: string }[] = [],
   maxTokens = 700
 ): Promise<string> {
-  const key = getClaudeKey();
-  if (!key) return 'No API key set. Go to **Settings → AI Coach** and paste your Claude key.';
+  const key = getAIKey();
+  if (!key) return 'No API key set. Go to **Settings → AI Coach** and paste your Gemini key.';
   try {
-    const messages = [
-      ...history.slice(-10),
-      { role: 'user' as const, content: userMessage },
+    const contents = [
+      ...history.slice(-10).map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      })),
+      { role: 'user', parts: [{ text: userMessage }] },
     ];
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
-        max_tokens: maxTokens,
-        system: systemPrompt,
-        messages,
-      }),
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents,
+          generationConfig: { maxOutputTokens: maxTokens },
+        }),
+      }
+    );
     const data = await res.json();
     if (data.error) {
-      if (data.error.type === 'authentication_error') return 'Invalid API key. Double-check your key in **Settings → AI Coach**.';
-      if (data.error.type === 'rate_limit_error') return 'Rate limit hit. Wait 60 seconds and try again.';
+      if (data.error.code === 400) return 'Invalid Gemini API key. Double-check your key in **Settings → AI Coach**.';
+      if (data.error.code === 429) return 'Rate limit hit. Wait 60 seconds and try again.';
       return `API error: ${data.error.message}`;
     }
-    const text = data.content?.[0]?.text;
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) return 'Empty response from AI. Try again.';
     return text;
   } catch (e) {
@@ -107,7 +109,7 @@ const FALLBACK_AFFIRMATIONS = [
 let _fallbackIdx = new Date().getDay() % FALLBACK_AFFIRMATIONS.length;
 
 export async function generateAffirmation(userName?: string): Promise<string> {
-  const key = getClaudeKey();
+  const key = getAIKey();
   if (!key) {
     const text = FALLBACK_AFFIRMATIONS[_fallbackIdx % FALLBACK_AFFIRMATIONS.length];
     _fallbackIdx++;
@@ -115,25 +117,21 @@ export async function generateAffirmation(userName?: string): Promise<string> {
   }
   const firstName = userName ? userName.split(' ')[0] : 'you';
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
-        max_tokens: 100,
-        system: `You are a motivational coach for ${firstName}, a woman on a personal fitness and self-improvement journey. Generate exactly one powerful, unique fitness affirmation that feels personal, energising, and focused on strength, discipline, and progress. Make it different each time — vary the theme: mindset, nutrition, training, self-belief, resilience. Output only the affirmation text itself, no quotes, no explanation, no trailing punctuation beyond a period.`,
-        messages: [{ role: 'user', content: 'Generate a fresh affirmation for today.' }],
-      }),
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: `You are a motivational coach for ${firstName}, a woman on a personal fitness and self-improvement journey. Generate exactly one powerful, unique fitness affirmation that feels personal, energising, and focused on strength, discipline, and progress. Make it different each time — vary the theme: mindset, nutrition, training, self-belief, resilience. Output only the affirmation text itself, no quotes, no explanation, no trailing punctuation beyond a period.` }] },
+          contents: [{ role: 'user', parts: [{ text: 'Generate a fresh affirmation for today.' }] }],
+          generationConfig: { maxOutputTokens: 100 },
+        }),
+      }
+    );
     const data = await res.json();
-    const text = data.content?.[0]?.text?.trim();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     if (text && text.length > 10 && !text.includes('API') && !text.includes('key')) return text;
-    // Fallback if response looks like an error
     const fb = FALLBACK_AFFIRMATIONS[_fallbackIdx % FALLBACK_AFFIRMATIONS.length];
     _fallbackIdx++;
     return fb;
@@ -218,6 +216,11 @@ const buildSystemPrompt = (user: UserProfile, ctx?: Partial<CoachContext>): stri
 
   if (tc?.deloadRecommended && tc.deloadReasons && tc.deloadReasons.length > 0) {
     lines.push(``, `DELOAD SIGNAL: ${tc.deloadReasons.join('; ')}`);
+  }
+
+  if (tc?.programDayNotes && tc.programDayNotes.length > 0) {
+    lines.push(``, `ATHLETE'S OWN TRAINING NOTES (written by ${firstName} — factor these into all advice):`);
+    tc.programDayNotes.forEach(n => lines.push(`- ${n.dayName}: "${n.notes}"`));
   }
 
   lines.push(``, `─── RESPONSE RULES ───`);
@@ -475,13 +478,13 @@ export class AICoachService {
 
   /** Generate weekly review text — uses Claude if API key set, otherwise free engine */
   async getWeeklyReview(ctx: CoachContext): Promise<string> {
-    if (getClaudeKey()) {
+    if (getAIKey()) {
       const { user, weeklyStats: stats, weightDelta7d: delta } = ctx;
       const firstName = user.name.split(' ')[0];
       const weightNote = delta !== undefined
         ? `Weight trend: ${delta > 0 ? '+' : ''}${delta.toFixed(2)}kg over 7 days.`
         : '';
-      return claudeComplete(
+      return geminiComplete(
         buildSystemPrompt(user, ctx),
         `Write ${firstName}'s weekly coaching review. Data: ${stats.calorieAdherence}% calorie adherence (avg ${stats.avgCalories} kcal), ${stats.proteinAdherence}% protein adherence (avg ${stats.avgProtein}g), ${stats.workoutsCompleted} workouts completed. ${weightNote}
 
@@ -500,7 +503,7 @@ Structure the response as:
 
   /** Workout feedback — uses Claude if available, otherwise free engine */
   async getWorkoutFeedback(user: UserProfile, workout: WorkoutSession, prevSessionVolumeKg?: number): Promise<string> {
-    if (getClaudeKey()) {
+    if (getAIKey()) {
       const totalVolume = workout.exercises.reduce(
         (a, ex) => a + ex.sets.reduce((b, s) => b + s.weight * s.reps, 0), 0
       );
@@ -516,7 +519,7 @@ Structure the response as:
         ? `\nVolume vs last session: ${Math.round(totalVolume)}kg vs ${Math.round(prevSessionVolumeKg)}kg (${totalVolume >= prevSessionVolumeKg ? '+' : ''}${(((totalVolume - prevSessionVolumeKg) / prevSessionVolumeKg) * 100).toFixed(0)}%)`
         : '\nFirst time logging this session.';
 
-      return claudeComplete(
+      return geminiComplete(
         buildSystemPrompt(user),
         `Workout completed: **${workout.name}** | ${workout.durationMinutes} minutes | Session RPE: ${workout.sessionRPE ?? 'not recorded'}${vsLast}
 
@@ -538,7 +541,7 @@ Be direct. Reference actual numbers. No generic praise.`,
 
   /** Free-form AI chat with the coach — uses Claude Haiku */
   async chat(ctx: CoachContext, userMessage: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<string> {
-    return claudeComplete(buildSystemPrompt(ctx.user, ctx), userMessage, history, 700);
+    return geminiComplete(buildSystemPrompt(ctx.user, ctx), userMessage, history, 700);
   }
 }
 
@@ -562,8 +565,8 @@ export async function analyzeFoodImage(
   base64Data: string,
   mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif'
 ): Promise<{ foods: DetectedFood[]; disclaimer: string } | { error: string }> {
-  const key = getClaudeKey();
-  if (!key) return { error: 'No API key set. Add your Claude key in Settings → AI Coach.' };
+  const key = getAIKey();
+  if (!key) return { error: 'No API key set. Add your Gemini key in Settings → AI Coach.' };
 
   const systemPrompt = `You are a nutrition estimation assistant. When given a photo of food, you identify each visible food item and estimate its nutritional content based on visual portion assessment. Always respond with valid JSON only — no markdown, no explanations outside the JSON.`;
 
@@ -593,39 +596,32 @@ Respond ONLY with this exact JSON structure (no other text):
 Confidence levels: "high" = clearly identifiable food with well-known macros, "medium" = recognisable but portion uncertain, "low" = unclear or mixed item.`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
-        max_tokens: 1200,
-        system: systemPrompt,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: mediaType, data: base64Data },
-            },
-            { type: 'text', text: userPrompt },
-          ],
-        }],
-      }),
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [{
+            role: 'user',
+            parts: [
+              { inline_data: { mime_type: mediaType, data: base64Data } },
+              { text: userPrompt },
+            ],
+          }],
+          generationConfig: { maxOutputTokens: 1200 },
+        }),
+      }
+    );
 
     const data = await res.json();
     if (data.error) {
-      if (data.error.type === 'authentication_error') return { error: 'Invalid API key.' };
+      if (data.error.code === 400) return { error: 'Invalid API key.' };
       return { error: `API error: ${data.error.message}` };
     }
 
-    const text = data.content?.[0]?.text ?? '';
-    // Extract JSON from the response (handle potential markdown fences)
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return { error: 'Could not parse AI response. Try again.' };
 
@@ -662,8 +658,8 @@ export async function generateWorkout(params: {
   level: string;
   notes?: string;
 }): Promise<AIGeneratedWorkout> {
-  const key = getClaudeKey();
-  if (!key) throw new Error('No Claude API key. Set it in Settings → AI Coach.');
+  const key = getAIKey();
+  if (!key) throw new Error('No Gemini API key. Set it in Settings → AI Coach.');
 
   const exerciseCount =
     params.durationMinutes <= 20 ? 4
@@ -690,25 +686,21 @@ Rules:
 - Intermediate: compound + isolation mix, 3-4 sets
 - Advanced: 4 sets, drop sets / superset notes welcome`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: CLAUDE_MODEL,
-      max_tokens: 1200,
-      system: 'You are an expert personal trainer. Output only valid JSON, nothing else.',
-      messages: [{ role: 'user', content: userMessage }],
-    }),
-  });
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: 'You are an expert personal trainer. Output only valid JSON, nothing else.' }] },
+        contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+        generationConfig: { maxOutputTokens: 1200 },
+      }),
+    }
+  );
 
   const data = await res.json();
-  const text: string = data.content?.[0]?.text?.trim() ?? '';
-  // Strip markdown code fences if Claude wraps the JSON
+  const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
   const jsonStr = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
   return JSON.parse(jsonStr) as AIGeneratedWorkout;
 }
@@ -838,7 +830,7 @@ export async function generateMealPlan(user: UserProfile): Promise<MealPlan> {
     return d.toISOString().split('T')[0];
   })();
 
-  const key = getClaudeKey();
+  const key = getAIKey();
   let days: PlannedDay[];
 
   if (key) {
@@ -870,23 +862,20 @@ Rules:
 - Output ONLY the JSON array, no markdown, no explanation`;
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: CLAUDE_MODEL,
-          max_tokens: 4000,
-          system: 'You are a nutrition expert. Output only valid JSON arrays, nothing else.',
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      });
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: 'You are a nutrition expert. Output only valid JSON arrays, nothing else.' }] },
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 4000 },
+          }),
+        }
+      );
       const data = await res.json();
-      const text: string = data.content?.[0]?.text?.trim() ?? '';
+      const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
       const jsonStr = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
       days = JSON.parse(jsonStr) as PlannedDay[];
     } catch {
@@ -1175,12 +1164,73 @@ function buildCheckInResponse(checkIn: DailyCheckInInput, user: UserProfile, wee
   return `Average day — that's fine. Show up, train at a reasonable intensity, and log it. Consistency across average days is what separates results from goals.`;
 }
 
+// ─── Weekly Progress Report ───────────────────────────────────────────────────
+
+export interface ProgressReportInput {
+  user: UserProfile;
+  weeklyStats: WeeklyStats;
+  weightDelta7d: number;
+  weightTrend: 'losing' | 'gaining' | 'maintaining';
+  topProgressions: Array<{ exerciseName: string; reasoning: string }>;
+  musclesUnderMEV: string[];
+  recentSessionCount: number; // last 4 weeks
+}
+
+function buildFallbackProgressReport(input: ProgressReportInput): string {
+  const { user, weeklyStats, weightDelta7d, weightTrend, topProgressions, musclesUnderMEV } = input;
+  const firstName = user.name.split(' ')[0];
+  const weightStr = `${weightDelta7d > 0 ? '+' : ''}${weightDelta7d.toFixed(2)}kg`;
+  const goalLabel = user.goalType === 'fat_loss' ? 'fat loss' : user.goalType === 'muscle_gain' ? 'muscle gain' : user.goalType.replace('_', ' ');
+
+  const lines: string[] = [];
+  lines.push(`**Weekly Report — ${firstName}**\n`);
+  lines.push(`**Body Composition:** Weight trend ${weightStr} (7-day). ${weightTrend === 'losing' ? 'Deficit is working — continue monitoring protein to preserve muscle.' : weightTrend === 'gaining' ? 'Weight is rising — ensure surplus is appropriate for muscle gain phase.' : 'Weight stable — good for recomposition or maintenance phase.'}\n`);
+  lines.push(`**Nutrition:** ${weeklyStats.calorieAdherence}% calorie adherence, ${weeklyStats.proteinAdherence}% protein adherence (avg ${weeklyStats.avgProtein}g vs ${user.targets.protein}g target). ${weeklyStats.proteinAdherence < 80 ? 'Protein is the primary lever to fix this week.' : 'Nutrition execution is solid.'}\n`);
+  lines.push(`**Training:** ${weeklyStats.workoutsCompleted} sessions logged.${topProgressions.length > 0 ? ` Exercises ready to progress: ${topProgressions.slice(0, 2).map(p => p.exerciseName).join(', ')}.` : ''}\n`);
+  if (musclesUnderMEV.length > 0) {
+    lines.push(`**Volume gaps:** ${musclesUnderMEV.join(', ')} are below minimum effective volume — add 1–2 sets per session next week.\n`);
+  }
+  lines.push(`**Next week priority:** ${weeklyStats.proteinAdherence < 80 ? `Hit ${user.targets.protein}g protein every day — plan sources at each meal.` : weeklyStats.calorieAdherence < 80 ? 'Tighten calorie tracking — log every meal including snacks.' : weeklyStats.workoutsCompleted < user.trainingFrequency ? `Complete at least ${user.trainingFrequency} sessions — schedule them now.` : `Maintain this standard. Focus on ${goalLabel} execution.`}`);
+  return lines.join('\n');
+}
+
+export async function generateProgressReport(input: ProgressReportInput): Promise<string> {
+  const key = getAIKey();
+  if (!key) return buildFallbackProgressReport(input);
+
+  const { user, weeklyStats, weightDelta7d, topProgressions, musclesUnderMEV } = input;
+  const firstName = user.name.split(' ')[0];
+  const weightStr = `${weightDelta7d > 0 ? '+' : ''}${weightDelta7d.toFixed(2)}kg`;
+
+  const prompt = `Generate ${firstName}'s weekly progress report. Data:
+- Goal: ${user.goalType.replace('_', ' ')} | Weight: ${user.weight}kg → trend ${weightStr} (7 days)
+- Nutrition: ${weeklyStats.calorieAdherence}% calorie adherence (avg ${weeklyStats.avgCalories} kcal / target ${user.targets.calories}), ${weeklyStats.proteinAdherence}% protein (avg ${weeklyStats.avgProtein}g / target ${user.targets.protein}g)
+- Training: ${weeklyStats.workoutsCompleted}/${user.trainingFrequency} sessions | ${weeklyStats.daysLogged} days logged
+${topProgressions.length > 0 ? `- Exercises progressing: ${topProgressions.map(p => `${p.exerciseName} (${p.reasoning})`).join(', ')}` : ''}
+${musclesUnderMEV.length > 0 ? `- Muscles below MEV: ${musclesUnderMEV.join(', ')}` : ''}
+
+Write a structured weekly progress report with these sections:
+1. **Body Composition** — interpret the weight trend for their specific goal (is this the expected rate?)
+2. **Nutrition** — honest assessment of adherence, what it means for progress
+3. **Training** — session completion, strength trends
+4. **Gaps & Actions** — the 2–3 most important things to fix or maintain next week, with specific numbers
+
+Use markdown bold for section headers. Be direct and data-driven. 150–200 words total. No filler.`;
+
+  return geminiComplete(
+    `You are an elite fitness coach writing a data-driven weekly progress report. Use the athlete's real numbers. Be concise, honest, and actionable.`,
+    prompt,
+    [],
+    400,
+  );
+}
+
 export async function getDailyCheckInResponse(
   checkIn: DailyCheckInInput,
   user: UserProfile,
   weeklyStats: WeeklyStats,
 ): Promise<string> {
-  const key = getClaudeKey();
+  const key = getAIKey();
   if (!key) return buildCheckInResponse(checkIn, user, weeklyStats);
 
   const firstName = user.name.split(' ')[0];
@@ -1197,7 +1247,7 @@ Goal: ${goalLabel} | This week: ${weeklyStats.calorieAdherence}% calorie adheren
 
 Give ${firstName} a 2–3 sentence personalised coaching response: acknowledge how they're feeling, give one specific actionable recommendation for today (training modification, nutrition focus, or recovery), and close with a brief motivating line. Be direct. No filler.`;
 
-  return claudeComplete(
+  return geminiComplete(
     `You are an elite personal fitness coach. Give brief, direct, data-driven check-in responses. Reference the person's name and actual numbers.`,
     prompt,
     [],

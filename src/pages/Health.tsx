@@ -487,7 +487,6 @@ export const Health: React.FC = () => {
             </div>
             <div style={{ height: 120 }}>
               <ResponsiveContainer width="100%" height="100%">
-                {/* @ts-ignore */}
                 <LineChart data={trendData} margin={{ top: 5, right: 8, left: -22, bottom: 0 }}>
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'rgba(0,0,0,0.20)', fontWeight: 700 }} interval={1} />
                   <Tooltip

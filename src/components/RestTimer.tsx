@@ -24,9 +24,11 @@ export const RestTimer: React.FC<RestTimerProps> = ({ onClose, defaultSeconds = 
   const playBeep = useCallback((freq: number, duration: number) => {
     try {
       if (!audioCtxRef.current) {
-        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioCtx = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (AudioCtx) audioCtxRef.current = new AudioCtx();
       }
       const ctx = audioCtxRef.current;
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);

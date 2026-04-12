@@ -83,13 +83,13 @@ export const LogFood: React.FC = () => {
     if (prevDateHasData) setShowCopyYesterday(true);
   }, [prevDateHasData]);
 
-  const todayLog = state.logs[selectedDate] || {
+  const todayLog = state.logs[selectedDate] ?? {
     id: selectedDate, date: selectedDate, steps: 0, waterGlasses: 0,
     meals: { breakfast: [], lunch: [], dinner: [], snacks: [] },
     workouts: [], health: {}, adherenceScore: 0,
   };
 
-  const dayTotals = getMacrosFromLog(todayLog as any);
+  const dayTotals = getMacrosFromLog(todayLog);
   const targets = state.user?.targets;
   const calTarget = targets?.calories ?? 2000;
   const proTarget = targets?.protein ?? 150;

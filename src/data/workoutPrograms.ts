@@ -16,11 +16,12 @@ export interface ProgramDay {
   dayNumber: number;
   name: string;
   focus: string;
+  notes?: string; // user notes for this day
   exercises: ProgramExercise[];
 }
 
 export interface WorkoutProgram {
-  id: 'male_phase2' | 'female_phase1';
+  id: 'male_phase2' | 'female_phase1' | (string & {});
   name: string;
   description: string;
   days: ProgramDay[];

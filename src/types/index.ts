@@ -345,6 +345,7 @@ export interface CustomProgramDay {
   dayNumber: number;
   name: string;
   focus?: string;
+  notes?: string; // user notes for this day — fed into AI coach context
   exercises: CustomProgramExercise[];
 }
 

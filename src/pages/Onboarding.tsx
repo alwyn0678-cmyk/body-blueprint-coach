@@ -4,6 +4,7 @@ import { calculateTargets } from '../utils/macroEngine';
 import { ftInToCm, lbsToKg } from '../utils/units';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import type { GoalType, ActivityLevel } from '../types';
 
 // ── Total step count ──────────────────────────────────────────────────────────
 const STEP_WELCOME = 0;
@@ -420,11 +421,11 @@ export const Onboarding: React.FC = () => {
       weight: weightKg,
       goalWeight: effectiveGoalWeight,
       bodyFat: formData.bodyFat ? parseFloat(formData.bodyFat) : undefined,
-      goalType: formData.goalType as any,
-      activityLevel: formData.activityLevel as any,
+      goalType: formData.goalType as GoalType,
+      activityLevel: formData.activityLevel as ActivityLevel,
       trainingFrequency: parseInt(formData.trainingFrequency) || 3,
       stepsTarget: parseInt(formData.stepsTarget) || 8000,
-      preferredDietSpeed: effectiveDietSpeed as any,
+      preferredDietSpeed: effectiveDietSpeed as 'aggressive' | 'moderate' | 'sustainable',
       onboarded: true,
     };
 
@@ -479,11 +480,11 @@ export const Onboarding: React.FC = () => {
       weight: weightKg,
       goalWeight: effectiveGoalWeight,
       bodyFat: formData.bodyFat ? parseFloat(formData.bodyFat) : undefined,
-      goalType: formData.goalType as any,
-      activityLevel: formData.activityLevel as any,
+      goalType: formData.goalType as GoalType,
+      activityLevel: formData.activityLevel as ActivityLevel,
       trainingFrequency: parseInt(formData.trainingFrequency) || 3,
       stepsTarget: parseInt(formData.stepsTarget) || 8000,
-      preferredDietSpeed: effectiveDietSpeed as any,
+      preferredDietSpeed: effectiveDietSpeed as 'aggressive' | 'moderate' | 'sustainable',
       onboarded: true,
       targets,
     };

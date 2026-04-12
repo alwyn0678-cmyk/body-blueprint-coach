@@ -171,7 +171,7 @@ const HealthMetricsCard: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>Today's Health Metrics</div>
         <button onClick={() => setEditing(e => !e)}
-          style={{ border: 'none', padding: '4px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, color: editing ? '#EF4444' : '#576038', cursor: 'pointer', background: editing ? 'rgba(239,68,68,0.1)' : 'rgba(87,96,56,0.10)' } as any}>
+          style={{ border: 'none', padding: '4px 10px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, color: editing ? '#EF4444' : '#576038', cursor: 'pointer', background: editing ? 'rgba(239,68,68,0.1)' : 'rgba(87,96,56,0.10)' }}>
           {editing ? 'Cancel' : 'Edit'}
         </button>
       </div>
@@ -185,7 +185,7 @@ const HealthMetricsCard: React.FC = () => {
               </div>
               <div>
                 <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)' }}>{m.label}</div>
-                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: (health as any)[m.key] ? m.color : 'var(--text-tertiary)' }}>{m.value}</div>
+                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: (health as Record<string, unknown>)[m.key] ? m.color : 'var(--text-tertiary)' }}>{m.value}</div>
               </div>
             </div>
           ))}
@@ -198,7 +198,7 @@ const HealthMetricsCard: React.FC = () => {
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input
                   type="text" inputMode="numeric"
-                  value={(form as any)[m.key] || ''}
+                  value={(form as Record<string, number>)[m.key] || ''}
                   onChange={e => {
                     const n = parseInt(e.target.value, 10);
                     setForm(f => ({ ...f, [m.key]: isFinite(n) ? n : 0 }));

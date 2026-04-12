@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import {
   Dumbbell, Plus, Timer, X, Check, RotateCcw, Search,
   TrendingUp, TrendingDown, Trash2, Play, ChevronDown, ChevronUp,
-  Award, Zap, Flame, Target, BarChart2, Copy, Star, RefreshCw, Sparkles,
+  Award, Zap, Flame, Target, BarChart2, Copy, Star, RefreshCw, Sparkles, BookOpen, Link2, Link2Off,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useApp } from '../context/AppContext';
 import { getLocalISOString } from '../utils/dateUtils';
 import { WorkoutSession, ExerciseEntry, ExerciseSet, CustomProgram } from '../types';
 import { getProgramById, WorkoutProgram, ProgramDay } from '../data/workoutPrograms';
+import { PROGRAM_TEMPLATES, cloneTemplateAsCustomProgram, ProgramTemplate } from '../data/templatePrograms';
 import { coachService } from '../services/aiCoach';
 import { computeEarnedBadges } from '../utils/aiCoachingEngine';
 import { AIWorkoutBuilder, BuiltExercise } from '../components/AIWorkoutBuilder';
@@ -176,13 +177,14 @@ const cycleSetType = (t: SetType): SetType => t === 'W' ? 'N' : t === 'N' ? 'D' 
 
 // ── Custom Program Adapter ─────────────────────────────────────────────────────
 const adaptCustomProgram = (cp: CustomProgram): WorkoutProgram => ({
-  id: cp.id as any,
+  id: cp.id,
   name: cp.name,
   description: cp.description || '',
   days: cp.days.map(d => ({
     dayNumber: d.dayNumber,
     name: d.name,
     focus: d.focus || '',
+    notes: d.notes,
     exercises: d.exercises.map(e => ({
       exerciseId: e.exerciseId,
       name: e.name,
@@ -932,6 +934,18 @@ const ActiveWorkoutScreen: React.FC<{
     showToast(`Filled from last: ${lastPerf.weight}kg × ${lastPerf.reps}`, 'info');
   };
 
+  const [supersetPickerIdx, setSupersetPickerIdx] = useState<number | null>(null);
+
+  const setSupersetGroup = (exIdx: number, group: string | null) => {
+    onUpdateExercises(prev => prev.map((ex, i) => i !== exIdx ? ex : { ...ex, supersetGroup: group ?? undefined }));
+    setSupersetPickerIdx(null);
+  };
+
+  // Color palette for superset groups A–F
+  const SUPERSET_COLORS: Record<string, string> = {
+    A: '#576038', B: '#974400', C: '#3E4528', D: '#8B9467', E: '#DC2626', F: '#0284C7',
+  };
+
   const completedSets = exercises.reduce((a, ex) => a + ex.sets.filter(s => s.done).length, 0);
   const totalSets = exercises.reduce((a, ex) => a + ex.sets.length, 0);
   const progressPct = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
@@ -1018,6 +1032,7 @@ const ActiveWorkoutScreen: React.FC<{
           const doneSets = ex.sets.filter(s => s.done).length;
           const allDone = doneSets === ex.sets.length && doneSets > 0;
 
+          const ssColor = ex.supersetGroup ? (SUPERSET_COLORS[ex.supersetGroup] ?? '#576038') : null;
           return (
             <div
               key={`${ex.libraryId}-${exIdx}`}
@@ -1027,6 +1042,7 @@ const ActiveWorkoutScreen: React.FC<{
                   : 'var(--bg-card)',
                 borderRadius: 22,
                 border: `1px solid ${allDone ? 'rgba(87,96,56,0.25)' : 'rgba(0,0,0,0.06)'}`,
+                borderLeft: ssColor ? `3px solid ${ssColor}` : undefined,
                 overflow: 'hidden',
                 boxShadow: allDone ? '0 0 30px rgba(87,96,56,0.07)' : '0 4px 24px rgba(0,0,0,0.3)',
                 transition: 'all 0.3s',
@@ -1052,6 +1068,15 @@ const ActiveWorkoutScreen: React.FC<{
                       {allDone && <Check size={15} color="#576038" />}
                       {trend === 'up' && <TrendingUp size={13} color="#576038" />}
                       {trend === 'down' && <TrendingDown size={13} color="#EF4444" />}
+                      {ex.supersetGroup && (
+                        <span style={{
+                          fontSize: '0.6rem', fontWeight: 800, padding: '1px 7px', borderRadius: 99,
+                          background: `${ssColor}18`, color: ssColor!, border: `1px solid ${ssColor}30`,
+                          letterSpacing: '0.04em',
+                        }}>
+                          SS {ex.supersetGroup}
+                        </span>
+                      )}
                       {pr && (
                         <span style={{
                           fontSize: '0.58rem', fontWeight: 800, padding: '2px 7px', borderRadius: 99,
@@ -1108,6 +1133,19 @@ const ActiveWorkoutScreen: React.FC<{
                       </button>
                     )}
                     <button
+                      onClick={() => setSupersetPickerIdx(supersetPickerIdx === exIdx ? null : exIdx)}
+                      title={ex.supersetGroup ? `Superset ${ex.supersetGroup} — tap to change` : 'Link as superset'}
+                      style={{
+                        background: ex.supersetGroup ? `${ssColor}18` : 'rgba(0,0,0,0.04)',
+                        border: ex.supersetGroup ? `1px solid ${ssColor}30` : '1px solid rgba(0,0,0,0.07)',
+                        borderRadius: 10, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                      }}
+                    >
+                      {ex.supersetGroup
+                        ? <Link2 size={13} color={ssColor!} />
+                        : <Link2Off size={13} color="rgba(0,0,0,0.25)" />}
+                    </button>
+                    <button
                       onClick={() => {
                         // Find muscles for this exercise and open swap picker
                         const libEx = state.workoutLibrary.find(l => l.id === ex.libraryId);
@@ -1162,6 +1200,34 @@ const ActiveWorkoutScreen: React.FC<{
                   </div>
                 );
               })()}
+
+              {/* Superset group picker */}
+              {supersetPickerIdx === exIdx && (
+                <div style={{ padding: '0 16px 10px', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'rgba(0,0,0,0.35)' }}>Link superset:</span>
+                  {['A', 'B', 'C', 'D', 'E', 'F'].map(g => {
+                    const gc = SUPERSET_COLORS[g];
+                    const isActive = ex.supersetGroup === g;
+                    return (
+                      <button key={g} onClick={() => setSupersetGroup(exIdx, isActive ? null : g)}
+                        style={{
+                          width: 30, height: 30, borderRadius: 8, fontWeight: 900, fontSize: '0.7rem',
+                          background: isActive ? gc : `${gc}18`,
+                          color: isActive ? 'white' : gc,
+                          border: `1px solid ${gc}40`, cursor: 'pointer',
+                        }}>
+                        {g}
+                      </button>
+                    );
+                  })}
+                  {ex.supersetGroup && (
+                    <button onClick={() => setSupersetGroup(exIdx, null)}
+                      style={{ padding: '4px 10px', borderRadius: 8, fontSize: '0.65rem', fontWeight: 700, background: 'rgba(239,68,68,0.08)', border: 'none', color: '#EF4444', cursor: 'pointer' }}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Column headers */}
               <div style={{ display: 'flex', padding: '0 16px', marginBottom: 6, alignItems: 'center' }}>
@@ -1473,9 +1539,135 @@ const ActiveWorkoutScreen: React.FC<{
   );
 };
 
+// ── Template Library Modal ────────────────────────────────────────────────────
+const GOAL_COLORS: Record<string, string> = {
+  strength: '#974400',
+  hypertrophy: '#576038',
+  fat_loss: '#3E4528',
+  general: '#8B9467',
+};
+
+const DIFFICULTY_BADGE: Record<string, string> = {
+  beginner: '🟢 Beginner',
+  intermediate: '🟡 Intermediate',
+  advanced: '🔴 Advanced',
+};
+
+const TemplateLibraryModal: React.FC<{
+  onClone: (template: ProgramTemplate) => void;
+  onClose: () => void;
+}> = ({ onClone, onClose }) => {
+  const [selected, setSelected] = useState<ProgramTemplate | null>(null);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9010, background: 'rgba(0,0,0,0.55)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      <div style={{
+        background: '#F5F0E8', borderRadius: '28px 28px 0 0',
+        maxHeight: '88dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 12px' }}>
+          <div>
+            <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1.2rem', letterSpacing: '-0.02em' }}>Program Templates</div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(0,0,0,0.35)', marginTop: 2 }}>Browse & clone evidence-based programs</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'rgba(0,0,0,0.07)', border: 'none', borderRadius: 99, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <X size={16} color="rgba(0,0,0,0.45)" />
+          </button>
+        </div>
+
+        {/* Template list or detail */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 16px' }}>
+          {!selected ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {PROGRAM_TEMPLATES.map(tpl => {
+                const color = GOAL_COLORS[tpl.goal] ?? '#576038';
+                return (
+                  <button
+                    key={tpl.id}
+                    onClick={() => setSelected(tpl)}
+                    style={{
+                      textAlign: 'left', padding: '16px', background: 'white',
+                      border: '1px solid rgba(0,0,0,0.06)', borderRadius: 18,
+                      cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                    }}
+                  >
+                    <div style={{ position: 'absolute', top: 0, left: '10%', right: '10%', height: 2, background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                      <span style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1rem', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>{tpl.name}</span>
+                      <span style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: `${color}15`, color, flexShrink: 0, marginLeft: 8 }}>
+                        {tpl.daysPerWeek}d/wk
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(0,0,0,0.32)', marginBottom: 6 }}>
+                      {DIFFICULTY_BADGE[tpl.difficulty]} · {tpl.sessionDuration}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 500, color: 'rgba(0,0,0,0.45)', lineHeight: 1.5 }}>{tpl.description}</div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <button
+                onClick={() => setSelected(null)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', padding: '4px 0', color: '#576038', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
+              >
+                ← Back to templates
+              </button>
+
+              <div style={{ borderRadius: 18, background: 'white', border: '1px solid rgba(0,0,0,0.06)', padding: '16px' }}>
+                <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1.2rem', letterSpacing: '-0.02em', marginBottom: 4 }}>{selected.name}</div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'rgba(0,0,0,0.32)', marginBottom: 10 }}>
+                  {DIFFICULTY_BADGE[selected.difficulty]} · {selected.daysPerWeek} days/week · {selected.sessionDuration}
+                </div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'rgba(0,0,0,0.55)', lineHeight: 1.6 }}>{selected.description}</div>
+              </div>
+
+              {/* Day previews */}
+              {selected.program.days.map(day => (
+                <div key={day.id} style={{ borderRadius: 14, background: 'white', border: '1px solid rgba(0,0,0,0.05)', padding: '12px 14px' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)', marginBottom: 6 }}>
+                    Day {day.dayNumber}: {day.name}
+                    {day.focus && <span style={{ fontWeight: 600, fontSize: '0.72rem', color: 'rgba(0,0,0,0.35)', marginLeft: 8 }}>{day.focus}</span>}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {day.exercises.map(ex => (
+                      <div key={ex.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                          {ex.supersetGroup && <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#576038', marginRight: 4 }}>[{ex.supersetGroup}]</span>}
+                          {ex.name}
+                        </span>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(0,0,0,0.28)', flexShrink: 0, marginLeft: 8 }}>{ex.sets}×{ex.reps}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <button
+                onClick={() => onClone(selected)}
+                style={{
+                  width: '100%', padding: '14px', borderRadius: 16,
+                  background: 'linear-gradient(135deg, #576038, #3E4528)',
+                  border: 'none', color: 'white', fontSize: '0.9rem', fontWeight: 800,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <Play size={15} /> Clone & Use This Program
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 export const Training: React.FC = () => {
-  const { state, addWorkout, showToast, setAssignedProgram, activateCustomProgram, toggleFavoriteExercise } = useApp();
+  const { state, addWorkout, showToast, setAssignedProgram, activateCustomProgram, saveCustomProgram, toggleFavoriteExercise } = useApp();
   const navigate = useNavigate();
   const today = getLocalISOString();
 
@@ -1491,10 +1683,26 @@ export const Training: React.FC = () => {
   const swipeTouchStartX = useRef<number | null>(null);
   const [showCustomOptions, setShowCustomOptions] = useState(false);
   const [showAIBuilder, setShowAIBuilder] = useState(false);
+  const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
   const [expandedWorkout, setExpandedWorkout] = useState<string | null>(null);
   const [showSummary, setShowSummary] = useState(false);
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [coachFeedback, setCoachFeedback] = useState('');
+  const [dayNoteEditIdx, setDayNoteEditIdx] = useState<number | null>(null);
+  const [dayNoteDraft, setDayNoteDraft] = useState('');
+
+  // Save notes for a specific day back into the active custom program
+  const saveDayNote = useCallback((dayIdx: number, note: string) => {
+    const cp = (state.customPrograms || []).find(p => p.id === state.activeCustomProgramId);
+    if (!cp) return;
+    const updatedDays = cp.days.map((d, i) => i === dayIdx ? { ...d, notes: note } : d);
+    saveCustomProgram({ ...cp, days: updatedDays, updatedAt: new Date().toISOString() });
+  }, [state.customPrograms, state.activeCustomProgramId, saveCustomProgram]);
+
+  // Close note editor when selected day changes
+  useEffect(() => {
+    setDayNoteEditIdx(null);
+  }, [selectedDayOverride]);
 
   // Recent exercise IDs from logs
   const recentExerciseIds = useMemo(() => {
@@ -1664,6 +1872,14 @@ export const Training: React.FC = () => {
     setShowAIBuilder(false);
     setShowCustomOptions(false);
     setSessionActive(true);
+  };
+
+  const handleCloneTemplate = (template: ProgramTemplate) => {
+    const program = cloneTemplateAsCustomProgram(template);
+    saveCustomProgram(program);
+    activateCustomProgram(program.id);
+    setShowTemplateLibrary(false);
+    showToast(`"${program.name}" activated!`, 'success');
   };
 
   const startCustomSession = (name: string) => {
@@ -1922,6 +2138,23 @@ export const Training: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setShowTemplateLibrary(true)}
+          style={{
+            padding: '1.1rem', background: 'white',
+            border: '1px solid rgba(87,96,56,0.22)', borderRadius: 18,
+            cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12,
+          }}
+        >
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(87,96,56,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <BookOpen size={18} color="#576038" />
+          </div>
+          <div>
+            <div style={{ fontFamily: "'Outfit',sans-serif", fontWeight: 900, fontSize: '1rem', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>Browse Templates</div>
+            <div style={{ fontSize: '0.73rem', color: 'rgba(0,0,0,0.35)', fontWeight: 600, marginTop: 2 }}>PPL, 5×5, Upper/Lower, Full Body &amp; more</div>
+          </div>
+        </button>
+
+        <button
           onClick={() => navigate('/programs')}
           style={{
             padding: '1rem', borderRadius: 16, cursor: 'pointer',
@@ -1933,6 +2166,10 @@ export const Training: React.FC = () => {
         >
           <Target size={14} /> Build a custom program
         </button>
+
+        {showTemplateLibrary && (
+          <TemplateLibraryModal onClone={handleCloneTemplate} onClose={() => setShowTemplateLibrary(false)} />
+        )}
 
         {showPicker && (
           <ExercisePicker
@@ -1995,7 +2232,7 @@ export const Training: React.FC = () => {
             }}
           >Programs</button>
           <button
-            onClick={() => { setAssignedProgram(null as any); activateCustomProgram(null); }}
+            onClick={() => { setAssignedProgram(null); activateCustomProgram(null); }}
             style={{
               padding: '7px 12px', borderRadius: 99,
               background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)',
@@ -2149,7 +2386,7 @@ export const Training: React.FC = () => {
             </div>
 
             {/* Exercise preview chips */}
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
               {selectedDay.exercises.slice(0, 5).map((ex, i) => (
                 <span key={i} style={{
                   fontSize: '0.66rem', fontWeight: 700, padding: '4px 10px', borderRadius: 99,
@@ -2164,6 +2401,80 @@ export const Training: React.FC = () => {
                 }}>+{selectedDay.exercises.length - 5} more</span>
               )}
             </div>
+
+            {/* Day notes — only editable for custom programs */}
+            {state.activeCustomProgramId && (
+              <div style={{ marginBottom: 16 }}>
+                {dayNoteEditIdx === selectedDayIdx ? (
+                  <div>
+                    <textarea
+                      autoFocus
+                      value={dayNoteDraft}
+                      onChange={e => setDayNoteDraft(e.target.value)}
+                      placeholder={`Notes for ${selectedDay.name} — e.g. "Went heavier on squats, felt strong. Left glute still tight."`}
+                      rows={3}
+                      style={{
+                        width: '100%', boxSizing: 'border-box',
+                        padding: '10px 12px', borderRadius: 12,
+                        background: 'rgba(255,255,255,0.55)',
+                        border: '1px solid rgba(87,96,56,0.30)',
+                        color: 'rgba(28,28,46,0.85)', fontSize: '0.78rem',
+                        fontWeight: 600, lineHeight: 1.5, resize: 'none',
+                        outline: 'none', fontFamily: 'inherit',
+                      }}
+                    />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                      <button
+                        onClick={() => {
+                          saveDayNote(selectedDayIdx, dayNoteDraft);
+                          setDayNoteEditIdx(null);
+                          showToast('Note saved — AI coach will use this', 'success');
+                        }}
+                        style={{
+                          flex: 1, padding: '8px', borderRadius: 10,
+                          background: 'rgba(87,96,56,0.18)',
+                          border: '1px solid rgba(87,96,56,0.30)',
+                          color: '#576038', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer',
+                        }}
+                      >Save Note</button>
+                      <button
+                        onClick={() => setDayNoteEditIdx(null)}
+                        style={{
+                          padding: '8px 14px', borderRadius: 10,
+                          background: 'rgba(0,0,0,0.04)',
+                          border: '1px solid rgba(0,0,0,0.08)',
+                          color: 'rgba(0,0,0,0.35)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer',
+                        }}
+                      >Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setDayNoteDraft(selectedDay.notes ?? '');
+                      setDayNoteEditIdx(selectedDayIdx);
+                    }}
+                    style={{
+                      width: '100%', textAlign: 'left',
+                      padding: '9px 12px', borderRadius: 12,
+                      background: selectedDay.notes ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.20)',
+                      border: `1px solid ${selectedDay.notes ? 'rgba(87,96,56,0.25)' : 'rgba(0,0,0,0.08)'}`,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {selectedDay.notes ? (
+                      <span style={{ fontSize: '0.75rem', color: 'rgba(28,28,46,0.65)', fontWeight: 600, lineHeight: 1.4, display: 'block' }}>
+                        {selectedDay.notes}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.72rem', color: 'rgba(0,0,0,0.25)', fontWeight: 600 }}>
+                        + Add notes for this day (AI learns from these)
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
 
             <button
               onClick={() => startProgramDay(program, selectedDay)}
@@ -2312,7 +2623,6 @@ export const Training: React.FC = () => {
           </div>
           <div style={{ height: 140, marginLeft: -10 }}>
             <ResponsiveContainer width="100%" height="100%">
-              {/* @ts-ignore */}
               <BarChart data={volumeData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: 'rgba(0,0,0,0.14)', fontWeight: 700 }} dy={8} />
                 <Tooltip
