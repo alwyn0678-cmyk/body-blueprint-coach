@@ -22,42 +22,99 @@ const fmtNum = (n: number, dp = 0): string =>
 // ─── Evolved Ring ────────────────────────────────────────────────────────────
 
 const EvolvedRing: React.FC<{ score: number }> = ({ score }) => {
-  const R = 120;
+  const R = 112;
   const circ = 2 * Math.PI * R;
   const pct = Math.min(score / 100, 1);
   const offset = circ * (1 - pct);
 
+  // Glow dot position (in un-rotated SVG space: 0 = 3 o'clock, clockwise)
+  const angle = 2 * Math.PI * pct;
+  const dotX = 132 + R * Math.cos(angle);
+  const dotY = 132 + R * Math.sin(angle);
+
   return (
-    <div style={{ position: 'relative', width: 264, height: 264, margin: '0 auto' }}>
-      <svg width="264" height="264" style={{ transform: 'rotate(-90deg)' }}>
-        {/* Track */}
-        <circle cx="132" cy="132" r={R} fill="transparent" stroke="#E3E2E0" strokeWidth="11" />
-        {/* Progress */}
-        <circle
-          cx="132" cy="132" r={R} fill="transparent"
-          stroke="#C2CB9A" strokeWidth="11"
+    <div style={{ position: 'relative', width: 256, height: 256, margin: '0 auto' }}>
+      <svg width="256" height="256" style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
+        <defs>
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#C2CB9A" />
+            <stop offset="60%" stopColor="#8B9467" />
+            <stop offset="100%" stopColor="#576038" />
+          </linearGradient>
+          <filter id="dotGlow" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id="ringGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+
+        {/* Soft outer halo track */}
+        <circle cx="132" cy="132" r={R} fill="transparent"
+          stroke="rgba(194,203,154,0.18)" strokeWidth="20" />
+
+        {/* Main track */}
+        <circle cx="132" cy="132" r={R} fill="transparent"
+          stroke="rgba(0,0,0,0.07)" strokeWidth="12" />
+
+        {/* Progress arc */}
+        <circle cx="132" cy="132" r={R} fill="transparent"
+          stroke="url(#ringGrad)" strokeWidth="12"
           strokeLinecap="round"
           strokeDasharray={circ}
           strokeDashoffset={offset}
-          style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.25,1,0.5,1)' }}
+          filter="url(#ringGlow)"
+          style={{ transition: 'stroke-dashoffset 1.3s cubic-bezier(0.25,1,0.5,1)' }}
         />
+
+        {/* Glowing dot at progress tip */}
+        {pct > 0.03 && (
+          <>
+            <circle cx={dotX} cy={dotY} r={10}
+              fill="rgba(87,96,56,0.25)" filter="url(#dotGlow)" />
+            <circle cx={dotX} cy={dotY} r={6}
+              fill="#576038"
+              style={{ transition: 'all 1.3s cubic-bezier(0.25,1,0.5,1)' }} />
+            <circle cx={dotX} cy={dotY} r={3} fill="rgba(255,255,255,0.85)" />
+          </>
+        )}
       </svg>
+
+      {/* Center content — glass pill */}
       <div style={{
         position: 'absolute', inset: 0,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: 0,
       }}>
         <div style={{
-          fontSize: '4.5rem', fontWeight: 800,
-          letterSpacing: '-0.04em', lineHeight: 1,
-          color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums',
+          background: 'rgba(255,255,255,0.60)',
+          backdropFilter: 'blur(20px) saturate(1.6)',
+          WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
+          borderRadius: 22,
+          border: '1px solid rgba(255,255,255,0.88)',
+          boxShadow: '0 4px 20px rgba(87,96,56,0.10), inset 0 1.5px 0 rgba(255,255,255,0.95)',
+          padding: '14px 28px 12px',
+          textAlign: 'center',
+          minWidth: 110,
         }}>
-          {score}
-        </div>
-        <div style={{
-          fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.2em',
-          textTransform: 'uppercase', color: 'var(--text-tertiary)', marginTop: 6,
-        }}>
-          Daily Evolved
+          <div style={{
+            fontSize: '4rem', fontWeight: 900,
+            letterSpacing: '-0.05em', lineHeight: 1,
+            fontVariantNumeric: 'tabular-nums',
+            background: 'linear-gradient(135deg, #3E4528 20%, #8B9467 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>
+            {score}
+          </div>
+          <div style={{
+            fontSize: '0.5rem', fontWeight: 900, letterSpacing: '0.22em',
+            textTransform: 'uppercase', color: 'rgba(87,96,56,0.55)', marginTop: 5,
+          }}>
+            Daily Score
+          </div>
         </div>
       </div>
     </div>
@@ -240,63 +297,138 @@ export const Dashboard: React.FC = () => {
         paddingLeft: 24, paddingRight: 24,
       }}>
 
-        {/* ── Evolved Ring Hero ── */}
+        {/* ── Hero Section ── */}
         <motion.section
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          style={{ paddingTop: 32, paddingBottom: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}
+          style={{ paddingTop: 28, paddingBottom: 4, position: 'relative' }}
         >
-          <EvolvedRing score={evolvedScore} />
-
-          {/* Streaks + XP below ring */}
-          <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-            {streak > 0 && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '6px 14px', borderRadius: 9999,
-                background: streak >= 7 ? 'rgba(151,68,0,0.1)' : '#F4F3F1',
-                fontSize: '0.75rem', fontWeight: 700,
-                color: streak >= 7 ? '#974400' : '#576038',
-              }}>
-                {streak >= 3 ? '🔥' : <Flame size={13} color="#974400" />}
-                {streak} day{streak !== 1 ? 's' : ''}
-              </div>
-            )}
-            <div style={{
-              padding: '6px 14px', borderRadius: 9999,
-              background: '#F4F3F1', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(86,67,56,0.55)',
-            }}>
-              Goal: 100
-            </div>
-          </div>
-
-          {/* XP / Level bar */}
+          {/* ── Floating background orbs ── */}
           <div style={{
-            width: '100%', marginTop: 18,
-            background: '#F4F3F1', borderRadius: 16, padding: '12px 16px',
+            position: 'absolute', top: -40, left: -40, width: 300, height: 300,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(194,203,154,0.45) 0%, transparent 68%)',
+            filter: 'blur(48px)', pointerEvents: 'none', zIndex: 0,
+          }} />
+          <div style={{
+            position: 'absolute', top: 60, right: -60, width: 260, height: 260,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(151,68,0,0.18) 0%, transparent 68%)',
+            filter: 'blur(52px)', pointerEvents: 'none', zIndex: 0,
+          }} />
+          <div style={{
+            position: 'absolute', bottom: -20, left: '30%', width: 200, height: 200,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(87,96,56,0.14) 0%, transparent 68%)',
+            filter: 'blur(40px)', pointerEvents: 'none', zIndex: 0,
+          }} />
+
+          {/* ── Glass hero card ── */}
+          <div style={{
+            position: 'relative', zIndex: 1,
+            background: 'rgba(255,255,255,0.52)',
+            backdropFilter: 'blur(48px) saturate(2)',
+            WebkitBackdropFilter: 'blur(48px) saturate(2)',
+            borderRadius: 36,
+            border: '1.5px solid rgba(255,255,255,0.80)',
+            boxShadow: [
+              '0 2px 0 rgba(255,255,255,0.95) inset',
+              '0 -1px 0 rgba(87,96,56,0.06) inset',
+              '0 8px 48px rgba(87,96,56,0.12)',
+              '0 1px 0 rgba(87,96,56,0.04)',
+            ].join(', '),
+            padding: '28px 20px 22px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{
-                  background: 'linear-gradient(135deg, #576038, #8B9467)',
-                  borderRadius: 8, padding: '3px 8px',
-                  fontSize: '0.65rem', fontWeight: 900, color: '#fff', letterSpacing: '0.06em',
+
+            {/* Ring */}
+            <EvolvedRing score={evolvedScore} />
+
+            {/* Macro summary strip */}
+            <div style={{ display: 'flex', width: '100%', gap: 8, marginTop: 20 }}>
+              {[
+                { label: 'Calories', value: `${Math.round(totals.calories)}`, unit: 'kcal', color: '#974400', bg: 'rgba(151,68,0,0.07)' },
+                { label: 'Protein', value: `${Math.round(totals.protein)}`, unit: 'g', color: '#576038', bg: 'rgba(87,96,56,0.07)' },
+                { label: 'Steps', value: fmtNum(steps), unit: '', color: '#3E4528', bg: 'rgba(62,69,40,0.07)' },
+              ].map(({ label, value, unit, color, bg }) => (
+                <div key={label} style={{
+                  flex: 1,
+                  background: bg,
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  borderRadius: 16,
+                  border: '1px solid rgba(255,255,255,0.75)',
+                  padding: '10px 8px',
+                  textAlign: 'center',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)',
                 }}>
-                  LVL {xpInfo.level}
+                  <div style={{
+                    fontSize: '1.05rem', fontWeight: 900, color,
+                    letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums',
+                    lineHeight: 1,
+                  }}>
+                    {value}
+                    {unit && <span style={{ fontSize: '0.58rem', fontWeight: 700, opacity: 0.65, marginLeft: 2 }}>{unit}</span>}
+                  </div>
+                  <div style={{ fontSize: '0.5rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.30)', marginTop: 4 }}>
+                    {label}
+                  </div>
                 </div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#576038' }}>{levelName}</span>
-              </div>
-              <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'rgba(26,26,26,0.45)' }}>
-                {xpInfo.current} / {xpInfo.needed} XP
-              </span>
+              ))}
             </div>
-            <div style={{ height: 6, borderRadius: 6, background: 'rgba(87,96,56,0.15)', overflow: 'hidden' }}>
+
+            {/* Streak + XP row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, width: '100%' }}>
+              {streak > 0 && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '6px 14px', borderRadius: 9999,
+                  background: streak >= 7 ? 'rgba(151,68,0,0.12)' : 'rgba(87,96,56,0.08)',
+                  border: '1px solid rgba(255,255,255,0.65)',
+                  fontSize: '0.75rem', fontWeight: 800,
+                  color: streak >= 7 ? '#974400' : '#576038',
+                  flexShrink: 0,
+                }}>
+                  {streak >= 3 ? '🔥' : <Flame size={13} color="#974400" />}
+                  {streak} day streak
+                </div>
+              )}
               <div style={{
-                height: '100%', borderRadius: 6,
-                background: 'linear-gradient(90deg, #576038, #8B9467)',
-                width: `${Math.min((xpInfo.current / xpInfo.needed) * 100, 100)}%`,
-                transition: 'width 0.8s ease',
-              }} />
+                flex: 1,
+                background: 'rgba(255,255,255,0.55)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                borderRadius: 14,
+                border: '1px solid rgba(255,255,255,0.75)',
+                padding: '8px 12px',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9)',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{
+                      background: 'linear-gradient(135deg, #576038, #8B9467)',
+                      borderRadius: 7, padding: '2px 7px',
+                      fontSize: '0.6rem', fontWeight: 900, color: '#fff', letterSpacing: '0.05em',
+                    }}>
+                      LVL {xpInfo.level}
+                    </div>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#576038' }}>{levelName}</span>
+                  </div>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'rgba(26,26,26,0.38)' }}>
+                    {xpInfo.current}/{xpInfo.needed} XP
+                  </span>
+                </div>
+                <div style={{ height: 5, borderRadius: 5, background: 'rgba(87,96,56,0.12)', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 5,
+                    background: 'linear-gradient(90deg, #8B9467, #576038)',
+                    width: `${Math.min((xpInfo.current / xpInfo.needed) * 100, 100)}%`,
+                    transition: 'width 0.9s cubic-bezier(0.25,1,0.5,1)',
+                    boxShadow: '0 0 8px rgba(87,96,56,0.35)',
+                  }} />
+                </div>
+              </div>
             </div>
+
           </div>
         </motion.section>
 
