@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Dumbbell, Plus, Timer, X, Check, RotateCcw, Search,
   TrendingUp, TrendingDown, Trash2, Play, ChevronDown, ChevronUp,
-  Award, Zap, Flame, Target, BarChart2, Copy, Star, RefreshCw, Sparkles, BookOpen, Link2, Link2Off,
+  Award, Zap, Flame, Target, BarChart2, Copy, Star, RefreshCw, Sparkles, BookOpen, Link2, Link2Off, PenLine,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useApp } from '../context/AppContext';
@@ -627,9 +627,11 @@ const ExercisePicker: React.FC<{
   onClose: () => void;
   /** If set, show only exercises matching these muscles (swap mode) */
   swapMuscles?: string[];
-}> = ({ library, alreadyAdded, recentIds, favoriteIds, onToggleFavorite, onConfirm, onClose, swapMuscles }) => {
+  /** Pre-selected filter based on workout day focus */
+  defaultFilter?: string;
+}> = ({ library, alreadyAdded, recentIds, favoriteIds, onToggleFavorite, onConfirm, onClose, swapMuscles, defaultFilter }) => {
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<string>(swapMuscles ? 'swap' : 'all');
+  const [filter, setFilter] = useState<string>(swapMuscles ? 'swap' : (defaultFilter ?? 'all'));
   const [selected, setSelected] = useState<{ id: string; name: string }[]>([]);
 
   const toggle = (id: string, name: string) => {
@@ -891,6 +893,22 @@ const ActiveWorkoutScreen: React.FC<{
   const [showPicker, setShowPicker] = useState(false);
   const [swapExIdx, setSwapExIdx] = useState<number | null>(null);
   const [swapMuscles, setSwapMuscles] = useState<string[]>([]);
+  const [editingNoteIdx, setEditingNoteIdx] = useState<number | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
+
+  const getDefaultPickerFilter = (name: string): string => {
+    const n = name.toLowerCase();
+    if (/leg|lower|squat|glute|quad|hamstring|lunge|hip/i.test(n)) return 'legs';
+    if (/push|chest/i.test(n)) return 'push';
+    if (/pull|back|row/i.test(n)) return 'pull';
+    if (/core|abs/i.test(n)) return 'core';
+    return 'all';
+  };
+
+  const saveNote = (exIdx: number) => {
+    onUpdateExercises(prev => prev.map((e, i) => i === exIdx ? { ...e, notes: noteDraft } : e));
+    setEditingNoteIdx(null);
+  };
 
   const startRest = (s: number) => {
     setRestTimerDefault(s);
@@ -1198,6 +1216,21 @@ const ActiveWorkoutScreen: React.FC<{
                       <RefreshCw size={13} color="rgba(87,96,56,0.70)" />
                     </button>
                     <button
+                      onClick={() => {
+                        setNoteDraft(ex.notes ?? '');
+                        setEditingNoteIdx(editingNoteIdx === exIdx ? null : exIdx);
+                      }}
+                      title="Add note"
+                      style={{
+                        background: ex.notes ? 'rgba(87,96,56,0.10)' : 'rgba(0,0,0,0.04)',
+                        border: ex.notes ? '1px solid rgba(87,96,56,0.25)' : '1px solid rgba(0,0,0,0.07)',
+                        borderRadius: 10, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <PenLine size={13} color={ex.notes ? '#576038' : 'rgba(0,0,0,0.25)'} />
+                    </button>
+                    <button
                       onClick={() => removeExercise(exIdx)}
                       style={{
                         background: 'rgba(239,68,68,0.08)', border: 'none', borderRadius: 10,
@@ -1491,15 +1524,50 @@ const ActiveWorkoutScreen: React.FC<{
                   ))}
                 </div>
 
-                {/* Notes */}
-                {ex.notes && (
+                {/* Notes — inline editor or display */}
+                {editingNoteIdx === exIdx ? (
+                  <div style={{ marginTop: 8 }}>
+                    <textarea
+                      autoFocus
+                      value={noteDraft}
+                      onChange={e => setNoteDraft(e.target.value)}
+                      placeholder="Add a note for this exercise (e.g. cues, focus, pain points)..."
+                      rows={2}
+                      style={{
+                        width: '100%', padding: '8px 12px', borderRadius: 10, resize: 'none',
+                        border: '1.5px solid rgba(87,96,56,0.28)', outline: 'none',
+                        background: 'rgba(87,96,56,0.04)',
+                        fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)',
+                        fontFamily: 'inherit', boxSizing: 'border-box',
+                      }}
+                    />
+                    <div style={{ display: 'flex', gap: 6, marginTop: 5 }}>
+                      <button
+                        onClick={() => saveNote(exIdx)}
+                        style={{
+                          flex: 1, padding: '6px 0', borderRadius: 8,
+                          background: 'linear-gradient(135deg, #576038, #3E4528)',
+                          border: 'none', color: '#fff', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer',
+                        }}
+                      >Save</button>
+                      <button
+                        onClick={() => setEditingNoteIdx(null)}
+                        style={{
+                          flex: 1, padding: '6px 0', borderRadius: 8,
+                          background: 'rgba(0,0,0,0.06)', border: 'none',
+                          color: 'rgba(0,0,0,0.45)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
+                        }}
+                      >Cancel</button>
+                    </div>
+                  </div>
+                ) : ex.notes ? (
                   <div style={{
-                    marginTop: 4, padding: '8px 12px', borderRadius: 10,
+                    marginTop: 4, padding: '7px 12px', borderRadius: 10,
                     background: 'rgba(87,96,56,0.05)', border: '1px solid rgba(87,96,56,0.10)',
                   }}>
                     <span style={{ fontSize: '0.72rem', color: 'rgba(87,96,56,0.70)', fontWeight: 600, fontStyle: 'italic' }}>{ex.notes}</span>
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           );
@@ -1554,6 +1622,7 @@ const ActiveWorkoutScreen: React.FC<{
           favoriteIds={state.favoriteExerciseIds ?? []}
           onToggleFavorite={toggleFavoriteExercise}
           swapMuscles={swapExIdx !== null ? swapMuscles : undefined}
+          defaultFilter={swapExIdx !== null ? undefined : getDefaultPickerFilter(workoutName)}
           onConfirm={selected => {
             if (swapExIdx !== null && selected.length > 0) {
               const pick = selected[0];
