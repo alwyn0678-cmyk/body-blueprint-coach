@@ -402,126 +402,115 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
   // ── Custom Food Creation overlay ──────────────────────────────────────────
   if (showCustomForm) {
     return (
+      // Single scroll container — no transform, no sticky/fixed children
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        zIndex: 9005,
         backgroundColor: 'var(--bg-primary)',
-        display: 'flex', flexDirection: 'column', overflowY: 'auto',
-      }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '1rem 1.25rem',
-          paddingTop: 'calc(1rem + env(safe-area-inset-top))',
-          borderBottom: '1px solid rgba(0,0,0,0.07)',
-          flexShrink: 0,
-        }}>
-          <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>Create Food</span>
-          <button
-            onClick={() => { setShowCustomForm(false); resetCustomForm(); }}
-            style={{
-              background: 'rgba(0,0,0,0.07)',
-              border: '1px solid rgba(0,0,0,0.10)',
-              borderRadius: '50%', width: 32, height: 32,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', cursor: 'pointer',
-            }}
-          >
-            <X size={16} />
-          </button>
-        </div>
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+      } as React.CSSProperties}>
+        <div style={{ padding: '0 0 max(8rem, calc(6rem + env(safe-area-inset-bottom)))' }}>
+          {/* Header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '1rem 1.25rem',
+            paddingTop: 'calc(1rem + env(safe-area-inset-top))',
+            borderBottom: '1px solid rgba(0,0,0,0.07)',
+          }}>
+            <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>Create Food</span>
+            <button
+              onClick={() => { setShowCustomForm(false); resetCustomForm(); }}
+              style={{
+                background: 'rgba(0,0,0,0.07)',
+                border: '1px solid rgba(0,0,0,0.10)',
+                borderRadius: '50%', width: 32, height: 32,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', cursor: 'pointer',
+              }}
+            >
+              <X size={16} />
+            </button>
+          </div>
 
-        {/* Form */}
-        <div style={{
-          flex: 1, padding: '1.25rem',
-          display: 'flex', flexDirection: 'column', gap: '1rem',
-          paddingBottom: 'calc(7rem + env(safe-area-inset-bottom))',
-        }}>
-          <div>
-            <label style={formLabelStyle}>Name <span style={{ color: 'var(--accent-red)' }}>*</span></label>
-            <input
-              type="text" placeholder="e.g. Homemade granola"
-              value={customName} onChange={e => setCustomName(e.target.value)}
-              className="input-field"
-              style={inputFieldStyle}
-            />
-          </div>
-          <div>
-            <label style={formLabelStyle}>Brand <span style={{ color: 'rgba(0,0,0,0.20)', fontWeight: 400, textTransform: 'none' }}>(optional)</span></label>
-            <input
-              type="text" placeholder="e.g. Homemade"
-              value={customBrand} onChange={e => setCustomBrand(e.target.value)}
-              className="input-field"
-              style={inputFieldStyle}
-            />
-          </div>
-          <div>
-            <label style={formLabelStyle}>Serving size</label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {/* Form fields */}
+          <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div>
+              <label style={formLabelStyle}>Name <span style={{ color: 'var(--accent-red)' }}>*</span></label>
               <input
-                type="number" placeholder="100"
-                value={customServingSize} onChange={e => setCustomServingSize(e.target.value)}
+                type="text" placeholder="e.g. Homemade granola"
+                value={customName} onChange={e => setCustomName(e.target.value)}
                 className="input-field"
-                style={{ ...inputFieldStyle, flex: 1 }}
-              />
-              <input
-                type="text" placeholder="g"
-                value={customServingUnit} onChange={e => setCustomServingUnit(e.target.value)}
-                className="input-field"
-                style={{ ...inputFieldStyle, width: '80px', flex: 'none' }}
+                style={inputFieldStyle}
               />
             </div>
-          </div>
-          <div>
-            <label style={formLabelStyle}>Calories (kcal)</label>
-            <input
-              type="number" placeholder="0"
-              value={customCalories} onChange={e => setCustomCalories(e.target.value)}
-              className="input-field"
-              style={inputFieldStyle}
-            />
-          </div>
-          <div>
-            <label style={formLabelStyle}>Macros (g per serving)</label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              {[
-                { label: 'Protein', color: 'var(--color-protein)', val: customProtein, set: setCustomProtein },
-                { label: 'Carbs', color: 'var(--color-carbs)', val: customCarbs, set: setCustomCarbs },
-                { label: 'Fats', color: 'var(--color-fats)', val: customFats, set: setCustomFats },
-              ].map(m => (
-                <div key={m.label} style={{ flex: 1 }}>
-                  <label style={{ ...formLabelStyle, color: m.color }}>{m.label}</label>
-                  <input
-                    type="number" placeholder="0"
-                    value={m.val} onChange={e => m.set(e.target.value)}
-                    className="input-field"
-                    style={inputFieldStyle}
-                  />
-                </div>
-              ))}
+            <div>
+              <label style={formLabelStyle}>Brand <span style={{ color: 'rgba(0,0,0,0.20)', fontWeight: 400, textTransform: 'none' }}>(optional)</span></label>
+              <input
+                type="text" placeholder="e.g. Homemade"
+                value={customBrand} onChange={e => setCustomBrand(e.target.value)}
+                className="input-field"
+                style={inputFieldStyle}
+              />
             </div>
-          </div>
-        </div>
+            <div>
+              <label style={formLabelStyle}>Serving size</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="number" placeholder="100"
+                  value={customServingSize} onChange={e => setCustomServingSize(e.target.value)}
+                  className="input-field"
+                  style={{ ...inputFieldStyle, flex: 1 }}
+                />
+                <input
+                  type="text" placeholder="g"
+                  value={customServingUnit} onChange={e => setCustomServingUnit(e.target.value)}
+                  className="input-field"
+                  style={{ ...inputFieldStyle, width: '80px', flex: 'none' }}
+                />
+              </div>
+            </div>
+            <div>
+              <label style={formLabelStyle}>Calories (kcal)</label>
+              <input
+                type="number" placeholder="0"
+                value={customCalories} onChange={e => setCustomCalories(e.target.value)}
+                className="input-field"
+                style={inputFieldStyle}
+              />
+            </div>
+            <div>
+              <label style={formLabelStyle}>Macros (g per serving)</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {[
+                  { label: 'Protein', color: 'var(--color-protein)', val: customProtein, set: setCustomProtein },
+                  { label: 'Carbs', color: 'var(--color-carbs)', val: customCarbs, set: setCustomCarbs },
+                  { label: 'Fats', color: 'var(--color-fats)', val: customFats, set: setCustomFats },
+                ].map(m => (
+                  <div key={m.label} style={{ flex: 1 }}>
+                    <label style={{ ...formLabelStyle, color: m.color }}>{m.label}</label>
+                    <input
+                      type="number" placeholder="0"
+                      value={m.val} onChange={e => m.set(e.target.value)}
+                      className="input-field"
+                      style={inputFieldStyle}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
 
-        {/* Save button pinned bottom */}
-        <div style={{
-          position: 'sticky', bottom: 0, left: 0, right: 0,
-          padding: '1rem 1.25rem',
-          paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
-          backgroundColor: 'rgba(8,8,16,0.92)', backdropFilter: 'blur(12px)',
-          borderTop: '1px solid rgba(0,0,0,0.07)',
-          flexShrink: 0,
-        }}>
-          <button
-            onClick={handleSaveCustomFood}
-            style={{
-              width: '100%', padding: '1.1rem',
-              borderRadius: '16px', backgroundColor: 'var(--accent-blue)',
-              color: '#fff', fontWeight: 800, fontSize: '1rem', border: 'none', cursor: 'pointer',
-            }}
-          >
-            Save Food
-          </button>
+            {/* Save button — inline so it's always reachable by scrolling */}
+            <button
+              onClick={handleSaveCustomFood}
+              style={{
+                width: '100%', padding: '1.1rem', marginTop: '0.5rem',
+                borderRadius: '16px', backgroundColor: 'var(--accent-blue)',
+                color: '#fff', fontWeight: 800, fontSize: '1rem', border: 'none', cursor: 'pointer',
+              }}
+            >
+              Save Food
+            </button>
+          </div>
         </div>
       </div>
     );
