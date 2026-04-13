@@ -58,7 +58,9 @@ export const LogFood: React.FC = () => {
   // ── Date navigation ──────────────────────────────────────────────────────
   const [selectedDate, setSelectedDate] = useState(todayDate);
   const isToday = selectedDate === todayDate;
-  const canGoForward = selectedDate < todayDate;
+  const isFuture = selectedDate > todayDate;
+  const maxFutureDate = offsetDate(todayDate, 14); // allow up to 2 weeks ahead
+  const canGoForward = selectedDate < maxFutureDate;
 
   const [activeMeal, setActiveMeal] = useState<MealType>(defaultMeal);
   const [showSearch, setShowSearch] = useState(false);
@@ -77,19 +79,24 @@ export const LogFood: React.FC = () => {
 
   const prevDate = offsetDate(selectedDate, -1);
   const prevDateLog = state.logs[prevDate];
-  const prevDateHasData = isToday && prevDateLog && (
+  const prevDateHasData = !!prevDateLog && (
     Object.values(prevDateLog.meals).some(entries => entries.length > 0)
   );
-
-  useEffect(() => {
-    if (prevDateHasData) setShowCopyYesterday(true);
-  }, [prevDateHasData]);
 
   const todayLog = state.logs[selectedDate] ?? {
     id: selectedDate, date: selectedDate, steps: 0, waterGlasses: 0,
     meals: { breakfast: [], lunch: [], dinner: [], snacks: [], dessert: [] },
     workouts: [], health: {}, adherenceScore: 0,
   };
+
+  // Whether the currently-viewed date has any food logged (used for copy-to-next banner)
+  const currentDayHasData = Object.values(todayLog.meals).some(entries => entries.length > 0);
+  const nextDate = offsetDate(selectedDate, 1);
+  const canCopyToNext = currentDayHasData && selectedDate < maxFutureDate;
+
+  useEffect(() => {
+    if (prevDateHasData) setShowCopyYesterday(true);
+  }, [prevDateHasData]);
 
   const dayTotals = getMacrosFromLog(todayLog);
   const targets = state.user?.targets;
@@ -190,7 +197,29 @@ export const LogFood: React.FC = () => {
     });
     setCopiedYesterday(true);
     setShowCopyYesterday(false);
-    showToast(`Copied ${count} items from yesterday`, 'success');
+    const prevLabel = formatDateLabel(prevDate, todayDate).toLowerCase();
+    showToast(`Copied ${count} items from ${prevLabel}`, 'success');
+  };
+
+  const handleCopyToNextDay = () => {
+    const meals: MealType[] = ['breakfast', 'lunch', 'dinner', 'snacks', 'dessert'];
+    let count = 0;
+    meals.forEach(mealType => {
+      const entries = todayLog.meals[mealType] || [];
+      entries.forEach(item => {
+        const food: FoodItem = {
+          id: item.foodId, name: item.foodName,
+          calories: item.nutrition.calories, protein: item.nutrition.protein,
+          carbs: item.nutrition.carbs, fats: item.nutrition.fats,
+          servingSize: item.servingSize, servingUnit: item.servingUnit,
+        };
+        addFoodToLog(nextDate, mealType, food, item.amount);
+        count++;
+      });
+    });
+    const nextLabel = formatDateLabel(nextDate, todayDate).toLowerCase();
+    showToast(`Copied ${count} items to ${nextLabel}`, 'success');
+    setSelectedDate(nextDate);
   };
 
   const dateLabel = formatDateLabel(selectedDate, todayDate);
@@ -615,7 +644,14 @@ export const LogFood: React.FC = () => {
               <ChevronLeft size={16} color="#FCFFE2" />
             </button>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#FCFFE2', letterSpacing: '-0.01em' }}>{dateLabel}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#FCFFE2', letterSpacing: '-0.01em' }}>{dateLabel}</div>
+                {isFuture && (
+                  <span style={{ fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(194,203,154,0.8)', background: 'rgba(255,255,255,0.10)', padding: '2px 6px', borderRadius: 6 }}>
+                    Future
+                  </span>
+                )}
+              </div>
               {!isToday && (
                 <button onClick={() => setSelectedDate(todayDate)}
                   style={{ background: 'none', border: 'none', fontSize: '0.62rem', fontWeight: 700, color: 'rgba(194,203,154,0.85)', cursor: 'pointer', padding: '2px 0' }}>
@@ -881,15 +917,15 @@ export const LogFood: React.FC = () => {
           </div>
         )}
 
-        {/* ── COPY FROM YESTERDAY BANNER ── */}
-        {showCopyYesterday && !copiedYesterday && (
+        {/* ── COPY FROM PREVIOUS DAY BANNER ── */}
+        {showCopyYesterday && !copiedYesterday && prevDateHasData && (
           <div className="glass-card-warm" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             height: '48px', paddingLeft: '14px', paddingRight: '8px',
             borderRadius: '16px',
           }}>
             <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              📋 Copy meals from {formatDateLabel(prevDate, todayDate).toLowerCase()}
+              📋 Copy from {formatDateLabel(prevDate, todayDate).toLowerCase()}
             </span>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               <button
@@ -910,6 +946,31 @@ export const LogFood: React.FC = () => {
                 <X size={13} color="rgba(0,0,0,0.28)" />
               </button>
             </div>
+          </div>
+        )}
+
+        {/* ── COPY TO NEXT DAY BANNER ── */}
+        {canCopyToNext && (
+          <div className="glass-card" style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            height: '48px', paddingLeft: '14px', paddingRight: '10px',
+            borderRadius: '16px',
+          }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              ➡️ Copy to {formatDateLabel(nextDate, todayDate).toLowerCase()}
+            </span>
+            <button
+              onClick={handleCopyToNextDay}
+              style={{
+                padding: '0.35rem 0.85rem',
+                background: 'rgba(87,96,56,0.12)',
+                border: '1px solid rgba(87,96,56,0.20)',
+                borderRadius: '10px',
+                fontWeight: 800, fontSize: '0.78rem', color: 'var(--accent-blue)', cursor: 'pointer',
+              }}
+            >
+              Copy →
+            </button>
           </div>
         )}
 

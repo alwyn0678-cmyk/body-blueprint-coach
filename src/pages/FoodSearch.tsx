@@ -531,16 +531,19 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
     const mult = getMultiplier();
     const isFav = state.favoriteFoods.some(f => f.id === selectedFood.id);
     return (
-      // Outer: fixed full-screen container
+      // Outer: absolute inside SlideOver (which is position:fixed full-screen).
+      // Using absolute avoids the iOS scroll bug with position:fixed + overflow:auto
+      // inside a CSS-transformed ancestor (Framer Motion SlideOver).
       <div style={{
         backgroundColor: 'var(--bg-primary)',
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9003,
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
         overflowY: 'auto',
-      }}
+        WebkitOverflowScrolling: 'touch',
+      } as React.CSSProperties}
         className="animate-slide-up"
       >
-        {/* Scrollable content — paddingBottom clears the tab bar + home indicator */}
-        <div style={{ padding: '1rem', paddingBottom: 'max(8rem, calc(6rem + env(safe-area-inset-bottom)))' }}>
+        {/* Scrollable content — generous paddingBottom so button clears tab bar + home indicator */}
+        <div style={{ padding: '1rem', paddingBottom: 'max(10rem, calc(8rem + env(safe-area-inset-bottom)))' }}>
           {/* Top nav */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
             <button
