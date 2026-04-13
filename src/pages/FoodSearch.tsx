@@ -505,11 +505,12 @@ export const FoodSearch: React.FC<FoodSearchProps> = ({ mealType, onAdd, onCance
 
         {/* Save button pinned bottom */}
         <div style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0,
+          position: 'sticky', bottom: 0, left: 0, right: 0,
           padding: '1rem 1.25rem',
           paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
           backgroundColor: 'rgba(8,8,16,0.92)', backdropFilter: 'blur(12px)',
-          borderTop: '1px solid rgba(0,0,0,0.07)', zIndex: 9006,
+          borderTop: '1px solid rgba(0,0,0,0.07)',
+          flexShrink: 0,
         }}>
           <button
             onClick={handleSaveCustomFood}
