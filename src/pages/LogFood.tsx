@@ -94,9 +94,11 @@ export const LogFood: React.FC = () => {
   const nextDate = offsetDate(selectedDate, 1);
   const canCopyToNext = currentDayHasData && selectedDate < maxFutureDate;
 
+  // Reset copy banner state whenever the selected date changes
   useEffect(() => {
-    if (prevDateHasData) setShowCopyYesterday(true);
-  }, [prevDateHasData]);
+    setShowCopyYesterday(prevDateHasData);
+    setCopiedYesterday(false);
+  }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dayTotals = getMacrosFromLog(todayLog);
   const targets = state.user?.targets;
@@ -613,7 +615,7 @@ export const LogFood: React.FC = () => {
         display: 'flex', flexDirection: 'column',
         backgroundColor: 'var(--bg-primary)',
         minHeight: '100dvh',
-        paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))',
+        paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))',
       }}
       className="animate-fade-in"
     >
